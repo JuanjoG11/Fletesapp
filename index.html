@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login | Fletes App</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="login-body">
+
+<div class="login-box">
+    <!-- Logo de la empresa -->
+    <div class="logo">
+        <img src="logo_tym.png" alt="Logo Fletes App">
+    </div>
+
+    <h2>Bienvenido a Fletes App</h2>
+
+    <div class="input-group">
+        <input id="user" type="text" placeholder="Usuario">
+    </div>
+    <div class="input-group">
+        <input id="pass" type="password" placeholder="Contraseña">
+    </div>
+
+    <button class="btn btn-primary" onclick="login()">Ingresar</button>
+
+    <p class="footer-text">© 2025 Fletes App. Todos los derechos reservados.</p>
+</div>
+
+<script>
+function login() {
+    const user = document.getElementById("user").value.trim();
+    const pass = document.getElementById("pass").value.trim();
+
+    if(!user || !pass){
+        alert("Por favor, completa todos los campos.");
+        return;
+    }
+
+    window.location.href = "dashboard.html";
+}
+</script>
+
+</body>
+</html>

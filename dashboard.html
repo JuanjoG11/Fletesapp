@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Gestión de Fletes</title>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- App -->
+    <script src="app.js" defer></script>
+</head>
+
+<body>
+
+<!-- ===================== SIDEBAR ===================== -->
+<aside class="sidebar">
+   <div class="logo">
+    <img src="logo_tym.png" alt="Logo Empresa" style="width:100px; display:block; margin:0 auto;">
+</div>
+
+
+    <a class="tab-link active" data-tab="inicio">🏠 Inicio</a>
+    <a class="tab-link" data-tab="fletes">📝 Fletes</a>
+    <a class="tab-link" data-tab="programaciones">🗓 Programaciones</a>
+    <a class="tab-link" data-tab="estadisticas">📊 Estadísticas</a>
+
+    <hr>
+
+    <a onclick="exportarExcel()">💾 Exportar Excel</a>
+    <a onclick="generarPDF()">🖨 Generar PDF</a>
+
+    <hr>
+
+    <div class="theme-switch">
+        <label>
+            🌙 / ☀️
+            <input type="checkbox" id="themeToggle">
+        </label>
+    </div>
+
+    <a class="logout" href="index.html">🔒 Cerrar sesión </a>
+    
+</aside>
+
+<!-- ===================== TOPBAR ===================== -->
+<header class="topbar">
+    <h1 id="pageTitle">Dashboard General</h1>
+</header>
+
+<!-- ===================== CONTENIDO ===================== -->
+<main class="content">
+
+
+<!-- ======================================================
+                    TAB INICIO
+====================================================== -->
+<section id="inicio" class="tab-content visible">
+
+    <div class="grid-2">
+        <div class="card kpi">
+            <h3>📦 Total Fletes</h3>
+            <p id="cantFletes" class="kpi-number">0</p>
+        </div>
+
+        <div class="card kpi">
+            <h3>🛣 Viajes Programados</h3>
+            <p id="cantProgramaciones" class="kpi-number">0</p>
+        </div>
+    </div>
+
+</section>
+
+
+<!-- ======================================================
+                    TAB FLETES
+====================================================== -->
+<section id="fletes" class="tab-content">
+
+    <div class="card">
+        <h2>📝 Registrar Flete</h2>
+
+        <div class="form-grid">
+            <input id="cliente" placeholder="Cliente">
+            <input id="placa" placeholder="Placa (ABC-123)">
+            <select id="zona">
+                <option value="" disabled selected>Zona</option>
+                <option>Zona Norte</option>
+                <option>Zona Sur</option>
+                <option>Zona Oriente</option>
+                <option>Zona Occidente</option>
+                <option>Nacional</option>
+            </select>
+            <input id="precio" type="number" placeholder="Precio">
+        </div>
+
+        <button class="btn btn-primary" onclick="crearFlete()">Guardar</button>
+    </div>
+
+    <div class="card">
+        <h2>🔍 Buscar / Filtrar</h2>
+
+        <div class="form-grid">
+            <input id="buscarFlete" placeholder="Buscar flete..." onkeyup="buscarFletes()">
+            <select id="filtroZona" onchange="buscarFletes()">
+                <option value="">Filtrar zona</option>
+                <option>Zona Norte</option>
+                <option>Zona Sur</option>
+                <option>Zona Oriente</option>
+                <option>Zona Occidente</option>
+                <option>Nacional</option>
+            </select>
+            <input type="date" id="filtroFecha" onchange="buscarFletes()">
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>📋 Últimos Fletes</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Placa</th>
+                    <th>Zona</th>
+                    <th>Precio</th>
+                </tr>
+            </thead>
+            <tbody id="tablaFletes"></tbody>
+        </table>
+    </div>
+
+</section>
+
+
+<!-- ======================================================
+                TAB PROGRAMACIONES
+====================================================== -->
+<section id="programaciones" class="tab-content">
+
+    <div class="card">
+        <h2>🗓 Programar Viaje</h2>
+
+        <div class="form-grid">
+            <input type="date" id="fechaProg">
+            <input id="vehiculoProg" placeholder="vehiculoProg">
+            <input id="destinoProg" placeholder="Destino">
+        </div>
+
+        <button class="btn btn-secondary" onclick="crearProgramacion()">Programar</button>
+    </div>
+
+    <div class="card">
+        <h2>📋 Buscar / Filtrar</h2>
+
+        <div class="form-grid">
+            <input id="buscarProg" placeholder="Buscar destino..." onkeyup="buscarProgramaciones()">
+
+            <input type="date" id="filtroFechaProg" onchange="buscarProgramaciones()">
+
+            <select id="filtroEstadoProg" onchange="buscarProgramaciones()">
+                <option value="">Estado</option>
+                <option>Pendiente</option>
+                <option>En Ruta</option>
+                <option>Finalizado</option>
+                <option>Cancelado</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🚚 Viajes Programados</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Destino</th>
+                    <th>Vehículo</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody id="tablaProg"></tbody>
+        </table>
+    </div>
+
+</section>
+
+
+<!-- ======================================================
+                    TAB ESTADÍSTICAS
+====================================================== -->
+<section id="estadisticas" class="tab-content">
+
+    <div class="card">
+        <h2>📊 Ingresos por Mes</h2>
+        <canvas id="chartIngresos"></canvas>
+    </div>
+
+    <div class="card">
+        <h2>🍰 Fletes por Zona</h2>
+        <canvas id="chartZonas"></canvas>
+    </div>
+
+    <div class="card">
+        <h2>📦 Programaciones por Mes</h2>
+        <canvas id="chartProgramaciones"></canvas>
+    </div>
+
+</section>
+
+</main>
+
+<!-- ===================== TOASTS ===================== -->
+<div id="toastContainer"></div>
+
+</body>
+</html>

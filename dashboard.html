@@ -5,28 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | Gestión de Fletes</title>
 
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Styles -->
     <link rel="stylesheet" href="styles.css">
 
-    <!-- App -->
     <script src="app.js" defer></script>
+    
 </head>
-
+<header class="topbar">
+    <button id="menuToggleBtn" class="hamburger-menu">☰</button> 
+</header>
 <body>
 
-<!-- ===================== SIDEBAR ===================== -->
 <aside class="sidebar">
-   <div class="logo">
-    <img src="logo_tym.png" alt="Logo Empresa" style="width:100px; display:block; margin:0 auto;">
-</div>
+    <div class="logo">
+     <img src="logo_tym.png" alt="Logo Empresa" style="width:100px; display:block; margin:0 auto;">
+ </div>
 
 
     <a class="tab-link active" data-tab="inicio">🏠 Inicio</a>
     <a class="tab-link" data-tab="fletes">📝 Fletes</a>
-    <a class="tab-link" data-tab="programaciones">🗓 Programaciones</a>
     <a class="tab-link" data-tab="estadisticas">📊 Estadísticas</a>
 
     <hr>
@@ -47,18 +45,13 @@
     
 </aside>
 
-<!-- ===================== TOPBAR ===================== -->
 <header class="topbar">
     <h1 id="pageTitle">Dashboard General</h1>
 </header>
 
-<!-- ===================== CONTENIDO ===================== -->
 <main class="content">
 
 
-<!-- ======================================================
-                    TAB INICIO
-====================================================== -->
 <section id="inicio" class="tab-content visible">
 
     <div class="grid-2">
@@ -66,27 +59,20 @@
             <h3>📦 Total Fletes</h3>
             <p id="cantFletes" class="kpi-number">0</p>
         </div>
-
-        <div class="card kpi">
-            <h3>🛣 Viajes Programados</h3>
-            <p id="cantProgramaciones" class="kpi-number">0</p>
         </div>
-    </div>
 
 </section>
 
 
-<!-- ======================================================
-                    TAB FLETES
-====================================================== -->
 <section id="fletes" class="tab-content">
 
     <div class="card">
         <h2>📝 Registrar Flete</h2>
 
         <div class="form-grid">
-            <input id="cliente" placeholder="Cliente">
             <input id="placa" placeholder="Placa (ABC-123)">
+            <input id="Contratista" placeholder="Contratista"> 
+            
             <select id="zona">
                 <option value="" disabled selected>Zona</option>
                 <option>Zona Norte</option>
@@ -95,7 +81,43 @@
                 <option>Zona Occidente</option>
                 <option>Nacional</option>
             </select>
-            <input id="precio" type="number" placeholder="Precio">
+            <select id="Día">
+                <option value="" disabled selected>Día</option>
+                <option>Lunes</option>
+                <option >Martes</option>
+                <option >Miercoles</option>
+                <option>Jueves</option>
+                <option>Viernes</option>
+                <option>Sabado</option>
+            </select>
+            <select id="Poblacíon">
+                <option value="" disabled selected>Población</option>
+                <option>Pereira</option>
+                <option>Dosquebradas</option>
+                <option>Manizales</option>
+                <option>Armenia</option>
+                <option>Cartago</option>
+                <option>Cuba</option>
+                <option>Parque IndustriaL</option>
+                <option>Sta Rosa</option>
+                <option>Quimbaya</option>
+                <option>Viterbo</option>
+                <option>Vereda</option>
+            </select>   
+            <input id="Auxiliares" type="text" placeholder="Nombre(s) Auxiliares" >
+            <select id="No. Auxiliares">
+                <option value="" disabled selected>No. Auxiliares</option>
+                <option>1</option>
+                <option>2</option>
+            </select>
+            <input id="NoPedi" type="number" placeholder="No. Pedidos">
+            <input id="Valor Ruta" type="number" placeholder="Valor Ruta">
+            <select id="Adicionales?">
+                <option value="" selected disabled>Adicionales?</option>
+                <option>Si</option>
+                <option>No</option>
+            </select>
+            <input id="totalflete" type="number" placeholder="Total Flete">
         </div>
 
         <button class="btn btn-primary" onclick="crearFlete()">Guardar</button>
@@ -105,7 +127,7 @@
         <h2>🔍 Buscar / Filtrar</h2>
 
         <div class="form-grid">
-            <input id="buscarFlete" placeholder="Buscar flete..." onkeyup="buscarFletes()">
+            <input id="buscarFlete" placeholder="Buscar flete (Placa o Contratista)..." onkeyup="buscarFletes()">
             <select id="filtroZona" onchange="buscarFletes()">
                 <option value="">Filtrar zona</option>
                 <option>Zona Norte</option>
@@ -125,8 +147,7 @@
             <thead>
                 <tr>
                     <th>Fecha</th>
-                    <th>Cliente</th>
-                    <th>Placa</th>
+                    <th>Contratista</th> <th>Placa</th>
                     <th>Zona</th>
                     <th>Precio</th>
                 </tr>
@@ -138,63 +159,10 @@
 </section>
 
 
-<!-- ======================================================
-                TAB PROGRAMACIONES
-====================================================== -->
-<section id="programaciones" class="tab-content">
-
-    <div class="card">
-        <h2>🗓 Programar Viaje</h2>
-
-        <div class="form-grid">
-            <input type="date" id="fechaProg">
-            <input id="vehiculoProg" placeholder="placa">
-            <input id="destinoProg" placeholder="Destino">
-        </div>
-
-        <button class="btn btn-secondary" onclick="crearProgramacion()">Programar</button>
-    </div>
-
-    <div class="card">
-        <h2>📋 Buscar / Filtrar</h2>
-
-        <div class="form-grid">
-            <input id="buscarProg" placeholder="Buscar destino..." onkeyup="buscarProgramaciones()">
-
-            <input type="date" id="filtroFechaProg" onchange="buscarProgramaciones()">
-
-            <select id="filtroEstadoProg" onchange="buscarProgramaciones()">
-                <option value="">Estado</option>
-                <option>Pendiente</option>
-                <option>En Ruta</option>
-                <option>Finalizado</option>
-                <option>Cancelado</option>
-            </select>
-        </div>
-    </div>
-
-    <div class="card">
-        <h2>🚚 Viajes Programados</h2>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Destino</th>
-                    <th>Vehículo</th>
-                    <th>Estado</th>
-                </tr>
-            </thead>
-            <tbody id="tablaProg"></tbody>
-        </table>
-    </div>
-
-</section>
 
 
-<!-- ======================================================
-                    TAB ESTADÍSTICAS
-====================================================== -->
+
+
 <section id="estadisticas" class="tab-content">
 
     <div class="card">
@@ -207,16 +175,11 @@
         <canvas id="chartZonas"></canvas>
     </div>
 
-    <div class="card">
-        <h2>📦 Programaciones por Mes</h2>
-        <canvas id="chartProgramaciones"></canvas>
-    </div>
-
+   
 </section>
 
 </main>
 
-<!-- ===================== TOASTS ===================== -->
 <div id="toastContainer"></div>
 
 </body>

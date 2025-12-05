@@ -1,5 +1,5 @@
 /* ============================================================
-   🌙 TEMA GENERAL (DARK MODE POR DEFECTO)
+    🌙 TEMA GENERAL (DARK MODE POR DEFECTO)
 ============================================================ */
 
 :root {
@@ -13,6 +13,8 @@
     --warning: #f59e0b;
     --shadow: rgba(0,0,0,0.4);
     --border: #333;
+    --success-light: rgba(16, 185, 129, 0.15);
+    --primary-light: rgba(59, 130, 246, 0.15);
 }
 
 html[data-theme="light"] {
@@ -26,6 +28,8 @@ html[data-theme="light"] {
     --warning: #d97706;
     --shadow: rgba(0,0,0,0.1);
     --border: #ddd;
+    --success-light: rgba(5, 150, 105, 0.1);
+    --primary-light: rgba(37, 99, 235, 0.1);
 }
 
 * {
@@ -42,7 +46,7 @@ body {
 }
 
 /* ============================================================
-   SIDEBAR
+    SIDEBAR
 ============================================================ */
 
 .sidebar {
@@ -53,9 +57,19 @@ body {
     height: 100vh;
     background: #000;
     padding: 20px 15px;
-    box-shadow: 3px 0 10px rgba(0,0,0,0.4);
+    box-shadow: 3px 0 10px rgba(0,0,0,0.6);
     transition: left 0.3s;
     z-index: 1000;
+}
+
+/* El estado inicial en móvil debe estar oculto */
+@media (max-width: 900px) {
+    .sidebar {
+        left: -250px; /* Oculta el menú por defecto en móvil */
+    }
+    .sidebar.active {
+        left: 0; /* Muestra el menú cuando tiene la clase 'active' */
+    }
 }
 
 .sidebar .logo {
@@ -72,18 +86,20 @@ body {
     color: var(--text-soft);
     border-radius: 6px;
     cursor: pointer;
-    transition: .2s;
+    transition: background .2s, color .2s;
     font-size: 15px;
 }
 
 .sidebar a:hover {
     background: #222;
     color: var(--text);
+    transform: translateX(2px);
 }
 
 .sidebar a.active {
     background: var(--primary);
     color: white !important;
+    font-weight: 600;
 }
 
 .logout {
@@ -91,8 +107,49 @@ body {
     font-weight: 600;
 }
 
+.theme-switch {
+    margin: 20px 0;
+    padding: 10px 15px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+.theme-switch label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    cursor: pointer;
+}
+.theme-switch input[type="checkbox"] {
+    appearance: none;
+    width: 40px;
+    height: 20px;
+    background: #555;
+    border-radius: 10px;
+    position: relative;
+    cursor: pointer;
+    transition: background .3s;
+}
+.theme-switch input[type="checkbox"]:checked {
+    background: var(--primary);
+}
+.theme-switch input[type="checkbox"]::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: white;
+    border-radius: 50%;
+    transition: transform .3s;
+}
+.theme-switch input[type="checkbox"]:checked::after {
+    transform: translateX(20px);
+}
+
 /* ============================================================
-   TOPBAR
+    TOPBAR
 ============================================================ */
 
 .topbar {
@@ -102,72 +159,148 @@ body {
     padding: 15px 20px;
     display: flex;
     align-items: center;
-    font-size: 20px;
-    font-weight: 600;
+    font-size: 24px;
+    font-weight: 700;
     border-bottom: 1px solid var(--border);
-    box-shadow: 0 2px 6px var(--shadow);
-    transition: margin .3s, padding .3s;
+    box-shadow: 0 2px 8px var(--shadow);
+    transition: margin .3s;
 }
 
+/* Botón de hamburguesa solo visible en móvil */
+.hamburger-menu {
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0 10px 0 0;
+    margin-right: 10px;
+    display: none; /* Oculto por defecto */
+}
+
+@media (max-width: 900px) {
+    .topbar {
+        margin-left: 0; /* La barra superior ocupa todo el ancho */
+        padding-left: 15px; /* Ajusta el padding para dar espacio al botón */
+    }
+    .hamburger-menu {
+        display: block; /* Muestra el botón de hamburguesa */
+    }
+    .topbar #pageTitle {
+        font-size: 20px;
+    }
+}
+
+
 /* ============================================================
-   CONTENIDO
+    CONTENIDO
 ============================================================ */
 
 .content {
     margin-left: 250px;
-    padding: 20px;
-    transition: margin .3s, padding .3s;
+    padding: 30px 20px;
+    transition: margin .3s;
+}
+
+@media (max-width: 900px) {
+    .content {
+        margin-left: 0; /* El contenido ocupa todo el ancho en móvil */
+        padding: 15px;
+    }
 }
 
 .tab-content {
     display: none;
+    padding-top: 10px;
 }
 .tab-content.visible {
     display: block;
 }
 
 /* ============================================================
-   CARDS
+    CARDS
 ============================================================ */
 
 .card {
     background: var(--bg-card);
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 25px;
-    box-shadow: 0 3px 10px var(--shadow);
+    padding: 25px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 15px var(--shadow);
     border: 1px solid var(--border);
-    transition: background .3s, color .3s;
+    transition: background .3s, color .3s, border .3s, box-shadow .3s;
 }
 
+.card h2, .card h3 {
+    color: var(--text);
+    margin-bottom: 15px;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 8px;
+}
+
+/* 📊 ESTILOS DE KPI / DASHBOARD (Pestaña Inicio) */
 .kpi {
     text-align: center;
+    background: var(--primary-light);
+    border: 1px solid var(--primary);
+    transition: transform 0.3s;
 }
+
+.kpi:hover {
+    transform: translateY(-5px);
+}
+
 .kpi-number {
-    font-size: 42px;
-    font-weight: bold;
+    font-size: 50px;
+    font-weight: 800;
     color: var(--primary);
     margin-top: 10px;
+    line-height: 1;
 }
 
 /* ============================================================
-   GRID
+    GRID - AJUSTES RESPONSIVOS FINALES
 ============================================================ */
 
 .grid-2 {
+    /* Mantiene el comportamiento adaptativo */
     display: grid;
-    grid-template-columns: repeat(2,1fr);
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
 }
 
 .form-grid {
+    /* Mantiene el comportamiento adaptativo */
     display: grid;
-    grid-template-columns: repeat(3,1fr);
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 15px;
+    margin-bottom: 20px;
+}
+
+/* En el móvil, permite que el grid colapse a una sola columna si es necesario */
+@media (max-width: 480px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.card button {
+    margin-top: 20px;
+    width: 100%;
+    max-width: 300px;
+    display: block; /* Asegura que el botón ocupe su propio bloque */
+    margin-left: 0; /* Alineación a la izquierda si es menor al max-width */
+}
+
+@media (min-width: 481px) {
+    .card button {
+        /* Centrar el botón cuando hay espacio, pero no es una pantalla grande */
+        margin: 20px auto 0 auto;
+    }
 }
 
 /* ============================================================
-   INPUTS Y SELECTS
+    INPUTS Y SELECTS
 ============================================================ */
 
 input, select {
@@ -189,27 +322,39 @@ html[data-theme="light"] select {
 
 input:focus, select:focus {
     border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
     outline: none;
 }
 
 /* ============================================================
-   BOTONES
+    BOTONES
 ============================================================ */
 
 .btn {
-    padding: 10px 18px;
+    padding: 12px 20px;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
-    font-weight: 600;
-    transition: .2s;
+    font-weight: 700;
+    transition: .3s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .btn-primary {
     background: var(--primary);
     color: white;
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
 }
-.btn-primary:hover { background: #1d4ed8; }
+.btn-primary:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(59, 130, 246, 0.5);
+}
+.btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 5px rgba(59, 130, 246, 0.2);
+}
 
 .btn-secondary {
     background: var(--secondary);
@@ -218,212 +363,212 @@ input:focus, select:focus {
 .btn-secondary:hover { background: #059669; }
 
 /* ============================================================
-   TABLAS
+    TABLAS - MANEJO RESPONSIVO MEJORADO
 ============================================================ */
 
+.card table {
+    /* Envuelve la tabla con un div para mejor desplazamiento en móvil */
+    display: block;
+    overflow-x: auto; /* Permite el scroll horizontal */
+    width: 100%;
+}
+
+/* Quita el overflow de la tabla misma, lo pone en el contenedor .card table */
 table {
     width: 100%;
     border-collapse: collapse;
+    border-radius: 8px;
+    overflow: hidden; 
+    min-width: 600px; /* Asegura un ancho mínimo para que el scroll horizontal sea efectivo */
 }
 
 table thead {
     background: var(--primary);
     color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 table th, table td {
-    padding: 12px 10px;
+    padding: 14px 12px;
     font-size: 14px;
+    text-align: left;
     border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+    white-space: nowrap; /* Evita que el texto de las celdas se rompa */
 }
 
 table tbody tr:hover {
-    background: rgba(255,255,255,0.05);
+    background: var(--bg);
+    box-shadow: inset 3px 0 0 0 var(--primary);
 }
 
-/* Scroll horizontal para móviles */
-@media (max-width: 600px) {
-    table {
-        display: block;
-        overflow-x: auto;
-        white-space: nowrap;
-    }
-}
 
 /* ============================================================
-   ESTADOS (Programaciones)
+    📈 ESTADÍSTICAS
 ============================================================ */
 
-.estado {
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.estado.pendiente { background: #444; color: white; }
-.estado.enruta { background: var(--warning); color: black; }
-.estado.finalizado { background: var(--secondary); color: white; }
-.estado.cancelado { background: var(--danger); color: white; }
-
-/* ============================================================
-   TOASTS PRO
-============================================================ */
-
-#toastContainer {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 2000;
+#estadisticas .card {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    /* Mantiene la altura consistente, pero la hace más pequeña en móviles */
+    height: 400px; 
 }
 
-.toast {
-    min-width: 250px;
-    padding: 12px 15px;
-    border-radius: 8px;
-    background: var(--bg-card);
-    color: var(--text);
-    box-shadow: 0 3px 10px var(--shadow);
-    display: flex;
-    justify-content: space-between;
-    animation: slideIn .4s ease;
-    border-left: 5px solid;
+@media (max-width: 600px) {
+    #estadisticas .card {
+        height: 300px; /* Altura más pequeña para pantallas muy chicas */
+    }
 }
 
-.toast.success { border-color: var(--secondary); }
-.toast.error { border-color: var(--danger); }
-.toast.info { border-color: var(--primary); }
-.toast.warning { border-color: var(--warning); }
-
-@keyframes slideIn {
-    from { opacity: 0; transform: translateX(40px); }
-    to   { opacity: 1; transform: translateX(0); }
+#estadisticas .card h2 {
+    text-align: center;
+    font-size: 1.5em;
+    color: var(--secondary);
+    border-bottom: 2px solid var(--secondary);
+    padding-bottom: 8px;
+    margin-bottom: 10px;
 }
 
-/* ============================================================
-   LOGIN
-============================================================ */
-
+#estadisticas canvas {
+    flex-grow: 1;
+    max-width: 100%;
+    max-height: 100%;
+    margin: 0 auto;
+}
 .login-body {
+
     display: flex;
+
     justify-content: center;
+
     align-items: center;
+
     min-height: 100vh;
+
     background: var(--bg);
+
 }
+
+
 
 .login-box {
+
     background: var(--bg-card);
+
     padding: 40px 30px;
+
     border-radius: 12px;
+
     box-shadow: 0 10px 25px var(--shadow);
+
     max-width: 400px;
+
     width: 90%;
+
     text-align: center;
+
 }
+
+
 
 .login-box h2 {
+
     margin-bottom: 20px;
+
     color: var(--text);
+
 }
+
+
 
 .login-box .logo img {
+
     width: 100px;
+
     margin-bottom: 20px;
+
 }
+
+
 
 .input-group {
+
     margin-bottom: 15px;
+
 }
+
+
 
 .input-group input {
+
     width: 100%;
+
     padding: 12px;
+
     border-radius: 8px;
+
     border: 1px solid var(--border);
+
     background: var(--bg);
+
     color: var(--text);
+
     font-size: 14px;
+
     transition: border .2s, background .3s, color .3s;
+
 }
+
+
 
 .input-group input:focus {
+
     border-color: var(--primary);
+
     outline: none;
+
 }
+
+
 
 .login-box .btn {
+
     width: 100%;
+
     padding: 12px;
+
     border-radius: 8px;
+
     font-weight: 600;
+
     font-size: 16px;
+
     cursor: pointer;
+
     transition: background .2s, transform .2s;
+
 }
+
+
 
 .login-box .btn:hover {
+
     transform: scale(1.05);
+
 }
+
+
 
 .footer-text {
+
     margin-top: 15px;
+
     font-size: 12px;
+
     color: var(--text-soft);
+
 }
 
-/* ============================================================
-   RESPONSIVE GENERAL
-============================================================ */
 
-@media (max-width: 900px) {
-    /* Sidebar collapsa y contenido se expande */
-    .sidebar {
-        left: -250px;
-    }
 
-    .sidebar.active {
-        left: 0;
-    }
-
-    .topbar {
-        margin-left: 0;
-    }
-
-    .content {
-        margin-left: 0;
-        padding: 15px;
-    }
-
-    .grid-2, .form-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 480px) {
-    .card {
-        padding: 15px;
-    }
-
-    .kpi-number {
-        font-size: 32px;
-    }
-
-    input, select {
-        padding: 8px;
-        font-size: 13px;
-    }
-
-    .btn {
-        padding: 8px;
-        font-size: 14px;
-    }
-
-    .topbar {
-        font-size: 18px;
-        padding: 10px 15px;
-    }
-}
+/*

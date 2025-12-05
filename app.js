@@ -326,14 +326,31 @@ function generarEstadisticas() {
 // ==========================================================
 // 📱 RESPONSIVIDAD (TOGGLE MENÚ)
 // ==========================================================
+// ==========================================================
+// 📱 RESPONSIVIDAD Y CIERRE DE MENÚ AUTOMÁTICO
+// ==========================================================
+
 const menuToggleBtn = document.getElementById("menuToggleBtn");
 const sidebar = document.querySelector(".sidebar");
+const sidebarLinks = document.querySelectorAll(".sidebar a"); // Selecciona todos los enlaces de la barra lateral
 
+// 1. Lógica para abrir/cerrar el menú al tocar la hamburguesa
 if (menuToggleBtn && sidebar) {
     menuToggleBtn.addEventListener("click", () => {
         sidebar.classList.toggle("active");
     });
 }
+
+// 2. Lógica para cerrar el menú cuando se selecciona un enlace (solo en móvil)
+sidebarLinks.forEach(link => {
+    link.addEventListener("click", () => {
+        // Solo ejecuta si la pantalla es <= 900px (el breakpoint que usamos en CSS)
+        if (window.innerWidth <= 900) {
+            // Elimina la clase 'active' para ocultar el menú
+            sidebar.classList.remove("active");
+        }
+    });
+});
 // ==========================================================
 // 💾 EXPORTAR EXCEL
 // ==========================================================

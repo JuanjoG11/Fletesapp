@@ -405,7 +405,134 @@ function listarProgramaciones() { /* Aquí iría la lógica de programaciones */
 function buscarProgramaciones() { showToast("Función 'buscarProgramaciones' no implementada.","info"); }
 function cargarFlotaParaProgramacion() { /* Aquí iría la lógica de flota */ }
 function exportarExcel(){ /* Aquí iría la lógica de exportar */ }
-function generarPDF(){ window.print(); } 
+
+// --- FUNCIONES DE REPORTE PDF CORREGIDAS Y DEFINIDAS ---
+
+/**
+ * Genera el contenido HTML para el reporte de fletes con una columna de firma.
+ * @param {Array} fletes Lista de fletes a incluir en el reporte.
+ * @returns {string} El contenido HTML para la impresión.
+ */
+function generarContenidoReporte(fletes) {
+    // Genera las filas de la tabla, incluyendo la celda de firma
+    const filasTabla = fletes.map(f => `
+        <tr>
+            <td>${f.fecha}</td>
+            <td>${f.contratista || 'N/A'}</td> 
+            <td>${f.placa}</td>
+            <td>${f.zona}</td>
+            <td>$${f.precio.toLocaleString()}</td>
+            <td>${f.dia || 'N/A'}</td>
+            <td>${f.poblacion || 'N/A'}</td>
+            <td class="firma-celda"></td> </tr>
+    `).join('');
+
+    // Calcula el total de la suma de los precios
+    const totalFletes = fletes.reduce((sum, f) => sum + f.precio, 0);
+    const totalFormateado = totalFletes.toLocaleString();
+
+    // Estilos básicos para la impresión
+    const estilos = `
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h2 { text-align: center; color: #333; }
+            .reporte-container { width: 100%; max-width: 900px; margin: 0 auto; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 10px; }
+            th { background-color: #f2f2f2; }
+            .total-row td { font-weight: bold; background-color: #e0f7fa; }
+            
+            /* Estilo para la columna de la firma */
+            .firma-celda {
+                min-width: 120px; /* Ancho suficiente para una firma */
+                height: 30px; /* Alto suficiente para una firma */
+            }
+            
+            /* Ocultar elementos que no queremos imprimir */
+            @media print {
+                .no-print { display: none !important; }
+                body { margin: 0; }
+                .reporte-container { max-width: none; }
+            }
+        </style>
+    `;
+
+    // Estructura completa del HTML
+    return `
+        <html>
+        <head>
+            <title>Reporte de Fletes - ${new Date().toLocaleDateString()}</title>
+            ${estilos}
+        </head>
+        <body>
+            <div class="reporte-container">
+                <h2>📋 Reporte de Últimos Fletes para Confirmación</h2>
+                <p>Generado el: ${new Date().toLocaleString()}</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Contratista</th>
+                            <th>Placa</th>
+                            <th>Zona</th>
+                            <th>Precio</th>
+                            <th>Día</th>
+                            <th>Población</th>
+                            <th>✍️ Firma del Conductor</th> 
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filasTabla}
+                        <tr class="total-row">
+                            <td colspan="4" style="text-align: right;">TOTAL GENERAL:</td>
+                            <td>$${totalFormateado}</td>
+                            <td colspan="3"></td> </tr>
+                    </tbody>
+                </table>
+                
+            </div>
+        </body>
+        </html>
+    `;
+}
+
+/**
+ * Genera el PDF (mediante impresión) con los últimos 10 fletes y la columna de firma.
+ */
+function generarPDF() { 
+    const fletes = load("fletes");
+
+    // Filtrar los últimos 10 fletes para el reporte
+    const ultimosFletes = fletes.slice(-10).reverse(); // Muestra los 10 más recientes
+
+    if (ultimosFletes.length === 0) {
+        showModalAlert("Error", "No hay fletes registrados para generar el reporte.", "warning");
+        return;
+    }
+
+    const contenidoHTML = generarContenidoReporte(ultimosFletes);
+
+    // 1. Abrir una nueva ventana/pestaña
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+        showModalAlert("Error", "El bloqueo de ventanas emergentes impide generar el reporte. Por favor, desactívelo.", "error");
+        return;
+    }
+
+    // 2. Inyectar el contenido HTML
+    printWindow.document.write(contenidoHTML);
+    printWindow.document.close();
+
+    // 3. Esperar un breve momento a que cargue el contenido y llamar a imprimir
+    printWindow.onload = () => {
+        printWindow.print();
+        // Opcional: Cerrar la ventana después de la impresión
+        // setTimeout(() => printWindow.close(), 1000); 
+    };
+} 
+
+// --- FIN FUNCIONES DE REPORTE PDF ---
+
 
 let chartIngresos, chartZonas, chartProgramaciones;
 function generarEstadisticas() { 

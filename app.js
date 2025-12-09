@@ -406,6 +406,7 @@ function buscarProgramaciones() { showToast("Función 'buscarProgramaciones' no 
 function cargarFlotaParaProgramacion() { /* Aquí iría la lógica de flota */ }
 function exportarExcel(){ /* Aquí iría la lógica de exportar */ }
 
+
 // --- FUNCIONES DE REPORTE PDF CORREGIDAS Y DEFINIDAS ---
 
 /**
@@ -475,9 +476,9 @@ function generarContenidoReporte(fletes) {
                             <th>Contratista</th>
                             <th>Placa</th>
                             <th>Zona</th>
-                            <th>Precio</th>
                             <th>Día</th>
                             <th>Población</th>
+                            <th>Precio</th>
                             <th>✍️ Firma del Conductor</th> 
                         </tr>
                     </thead>

@@ -15,6 +15,12 @@
     --border: #333;
     --success-light: rgba(16, 185, 129, 0.15);
     --primary-light: rgba(59, 130, 246, 0.15);
+
+    /* --- Variables Añadidas/Corregidas para Consistencia --- */
+    --text-color: var(--text); /* Unificando nombre para Modals/Toasts */
+    --border-color: var(--border);
+    --background-card: var(--bg-card);
+    --hover-color: #222; /* Definir color de hover para uso general */
 }
 
 html[data-theme="light"] {
@@ -30,6 +36,12 @@ html[data-theme="light"] {
     --border: #ddd;
     --success-light: rgba(5, 150, 105, 0.1);
     --primary-light: rgba(37, 99, 235, 0.1);
+
+    /* --- Variables Añadidas/Corregidas para Consistencia --- */
+    --text-color: var(--text);
+    --border-color: var(--border);
+    --background-card: var(--bg-card);
+    --hover-color: #eee;
 }
 
 * {
@@ -91,7 +103,7 @@ body {
 }
 
 .sidebar a:hover {
-    background: #222;
+    background: var(--hover-color); /* Usar variable de hover */
     color: var(--text);
     transform: translateX(2px);
 }
@@ -200,6 +212,7 @@ body {
     margin-left: 250px;
     padding: 30px 20px;
     transition: margin .3s;
+    position: relative; /* CRÍTICO para los tabs con 'position: absolute' */
 }
 
 @media (max-width: 900px) {
@@ -209,13 +222,25 @@ body {
     }
 }
 
+/* --- TABS: Mejor manejo de ocultar/mostrar para Charts --- */
 .tab-content {
-    display: none;
+    position: absolute; 
+    left: -9999px;     
+    opacity: 0;        
+    
     padding-top: 10px;
+    width: 100%; 
+    transition: opacity 0.3s;
+    /* Para que el height del .content se calcule bien cuando hay tab visible */
+    min-height: 1px;
 }
+
 .tab-content.visible {
-    display: block;
+    position: static; 
+    left: 0;
+    opacity: 1;
 }
+
 
 /* ============================================================
     CARDS
@@ -263,16 +288,14 @@ body {
 ============================================================ */
 
 .grid-2 {
-    /* Mantiene el comportamiento adaptativo */
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Minwidth ajustado */
     gap: 25px;
 }
 
 .form-grid {
-    /* Mantiene el comportamiento adaptativo */
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Minwidth ajustado */
     gap: 15px;
     margin-bottom: 20px;
 }
@@ -284,20 +307,19 @@ body {
     }
 }
 
+.form-actions {
+    text-align: center; /* Centrar el botón en el contenedor */
+}
+
 .card button {
     margin-top: 20px;
     width: 100%;
     max-width: 300px;
-    display: block; /* Asegura que el botón ocupe su propio bloque */
-    margin-left: 0; /* Alineación a la izquierda si es menor al max-width */
+    display: block; 
+    margin-left: auto; /* Centrar */
+    margin-right: auto; /* Centrar */
 }
 
-@media (min-width: 481px) {
-    .card button {
-        /* Centrar el botón cuando hay espacio, pero no es una pantalla grande */
-        margin: 20px auto 0 auto;
-    }
-}
 
 /* ============================================================
     INPUTS Y SELECTS
@@ -362,24 +384,29 @@ input:focus, select:focus {
 }
 .btn-secondary:hover { background: #059669; }
 
+.btn-danger {
+    background-color: var(--danger);
+    color: white;
+}
+.btn-danger:hover { background-color: #b91c1c; }
+
+
 /* ============================================================
-    TABLAS - MANEJO RESPONSIVO MEJORADO
+    TABLAS - MANEJO RESPONSIVO MEJORADO (No se toca)
 ============================================================ */
 
 .card table {
-    /* Envuelve la tabla con un div para mejor desplazamiento en móvil */
     display: block;
-    overflow-x: auto; /* Permite el scroll horizontal */
+    overflow-x: auto; 
     width: 100%;
 }
 
-/* Quita el overflow de la tabla misma, lo pone en el contenedor .card table */
 table {
     width: 100%;
     border-collapse: collapse;
     border-radius: 8px;
     overflow: hidden; 
-    min-width: 600px; /* Asegura un ancho mínimo para que el scroll horizontal sea efectivo */
+    min-width: 600px; /* Clave para el scroll horizontal en móvil */
 }
 
 table thead {
@@ -394,7 +421,7 @@ table th, table td {
     text-align: left;
     border-bottom: 1px solid var(--border);
     vertical-align: middle;
-    white-space: nowrap; /* Evita que el texto de las celdas se rompa */
+    white-space: nowrap; 
 }
 
 table tbody tr:hover {
@@ -403,20 +430,28 @@ table tbody tr:hover {
 }
 
 
+/* --- Estilos para Botones y Acciones de Tabla --- */
+.table-actions {
+    display: flex;
+    gap: 5px; 
+    justify-content: center;
+    align-items: center;
+}
+
+
 /* ============================================================
-    📈 ESTADÍSTICAS
+    📈 ESTADÍSTICAS (Aseguramos que Chart.js funcione bien)
 ============================================================ */
 
 #estadisticas .card {
     display: flex;
     flex-direction: column;
-    /* Mantiene la altura consistente, pero la hace más pequeña en móviles */
-    height: 400px; 
+    height: 400px; /* Usar altura fija es aceptable para gráficos */
 }
 
 @media (max-width: 600px) {
     #estadisticas .card {
-        height: 300px; /* Altura más pequeña para pantallas muy chicas */
+        height: 300px; 
     }
 }
 
@@ -435,166 +470,65 @@ table tbody tr:hover {
     max-height: 100%;
     margin: 0 auto;
 }
+
+/* ============================================================
+    LOGIN (Si aplica)
+============================================================ */
 .login-body {
-
     display: flex;
-
     justify-content: center;
-
     align-items: center;
-
     min-height: 100vh;
-
     background: var(--bg);
-
 }
-
-
 
 .login-box {
-
     background: var(--bg-card);
-
     padding: 40px 30px;
-
     border-radius: 12px;
-
     box-shadow: 0 10px 25px var(--shadow);
-
     max-width: 400px;
-
     width: 90%;
-
     text-align: center;
-
 }
-
-
 
 .login-box h2 {
-
     margin-bottom: 20px;
-
     color: var(--text);
-
 }
-
-
 
 .login-box .logo img {
-
     width: 100px;
-
     margin-bottom: 20px;
-
 }
-
-
 
 .input-group {
-
     margin-bottom: 15px;
-
 }
-
-
-
-.input-group input {
-
-    width: 100%;
-
-    padding: 12px;
-
-    border-radius: 8px;
-
-    border: 1px solid var(--border);
-
-    background: var(--bg);
-
-    color: var(--text);
-
-    font-size: 14px;
-
-    transition: border .2s, background .3s, color .3s;
-
-}
-
-
-
-.input-group input:focus {
-
-    border-color: var(--primary);
-
-    outline: none;
-
-}
-
-
 
 .login-box .btn {
-
     width: 100%;
-
     padding: 12px;
-
     border-radius: 8px;
-
     font-weight: 600;
-
     font-size: 16px;
-
     cursor: pointer;
-
     transition: background .2s, transform .2s;
-
 }
-
-
 
 .login-box .btn:hover {
-
-    transform: scale(1.05);
-
+    transform: scale(1.02); /* Escala más suave en hover */
 }
-
-
 
 .footer-text {
-
     margin-top: 15px;
-
     font-size: 12px;
-
     color: var(--text-soft);
-
 }
 
-
-
-/* --- Estilos para Botones y Acciones de Tabla --- */
-/* Esta regla es crucial para alinear los botones en la tabla */
-.table-actions {
-    display: flex;
-    gap: 5px; /* Espacio entre los botones de Editar y Eliminar */
-    justify-content: center;
-    align-items: center;
-}
-
-/* Estilo para el botón secundario (Cancelar/Limpiar) */
-.btn-secondary {
-    background-color: var(--background-card);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    transition: background-color 0.2s;
-}
-
-.btn-secondary:hover {
-    background-color: var(--hover-color);
-}
-
-.btn-danger {
-    background-color: #ef4444; /* Rojo */
-}
+/* ============================================================
+    TOASTS Y MODALES
+============================================================ */
 
 /* --- Estilos para TOASTS (Notificaciones) --- */
 #toastContainer {
@@ -616,10 +550,10 @@ table tbody tr:hover {
     transition: opacity 0.3s;
 }
 
-.toast.success { background-color: #10b981; } /* Verde */
-.toast.error { background-color: #ef4444; } /* Rojo */
-.toast.info { background-color: #3b82f6; } /* Azul */
-.toast.danger { background-color: #f97316; } /* Naranja */
+.toast.success { background-color: var(--secondary); } 
+.toast.error { background-color: var(--danger); } 
+.toast.info { background-color: var(--primary); } 
+.toast.danger { background-color: var(--warning); } 
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
@@ -627,34 +561,34 @@ table tbody tr:hover {
 /* --- Estilos para MODAL (Ventana Emergente de Edición) --- */
 
 .modal-overlay {
-    /* Oculto por defecto */
     display: none; 
-    
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.7); /* Fondo oscuro semitransparente */
+    background-color: rgba(0, 0, 0, 0.7); 
     z-index: 9999;
-    /* Centrar contenido */
     align-items: center;
     justify-content: center;
+    overflow-y: auto; /* Permitir scroll si el modal es muy alto */
+    padding: 20px 0;
 }
 
 .modal-overlay.visible {
-    display: flex; /* Mostrar cuando se le añada la clase 'visible' */
+    display: flex;
 }
 
 .modal-content {
     background-color: var(--background-card);
     padding: 20px;
     border-radius: 8px;
-    width: 90%;
-    max-width: 600px;
+    width: 95%; /* Ajuste a 95% para mejor manejo en móviles */
+    max-width: 650px; /* Aumento ligero del max-width */
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     transform: scale(0.9);
     animation: modal-fade-in 0.3s forwards;
+    margin: auto; /* Centrar verticalmente */
 }
 
 @keyframes modal-fade-in {
@@ -685,9 +619,8 @@ table tbody tr:hover {
 }
 
 .modal-body .form-grid {
-    /* Reutiliza tu estilo de grid de formularios si es posible */
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Usar el grid del formulario */
     gap: 15px;
 }
 
@@ -698,4 +631,14 @@ table tbody tr:hover {
     padding-top: 15px;
     border-top: 1px solid var(--border-color);
     margin-top: 15px;
+}
+
+@media (max-width: 480px) {
+    .modal-footer {
+        flex-direction: column; /* Apilar botones en móvil */
+    }
+    .modal-footer button {
+        width: 100%;
+        margin-top: 0;
+    }
 }

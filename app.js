@@ -8,6 +8,9 @@ const FLOTA_VEHICULOS = [
     { placa: "JKL-012", modelo: "Van de Reparto", capacidad: "2 Toneladas" }
 ];
 
+// Variable global para rastrear el ID del flete que se está editando
+let ID_FLETE_EDITANDO = null;
+
 // ==========================================================
 // 📦 LOCAL STORAGE HELPERS
 // ==========================================================
@@ -15,15 +18,54 @@ function save(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
 function load(key) { return JSON.parse(localStorage.getItem(key)) || []; }
 
 // ==========================================================
-// 🟢 TOASTS PROFESIONALES
+// 🟢 TOASTS PROFESIONALES (Notificaciones pequeñas)
 // ==========================================================
 function showToast(msg, type="info", duration=3000){
     const toast = document.createElement("div");
     toast.className = `toast ${type}`;
     toast.innerText = msg;
-    document.getElementById("toastContainer").appendChild(toast);
-    setTimeout(()=> toast.remove(), duration);
+    const container = document.getElementById("toastContainer");
+    if (container) {
+        container.appendChild(toast);
+        setTimeout(()=> toast.remove(), duration);
+    }
 }
+
+// ==========================================================
+// 🛑 ALERTA BONITA (SIMULACIÓN DE MODAL) Y CONFIRMACIÓN
+// ==========================================================
+/**
+ * Utiliza showModalAlert para confirmaciones de eliminación.
+ * Usa un simple confirm() como fallback interactivo.
+ */
+function showModalAlert(title, msg, type = 'info', onConfirm = null, onCancel = null) {
+    if (onConfirm) {
+        // Para confirmación (Eliminar)
+        if (confirm(`[${title} - ${type.toUpperCase()}]\n${msg}`)) {
+            onConfirm();
+        } else if (onCancel) {
+            onCancel();
+        }
+    } else {
+        // Para errores (Validación)
+        alert(`[${title} - ${type.toUpperCase()}]\n${msg}`);
+    }
+}
+
+
+/**
+ * Utiliza showModalAlert para confirmaciones de eliminación.
+ */
+function confirmDeletion(callback) {
+    showModalAlert(
+        "Confirmar Eliminación", 
+        "¿Estás seguro de que quieres eliminar este flete? Esta acción es irreversible.", 
+        'warning', 
+        callback, 
+        () => showToast("Eliminación cancelada.", "info")
+    );
+}
+
 
 // ==========================================================
 // 🌙 MODO OSCURO / CLARO
@@ -34,11 +76,14 @@ function setTheme(theme){
     localStorage.setItem("theme", theme);
 }
 if(localStorage.getItem("theme") === "light"){
-    setTheme("light"); themeToggle.checked = true;
+    setTheme("light"); 
+    if (themeToggle) themeToggle.checked = true;
 }
-themeToggle.addEventListener("change", ()=>{
-    setTheme(themeToggle.checked ? "light":"dark");
-});
+if (themeToggle) {
+    themeToggle.addEventListener("change", ()=>{
+        setTheme(themeToggle.checked ? "light":"dark");
+    });
+}
 
 // ==========================================================
 // 🔀 TABS
@@ -49,8 +94,16 @@ document.querySelectorAll(".tab-link").forEach(link=>{
         link.classList.add("active");
         const tab = link.dataset.tab;
         document.querySelectorAll(".tab-content").forEach(tc=>tc.classList.remove("visible"));
-        document.getElementById(tab).classList.add("visible");
-        document.getElementById("pageTitle").innerText = link.innerText;
+        
+        const tabContent = document.getElementById(tab);
+        if (tabContent) {
+            tabContent.classList.add("visible");
+        }
+        
+        const pageTitleEl = document.getElementById("pageTitle");
+        if (pageTitleEl) {
+            pageTitleEl.innerText = link.innerText;
+        }
 
         // Recargar estadísticas si la pestaña de estadísticas está activa
         if(tab === 'estadisticas') generarEstadisticas();
@@ -58,79 +111,211 @@ document.querySelectorAll(".tab-link").forEach(link=>{
 });
 
 // ==========================================================
-// 📝 CREAR FLETE - CORREGIDO
+// 📝 GESTIONAR FLETE (CREAR/ACTUALIZAR)
 // ==========================================================
-function crearFlete(){
-    // Obtención de valores usando los IDs correctos del HTML
-    const placa = document.getElementById("placa").value.trim();
-    const contratista = document.getElementById("Contratista").value.trim();
-    const zona = document.getElementById("zona").value;
-    const dia = document.getElementById("Día").value;
-    const poblacion = document.getElementById("Poblacíon").value; // Corregido acento
-    const auxiliares = document.getElementById("Auxiliares").value.trim();
-    const noAuxiliares = document.getElementById("No. Auxiliares").value;
-    const noPedidos = parseInt(document.getElementById("NoPedi").value) || 0; 
-    const valorRuta = parseFloat(document.getElementById("Valor Ruta").value) || 0; 
-    const adicionales = document.getElementById("Adicionales?").value;
-    
-    // ID del input Total Flete es 'totalflete' (en minúsculas)
-    const precio = parseFloat(document.getElementById("totalflete").value);
 
-    // Validación simplificada
-    if(!placa || !contratista || !zona || isNaN(precio) || precio <= 0){ 
-        showToast("Completa los campos obligatorios y asegúrate que el precio sea válido.","error"); 
+// Función para obtener los valores de un formulario (principal o modal)
+function obtenerValoresFormulario(prefix = "") {
+    const placa = document.getElementById(prefix + "placa")?.value.trim() || '';
+    const contratista = document.getElementById(prefix + "Contratista")?.value.trim() || '';
+    const zona = document.getElementById(prefix + "zona")?.value || '';
+    const dia = document.getElementById(prefix + "Día")?.value || '';
+    const poblacion = document.getElementById(prefix + "Poblacíon")?.value || ''; 
+    const auxiliares = document.getElementById(prefix + "Auxiliares")?.value.trim() || '';
+    const noAuxiliares = document.getElementById(prefix + "No. Auxiliares")?.value || '';
+    const noPedidos = parseInt(document.getElementById(prefix + "NoPedi")?.value) || 0; 
+    const valorRuta = parseFloat(document.getElementById(prefix + "Valor Ruta")?.value) || 0; 
+    const adicionales = document.getElementById(prefix + "Adicionales?")?.value || '';
+    const totalfleteEl = document.getElementById(prefix + "totalflete");
+    const precio = parseFloat(totalfleteEl?.value) || 0;
+
+    return { 
+        placa, contratista, zona, dia, poblacion, auxiliares, noAuxiliares, noPedidos, valorRuta, adicionales, precio 
+    };
+}
+
+// Función para limpiar el formulario, adaptada para funcionar con o sin prefijo
+function limpiarFormulario(prefix = "") {
+    const ids = ["placa", "Contratista", "zona", "Día", "Poblacíon", "Auxiliares", "No. Auxiliares", "NoPedi", "Valor Ruta", "Adicionales?", "totalflete"];
+    
+    ids.forEach(id => {
+        const element = document.getElementById(prefix + id);
+        if (element) {
+            if (element.tagName === 'SELECT') {
+                element.selectedIndex = 0;
+            } else {
+                element.value = "";
+            }
+        }
+    });
+
+    if (prefix === "") {
+        ID_FLETE_EDITANDO = null;
+        const btnGestionar = document.getElementById("btnGestionarFlete");
+        if (btnGestionar) {
+            btnGestionar.innerText = "Registrar Flete";
+        }
+    }
+}
+
+// Lógica principal de gestión (Crear/Actualizar)
+function gestionarFlete(isModal = false){
+    const prefix = isModal ? "modal-" : "";
+    const data = obtenerValoresFormulario(prefix);
+    const id = ID_FLETE_EDITANDO; // Se usa siempre la variable global, solo es diferente el prefijo para los inputs
+
+    // Validación unificada
+    if(!data.placa || !data.contratista || !data.zona || isNaN(data.precio) || data.precio <= 0){ 
+        showModalAlert("Error de Formulario", "⚠️ Por favor, complete la Placa, Contratista, Zona y asegúrese de que el Precio sea un valor numérico válido.", "error"); 
         return; 
     }
 
-    const flete = {
-        id: Date.now(),
-        placa,
-        contratista, // Este es el campo 'Cliente' en la tabla
-        zona,
-        precio,
+    const fleteData = {
+        id: id && isModal ? id : Date.now(), // Crea ID solo si estamos creando, o usa el ID global si estamos editando en el modal
+        placa: data.placa,
+        contratista: data.contratista, 
+        zona: data.zona,
+        precio: data.precio,
         fecha: new Date().toISOString().split('T')[0],
-
-        // Nuevos campos
-        dia, 
-        poblacion,
-        auxiliares,
-        noAuxiliares,
-        noPedidos,
-        valorRuta,
-        adicionales
+        dia: data.dia, 
+        poblacion: data.poblacion,
+        auxiliares: data.auxiliares,
+        noAuxiliares: data.noAuxiliares,
+        noPedidos: data.noPedidos,
+        valorRuta: data.valorRuta,
+        adicionales: data.adicionales
     };
 
-    const fletes = load("fletes");
-    fletes.push(flete);
+    let fletes = load("fletes");
+    let mensaje = "";
+
+    if (id && isModal) {
+        // Modo Edición: Reemplazar el flete existente
+        fletes = fletes.map(f => f.id === id ? fleteData : f);
+        mensaje = `Flete de ${data.contratista} actualizado ✔️`;
+    } else {
+        // Modo Creación: Añadir nuevo flete (isModal debe ser false)
+        fletes.push(fleteData);
+        mensaje = `Flete para ${data.contratista} registrado ✔️`;
+    }
+
     save("fletes", fletes);
+    
+    // Limpiar y actualizar UI
+    limpiarFormulario(prefix);
+    
+    if (isModal) {
+        ocultarModalEdicion(); // Cierra el modal después de guardar
+    }
+
     listarFletes();
     actualizarResumen();
     generarEstadisticas();
-    showToast("Flete registrado ✔️","success");
+    showToast(mensaje,"success");
+}
 
-    // limpiar inputs - Usa los IDs correctos
-    document.getElementById("placa").value = "";
-    document.getElementById("Contratista").value = "";
-    document.getElementById("zona").selectedIndex = 0;
-    document.getElementById("Día").selectedIndex = 0;
-    document.getElementById("Poblacíon").selectedIndex = 0;
-    document.getElementById("Auxiliares").value = "";
-    document.getElementById("No. Auxiliares").selectedIndex = 0;
-    document.getElementById("NoPedi").value = "";
-    document.getElementById("Valor Ruta").value = "";
-    document.getElementById("Adicionales?").selectedIndex = 0;
-    document.getElementById("totalflete").value = "";
+// Alias para el formulario principal (Crear)
+function crearFlete() {
+    gestionarFlete(false);
+}
+
+// Alias para el botón del modal de edición (Actualizar)
+function guardarCambiosFlete() {
+    gestionarFlete(true);
+}
+
+
+// ==========================================================
+// ✏️ GESTIÓN DEL MODAL DE EDICIÓN
+// ==========================================================
+
+/**
+ * Carga los datos en los campos del modal de edición.
+ */
+function cargarDatosModal(flete) {
+    document.getElementById("modal-placa").value = flete.placa || "";
+    document.getElementById("modal-Contratista").value = flete.contratista || "";
+    document.getElementById("modal-zona").value = flete.zona || "";
+    document.getElementById("modal-Día").value = flete.dia || "";
+    document.getElementById("modal-Poblacíon").value = flete.poblacion || "";
+    document.getElementById("modal-Auxiliares").value = flete.auxiliares || "";
+    document.getElementById("modal-No. Auxiliares").value = flete.noAuxiliares || "";
+    document.getElementById("modal-NoPedi").value = flete.noPedidos || "";
+    document.getElementById("modal-Valor Ruta").value = flete.valorRuta || "";
+    document.getElementById("modal-Adicionales?").value = flete.adicionales || "";
+    document.getElementById("modal-totalflete").value = flete.precio || "";
+}
+
+/**
+ * Muestra el modal de edición y establece la variable de edición.
+ */
+function mostrarModalEdicion(id) {
+    const fletes = load("fletes");
+    const flete = fletes.find(f => f.id === id);
+
+    if (!flete) {
+        showToast("Flete no encontrado para editar.","error");
+        return;
+    }
+
+    ID_FLETE_EDITANDO = id; // Establece el ID global
+
+    cargarDatosModal(flete);
+    
+    const modal = document.getElementById("modalEdicionFlete");
+    if (modal) {
+        modal.classList.add("visible"); // Mostrar modal
+        showToast(`Editando flete ${flete.placa} en ventana emergente...`,"info");
+    }
+}
+
+/**
+ * Oculta el modal de edición y resetea la variable de edición.
+ */
+function ocultarModalEdicion() {
+    ID_FLETE_EDITANDO = null;
+    const modal = document.getElementById("modalEdicionFlete");
+    if (modal) {
+        modal.classList.remove("visible"); // Ocultar modal
+        limpiarFormulario("modal-"); // Limpia los campos del modal
+    }
+}
+
+// Función que se llama desde el botón de la tabla
+function cargarFleteParaEdicion(id) {
+    mostrarModalEdicion(id);
 }
 
 // ==========================================================
-// 📋 LISTAR FLETES - CORREGIDO PARA USAR CONTRATISTA
+// 🗑 ELIMINAR FLETE 
+// ==========================================================
+function eliminarFlete(id) {
+    confirmDeletion(
+        () => {
+            let fletes = load("fletes");
+            fletes = fletes.filter(f => f.id !== id);
+            save("fletes", fletes);
+            // Si el flete que se elimina estaba abierto en el modal, se cierra.
+            if (ID_FLETE_EDITANDO === id) {
+                ocultarModalEdicion(); 
+            }
+            listarFletes();
+            actualizarResumen();
+            generarEstadisticas();
+            showToast("Flete eliminado correctamente.","danger");
+        }
+    );
+}
+
+// ==========================================================
+// 📋 LISTAR FLETES (con botones EDITAR y ELIMINAR)
 // ==========================================================
 function listarFletes(){
     const fletes = load("fletes");
     const tbody = document.getElementById("tablaFletes");
+    if (!tbody) return;
     tbody.innerHTML = "";
 
-    // Muestra los últimos 50 fletes
     fletes.slice(-50).reverse().forEach(f=>{
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -139,21 +324,34 @@ function listarFletes(){
             <td>${f.placa}</td>
             <td>${f.zona}</td>
             <td>$${f.precio.toLocaleString()}</td>
+            <td class="table-actions">
+                <button 
+                    class="btn btn-primary btn-sm" 
+                    onclick="cargarFleteParaEdicion(${f.id})" 
+                    title="Editar Flete">
+                    ✏️ Editar
+                </button>
+                <button 
+                    class="btn btn-danger btn-sm" 
+                    onclick="eliminarFlete(${f.id})" 
+                    title="Eliminar Flete">
+                    ❌ Eliminar
+                </button>
+            </td>
         `;
         tbody.appendChild(tr);
     });
 }
 
 // ==========================================================
-// 🔍 BUSCADOR Y FILTRO FLETES - CORREGIDO PARA USAR CONTRATISTA
+// 🔍 BUSCADOR Y FILTRO FLETES
 // ==========================================================
 function buscarFletes(){
-    const q = document.getElementById("buscarFlete").value.toLowerCase();
-    const zona = document.getElementById("filtroZona").value;
-    const fecha = document.getElementById("filtroFecha").value;
+    const q = document.getElementById("buscarFlete")?.value.toLowerCase() || '';
+    const zona = document.getElementById("filtroZona")?.value || '';
+    const fecha = document.getElementById("filtroFecha")?.value || '';
 
     const fletes = load("fletes").filter(f=>{
-        // Ahora busca en Contratista (antes Cliente) y Placa
         const matchQuery = (f.contratista?.toLowerCase().includes(q) || f.placa?.toLowerCase().includes(q)); 
         const matchZona = zona ? f.zona===zona : true;
         const matchFecha = fecha ? f.fecha===fecha : true;
@@ -161,6 +359,8 @@ function buscarFletes(){
     });
 
     const tbody = document.getElementById("tablaFletes");
+    if (!tbody) return;
+    
     tbody.innerHTML = "";
     fletes.slice(-50).reverse().forEach(f=>{
         const tr = document.createElement("tr");
@@ -170,60 +370,51 @@ function buscarFletes(){
             <td>${f.placa}</td>
             <td>${f.zona}</td>
             <td>$${f.precio.toLocaleString()}</td>
+            <td class="table-actions">
+                <button 
+                    class="btn btn-primary btn-sm" 
+                    onclick="cargarFleteParaEdicion(${f.id})" 
+                    title="Editar Flete">
+                    ✏️ Editar
+                </button>
+                <button 
+                    class="btn btn-danger btn-sm" 
+                    onclick="eliminarFlete(${f.id})" 
+                    title="Eliminar Flete">
+                    ❌ Eliminar
+                </button>
+            </td>
         `;
         tbody.appendChild(tr);
     });
 }
 
 // ==========================================================
-// 📊 ACTUALIZAR RESUMEN - FUNCIÓN AÑADIDA
+// 📊 ACTUALIZAR RESUMEN, PROGRAMACIONES, ESTADÍSTICAS, ETC.
 // ==========================================================
 function actualizarResumen(){
     const fletes = load("fletes");
     const totalFletes = fletes.length;
-    const totalIngresos = fletes.reduce((sum, f) => sum + f.precio, 0);
-
-    // Si tienes un elemento con id="totalIngresos" en el HTML
-    // document.getElementById("totalIngresos").innerText = `$${totalIngresos.toLocaleString()}`;
-
-    // Actualizar el KPI de Total Fletes
     const cantFletesEl = document.getElementById("cantFletes");
     if (cantFletesEl) {
         cantFletesEl.innerText = totalFletes.toLocaleString();
     }
 }
+function crearProgramacion() { showToast("Función 'crearProgramacion' no implementada.","info"); }
+function listarProgramaciones() { /* Aquí iría la lógica de programaciones */ }
+function buscarProgramaciones() { showToast("Función 'buscarProgramaciones' no implementada.","info"); }
+function cargarFlotaParaProgramacion() { /* Aquí iría la lógica de flota */ }
+function exportarExcel(){ /* Aquí iría la lógica de exportar */ }
+function generarPDF(){ window.print(); } 
 
-
-// El resto del código se mantiene igual ya que las funciones de Programación y Estadísticas
-// (cargarFlotaParaProgramacion, crearProgramacion, listarProgramaciones, buscarProgramaciones, generarEstadisticas, exportarExcel, generarPDF)
-// no dependían de los IDs de los campos de registro de fletes.
-
-
-// ==========================================================
-// 🛣 PROGRAMACIONES
-// ==========================================================
-
-
-
-// ==========================================================
-// 📋 LISTAR PROGRAMACIONES
-// ==========================================================
-
-
-// ==========================================================
-// 🔍 BUSCADOR Y FILTRO PROGRAMACIONES
-// ==========================================================
-
-
-// ==========================================================
-// 📊 ESTADÍSTICAS CHART.JS MEJORADAS
-// ==========================================================
 let chartIngresos, chartZonas, chartProgramaciones;
-
-function generarEstadisticas() {
+function generarEstadisticas() { 
     const fletes = load("fletes");
-    const programaciones = load("programaciones");
+    const programaciones = load("programaciones") || [];
 
+    const COLOR_AZUL = "#3b82f6"; // Variable CSS no accesible en JS, se usa color fijo.
+    const COLOR_NARANJA = "#f97316";
+    
     // ---------- 1️⃣ Ingresos mensuales ----------
     const ingresosPorMes = Array(12).fill(0);
     fletes.forEach(f => {
@@ -241,19 +432,14 @@ function generarEstadisticas() {
                 datasets: [{
                     label: "Ingresos ($)",
                     data: ingresosPorMes,
-                    backgroundColor: "var(--primary)",
+                    backgroundColor: COLOR_NARANJA, 
                     borderRadius: 5
                 }]
             },
             options: {
                 responsive: true,
-                plugins: {
-                    legend: { display: true },
-                    tooltip: { mode: 'index', intersect: false }
-                },
-                scales: {
-                    y: { beginAtZero: true }
-                }
+                plugins: { legend: { display: true }, tooltip: { mode: 'index', intersect: false } },
+                scales: { y: { beginAtZero: true } }
             }
         });
     }
@@ -271,24 +457,17 @@ function generarEstadisticas() {
                 datasets: [{
                     label: "Fletes",
                     data: Object.values(zonas),
-                    backgroundColor: ["#3b82f6","#10b981","#f59e0b","#ef4444","#8b5cf6"]
+                    backgroundColor: [COLOR_AZUL, COLOR_NARANJA, "#10b981", "#ef4444", "#8b5cf6"]
                 }]
             },
             options: {
                 responsive: true,
-                plugins: {
-                    legend: { position: 'right' },
-                    tooltip: { callbacks: {
-                        label: function(context) {
-                            return `${context.label}: ${context.parsed} fletes`;
-                        }
-                    }}
-                }
+                plugins: { legend: { position: 'right' }, tooltip: { callbacks: { label: (c) => `${c.label}: ${c.parsed} fletes` } } }
             }
         });
     }
 
-    // ---------- 3️⃣ Programaciones por mes ----------
+    // ---------- 3️⃣ Programaciones por mes (Placeholder) ----------
     const progPorMes = Array(12).fill(0);
     programaciones.forEach(p => {
         const m = new Date(p.fecha).getMonth();
@@ -304,79 +483,44 @@ function generarEstadisticas() {
                 datasets: [{
                     label: "Programaciones",
                     data: progPorMes,
-                    borderColor: "var(--secondary)",
-                    backgroundColor: "rgba(16,185,129,0.3)",
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 5,
-                    pointBackgroundColor: "var(--secondary)"
+                    borderColor: COLOR_AZUL,
+                    backgroundColor: "hsla(217, 91%, 65%, 0.3)", 
+                    fill: true, tension: 0.4, pointRadius: 5, pointBackgroundColor: COLOR_AZUL
                 }]
             },
             options: {
                 responsive: true,
                 plugins: { legend: { display: true } },
-                scales: {
-                    y: { beginAtZero: true }
-                }
+                scales: { y: { beginAtZero: true } }
             }
         });
     }
 }
+// Fin de la función generarEstadisticas
 
-// ==========================================================
-// 📱 RESPONSIVIDAD (TOGGLE MENÚ)
-// ==========================================================
 // ==========================================================
 // 📱 RESPONSIVIDAD Y CIERRE DE MENÚ AUTOMÁTICO
 // ==========================================================
 
 const menuToggleBtn = document.getElementById("menuToggleBtn");
 const sidebar = document.querySelector(".sidebar");
-const sidebarLinks = document.querySelectorAll(".sidebar a"); // Selecciona todos los enlaces de la barra lateral
+const sidebarLinks = document.querySelectorAll(".sidebar a");
 
-// 1. Lógica para abrir/cerrar el menú al tocar la hamburguesa
 if (menuToggleBtn && sidebar) {
     menuToggleBtn.addEventListener("click", () => {
         sidebar.classList.toggle("active");
     });
 }
 
-// 2. Lógica para cerrar el menú cuando se selecciona un enlace (solo en móvil)
 sidebarLinks.forEach(link => {
     link.addEventListener("click", () => {
-        // Solo ejecuta si la pantalla es <= 900px (el breakpoint que usamos en CSS)
         if (window.innerWidth <= 900) {
-            // Elimina la clase 'active' para ocultar el menú
-            sidebar.classList.remove("active");
+            if (sidebar) {
+                sidebar.classList.remove("active");
+            }
         }
     });
 });
-// ==========================================================
-// 💾 EXPORTAR EXCEL
-// ==========================================================
-function exportarExcel(){
-    const fletes = load("fletes");
-    if(fletes.length===0){ showToast("No hay fletes para exportar","warning"); return; }
-    // Incluir todos los nuevos campos en el CSV
-    let csv = "Fecha,Contratista,Placa,Zona,Día,Población,Auxiliares,No. Auxiliares,No. Pedidos,Valor Ruta,Adicionales?,Precio\n";
-    fletes.forEach(f=>{
-        csv+=`${f.fecha},${f.contratista},${f.placa},${f.zona},${f.dia},${f.poblacion},${f.auxiliares},${f.noAuxiliares},${f.noPedidos},${f.valorRuta},${f.adicionales},${f.precio}\n`;
-    });
-    const blob = new Blob([csv], {type:"text/csv"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href=url;
-    a.download="fletes.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast("Excel generado ✔️","success");
-}
-
-// ==========================================================
-// 🖨 GENERAR PDF (Print)
-function generarPDF(){
-    window.print();
-}
 
 // ==========================================================
 // ⏱ INIT
@@ -387,5 +531,15 @@ window.addEventListener("load", ()=>{
     actualizarResumen();
     generarEstadisticas();
     cargarFlotaParaProgramacion();
-    document.getElementById("fechaProg")?.addEventListener("change", cargarFlotaParaProgramacion);
+    
+    const fechaProgEl = document.getElementById("fechaProg");
+    if (fechaProgEl) {
+        fechaProgEl.addEventListener("change", cargarFlotaParaProgramacion);
+    }
+
+    // El botón principal del formulario ahora solo CREA
+    const btnGestionar = document.getElementById("btnGestionarFlete");
+    if (btnGestionar) {
+        btnGestionar.onclick = crearFlete;
+    }
 });

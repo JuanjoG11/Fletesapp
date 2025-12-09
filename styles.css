@@ -571,4 +571,131 @@ table tbody tr:hover {
 
 
 
-/*
+/* --- Estilos para Botones y Acciones de Tabla --- */
+/* Esta regla es crucial para alinear los botones en la tabla */
+.table-actions {
+    display: flex;
+    gap: 5px; /* Espacio entre los botones de Editar y Eliminar */
+    justify-content: center;
+    align-items: center;
+}
+
+/* Estilo para el botón secundario (Cancelar/Limpiar) */
+.btn-secondary {
+    background-color: var(--background-card);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    transition: background-color 0.2s;
+}
+
+.btn-secondary:hover {
+    background-color: var(--hover-color);
+}
+
+.btn-danger {
+    background-color: #ef4444; /* Rojo */
+}
+
+/* --- Estilos para TOASTS (Notificaciones) --- */
+#toastContainer {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10000;
+}
+
+.toast {
+    padding: 10px 15px;
+    margin-top: 10px;
+    border-radius: 5px;
+    color: white;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    animation: fadeIn 0.3s forwards, fadeOut 0.3s 2.7s forwards;
+    transition: opacity 0.3s;
+}
+
+.toast.success { background-color: #10b981; } /* Verde */
+.toast.error { background-color: #ef4444; } /* Rojo */
+.toast.info { background-color: #3b82f6; } /* Azul */
+.toast.danger { background-color: #f97316; } /* Naranja */
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+/* --- Estilos para MODAL (Ventana Emergente de Edición) --- */
+
+.modal-overlay {
+    /* Oculto por defecto */
+    display: none; 
+    
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); /* Fondo oscuro semitransparente */
+    z-index: 9999;
+    /* Centrar contenido */
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-overlay.visible {
+    display: flex; /* Mostrar cuando se le añada la clase 'visible' */
+}
+
+.modal-content {
+    background-color: var(--background-card);
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    transform: scale(0.9);
+    animation: modal-fade-in 0.3s forwards;
+}
+
+@keyframes modal-fade-in {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: var(--text-color);
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-color);
+}
+
+.modal-body .form-grid {
+    /* Reutiliza tu estilo de grid de formularios si es posible */
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+    margin-top: 15px;
+}

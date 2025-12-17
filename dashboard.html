@@ -6,11 +6,8 @@
         <title>Dashboard | Gestión de Fletes</title>
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
         <link rel="stylesheet" href="styles.css">
-
         <script src="app.js" defer></script>
-        
     </head>
     <header class="topbar">
         <button id="menuToggleBtn" class="hamburger-menu">☰</button> 
@@ -21,7 +18,6 @@
         <div class="logo">
         <img src="logo_tym.png" alt="Logo Empresa" style="width:100px; display:block; margin:0 auto;">
         </div>
-
 
         <a class="tab-link active" data-tab="inicio">🏠 Inicio</a>
         <a class="tab-link" data-tab="fletes">📝 Fletes</a>
@@ -71,7 +67,7 @@
 
             <div class="form-grid">
                 <input id="placa" placeholder="Placa (ABC-123)">
-                <input id="Contratista" placeholder="Contratista"> 
+                <input id="Contratista" placeholder="Conductor"> 
                 
                 <select id="zona">
                     <option value="" disabled selected>Zona</option>
@@ -111,13 +107,16 @@
                     <option>2</option>
                 </select>
                 <input id="NoPedi" type="number" placeholder="No. Pedidos">
-                <input id="Valor Ruta" type="number" placeholder="Valor Ruta">
+
+                <input id="Valor Ruta" type="text" step="0.01" pattern="[0-9]+(\.[0-9]{1,2})?" placeholder="Valor Ruta"> 
+                
                 <select id="Adicionales?">
                     <option value="" selected disabled>Adicionales?</option>
                     <option>Si</option>
                     <option>No</option>
                 </select>
-                <input id="totalflete" type="number" placeholder="Total Flete">
+                
+                <input id="totalflete" type="text" step="0.01" pattern="[0-9]+(\.[0-9]{1,2})?" placeholder="Total Flete" readonly>
             </div>
 
             <div class="form-actions" style="margin-top: 20px;">
@@ -135,7 +134,7 @@
             <h2>🔍 Buscar / Filtrar</h2>
 
             <div class="form-grid">
-                <input id="buscarFlete" placeholder="Buscar flete (Placa o Contratista)..." onkeyup="buscarFletes()">
+                <input id="buscarFlete" placeholder="Buscar flete (Placa o Conductor)..." onkeyup="buscarFletes()"> 
                 <select id="filtroZona" onchange="buscarFletes()">
                     <option value="">Filtrar zona</option>
                     <option>Zona Norte</option>
@@ -155,7 +154,7 @@
                 <thead>
                     <tr>
                         <th>Fecha</th>
-                        <th>Contratista</th> 
+                        <th>Conductor</th> 
                         <th>Placa</th>
                         <th>Zona</th>
                         <th>Precio</th>
@@ -193,7 +192,7 @@
             <div class="modal-body">
                 <div class="form-grid">
                     <input id="modal-placa" placeholder="Placa (ABC-123)">
-                    <input id="modal-Contratista" placeholder="Contratista"> 
+                    <input id="modal-Contratista" placeholder="Conductor"> 
                     
                     <select id="modal-zona">
                         <option value="" disabled selected>Zona</option>
@@ -233,13 +232,16 @@
                         <option>2</option>
                     </select>
                     <input id="modal-NoPedi" type="number" placeholder="No. Pedidos">
-                    <input id="modal-Valor Ruta" type="number" placeholder="Valor Ruta">
+                    
+                    <input id="modal-Valor Ruta" type="text" step="0.01" pattern="[0-9]+(\.[0-9]{1,2})?" placeholder="Valor Ruta">
+                    
                     <select id="modal-Adicionales?">
                         <option value="" selected disabled>Adicionales?</option>
                         <option>Si</option>
                         <option>No</option>
                     </select>
-                    <input id="modal-totalflete" type="number" placeholder="Total Flete">
+                    
+                    <input id="modal-totalflete" type="text" step="0.01" pattern="[0-9]+(\.[0-9]{1,2})?" placeholder="Total Flete" readonly>
                 </div>
             </div>
             

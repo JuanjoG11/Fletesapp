@@ -222,23 +222,20 @@ body {
     }
 }
 
-/* --- TABS: Mejor manejo de ocultar/mostrar para Charts --- */
+/* --- TABS: CORRECCIÓN DE OCULTACIÓN PARA CHARTS --- */
 .tab-content {
-    position: absolute; 
-    left: -9999px;     
-    opacity: 0;        
+    /* Mantiene el flujo de la página pero está fuera del campo de visión */
+    display: none; 
     
     padding-top: 10px;
     width: 100%; 
-    transition: opacity 0.3s;
-    /* Para que el height del .content se calcule bien cuando hay tab visible */
     min-height: 1px;
+    /* Remover 'position: absolute' y 'left: -9999px' */
 }
 
 .tab-content.visible {
-    position: static; 
-    left: 0;
-    opacity: 1;
+    /* Simplemente se hace visible */
+    display: block; 
 }
 
 

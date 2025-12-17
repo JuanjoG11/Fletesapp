@@ -1,255 +1,352 @@
-    <!DOCTYPE html>
-    <html lang="es" data-theme="dark">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Dashboard | Gestión de Fletes</title>
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
 
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <link rel="stylesheet" href="styles.css">
-        <script src="app.js" defer></script>
-    </head>
-    <header class="topbar">
-        <button id="menuToggleBtn" class="hamburger-menu">☰</button> 
-    </header>
-    <body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Gestión de Fletes</title>
 
-    <aside class="sidebar">
-        <div class="logo">
-        <img src="logo_tym.png" alt="Logo Empresa" style="width:100px; display:block; margin:0 auto;">
+    <!-- 🎨 Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!-- 📊 Librerías Externas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+</head>
+
+<body>
+
+    <!-- 🟢 SIDEBAR (Navegación) -->
+    <aside class="sidebar glass-sidebar">
+        <div class="logo-container">
+            <img src="logo_tym.png" alt="Logo Empresa" class="logo-img">
+            <h2 class="brand-name">FletesApp</h2>
         </div>
 
-        <a class="tab-link active" data-tab="inicio">🏠 Inicio</a>
-        <a class="tab-link" data-tab="fletes">📝 Fletes</a>
-        <a class="tab-link" data-tab="estadisticas">📊 Estadísticas</a>
+        <nav class="nav-links">
+            <a class="nav-item active" data-tab="inicio">
+                <i class="ri-home-4-line"></i> Inicio
+            </a>
+            <a class="nav-item" data-tab="fletes">
+                <i class="ri-file-list-3-line"></i> Gestión Fletes
+            </a>
+            <a class="nav-item" data-tab="estadisticas" id="btnEstadisticas">
+                <i class="ri-pie-chart-2-line"></i> Estadísticas
+            </a>
+        </nav>
 
-        <hr>
-
-        <a onclick="exportarExcel()">💾 Exportar Excel</a>
-        <a onclick="generarPDF()">🖨 Generar PDF</a>
-
-        <hr>
-
-        <div class="theme-switch">
-            <label>
-                🌙 / ☀️
-                <input type="checkbox" id="themeToggle">
-            </label>
-        </div>
-
-        <a class="logout" href="index.html">🔒 Cerrar sesión </a>
-        
-    </aside>
-
-    <header class="topbar">
-        <h1 id="pageTitle">Dashboard General</h1>
-    </header>
-
-    <main class="content">
-
-
-    <section id="inicio" class="tab-content visible">
-
-        <div class="grid-2">
-            <div class="card kpi">
-                <h3>📦 Total Fletes</h3>
-                <p id="cantFletes" class="kpi-number">0</p>
-            </div>
-        </div>
-
-    </section>
-
-
-    <section id="fletes" class="tab-content">
-
-        <div class="card">
-            <h2>📝 Registrar Nuevo Flete</h2>
-
-            <div class="form-grid">
-                <input id="placa" placeholder="Placa (ABC-123)">
-                <input id="Contratista" placeholder="Conductor"> 
-                
-                <select id="zona">
-                    <option value="" disabled selected>Zona</option>
-                    <option>Zona Norte</option>
-                    <option>Zona Sur</option>
-                    <option>Zona Oriente</option>
-                    <option>Zona Occidente</option>
-                    <option>Nacional</option>
-                </select>
-                <select id="Día">
-                    <option value="" disabled selected>Día</option>
-                    <option>Lunes</option>
-                    <option>Martes</option>
-                    <option>Miercoles</option>
-                    <option>Jueves</option>
-                    <option>Viernes</option>
-                    <option>Sabado</option>
-                </select>
-                <select id="Poblacíon">
-                    <option value="" disabled selected>Población</option>
-                    <option>Pereira</option>
-                    <option>Dosquebradas</option>
-                    <option>Manizales</option>
-                    <option>Armenia</option>
-                    <option>Cartago</option>
-                    <option>Cuba</option>
-                    <option>Parque IndustriaL</option>
-                    <option>Sta Rosa</option>
-                    <option>Quimbaya</option>
-                    <option>Viterbo</option>
-                    <option>Vereda</option>
-                </select>   
-                <input id="Auxiliares" type="text" placeholder="Nombre(s) Auxiliares" >
-                <select id="No. Auxiliares">
-                    <option value="" disabled selected>No. Auxiliares</option>
-                    <option>1</option>
-                    <option>2</option>
-                </select>
-                <input id="NoPedi" type="number" placeholder="No. Pedidos">
-
-                <input id="Valor Ruta" type="text" step="0.01" pattern="[0-9]+(\.[0-9]{1,2})?" placeholder="Valor Ruta"> 
-                
-                <select id="Adicionales?">
-                    <option value="" selected disabled>Adicionales?</option>
-                    <option>Si</option>
-                    <option>No</option>
-                </select>
-                
-                <input id="totalflete" type="text" step="0.01" pattern="[0-9]+(\.[0-9]{1,2})?" placeholder="Total Flete" readonly>
-            </div>
-
-            <div class="form-actions" style="margin-top: 20px;">
-                <button 
-                    id="btnGestionarFlete" 
-                    class="btn btn-primary" 
-                    onclick="crearFlete()">
-                    Registrar Flete
+        <div class="sidebar-footer">
+            <div class="actions">
+                <button onclick="exportarExcel()" class="action-btn" title="Exportar Excel">
+                    <i class="ri-file-excel-2-line"></i>
+                </button>
+                <button onclick="generarPDFReporte()" class="action-btn" title="Generar PDF">
+                    <i class="ri-file-pdf-2-line"></i>
                 </button>
             </div>
-            
-        </div>
 
-        <div class="card">
-            <h2>🔍 Buscar / Filtrar</h2>
-
-            <div class="form-grid">
-                <input id="buscarFlete" placeholder="Buscar flete (Placa o Conductor)..." onkeyup="buscarFletes()"> 
-                <select id="filtroZona" onchange="buscarFletes()">
-                    <option value="">Filtrar zona</option>
-                    <option>Zona Norte</option>
-                    <option>Zona Sur</option>
-                    <option>Zona Oriente</option>
-                    <option>Zona Occidente</option>
-                    <option>Nacional</option>
-                </select>
-                <input type="date" id="filtroFecha" onchange="buscarFletes()">
+            <div class="theme-switch-wrapper">
+                <label class="theme-switch" for="themeToggle">
+                    <input type="checkbox" id="themeToggle" />
+                    <div class="slider round">
+                        <i class="ri-sun-line sun-icon"></i>
+                        <i class="ri-moon-line moon-icon"></i>
+                    </div>
+                </label>
             </div>
-        </div>
 
-        <div class="card">
-            <h2>📋 Últimos Fletes</h2>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Conductor</th> 
-                        <th>Placa</th>
-                        <th>Zona</th>
-                        <th>Precio</th>
-                        <th style="width: 180px;">Acciones</th> 
-                    </tr>
-                </thead>
-                <tbody id="tablaFletes"></tbody>
-            </table>
+            <a class="logout-btn" href="index.html" onclick="logout()">
+                <i class="ri-logout-box-r-line"></i> Salir
+            </a>
         </div>
+    </aside>
 
-    </section>
+    <!-- 🔵 MAIN CONTENT -->
+    <main class="main-content">
 
-    <section id="estadisticas" class="tab-content">
-        <div class="card">
-            <h2>📊 Ingresos por Mes</h2>
-            <canvas id="chartIngresos"></canvas>
-        </div>
-        <div class="card">
-            <h2>🍰 Fletes por Zona</h2>
-            <canvas id="chartZonas"></canvas>
-        </div>
-    </section>
+        <!-- HEADER MÓVIL / TOPBAR -->
+        <header class="topbar glass-header">
+            <button id="menuToggleBtn" class="menu-btn"><i class="ri-menu-2-line"></i></button>
+            <h1 id="pageTitle">Dashboard General</h1>
+            <div class="user-profile">
+                <span class="badget" id="userRoleBadge">Admin</span>
+                <div class="avatar">
+                    <i class="ri-user-3-line"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- 🏠 SECCIÓN INICIO -->
+        <section id="inicio" class="tab-content visible fade-in">
+            <div class="kpi-grid">
+                <div class="card glass-card kpi-card">
+                    <div class="kpi-icon"><i class="ri-truck-line"></i></div>
+                    <div class="kpi-info">
+                        <h3>Total Fletes</h3>
+                        <p id="cantFletes" class="kpi-value">0</p>
+                    </div>
+                </div>
+                <!-- Se pueden agregar más KPIs aquí -->
+            </div>
+        </section>
+
+        <!-- 📝 SECCIÓN GESTIÓN FLETES -->
+        <section id="fletes" class="tab-content fade-in">
+
+            <!-- FORMULARIO DE REGISTRO -->
+            <div class="card glass-card">
+                <div class="card-header">
+                    <h2><i class="ri-add-circle-line"></i> Registrar Nuevo Flete</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>Placa Vehículo</label>
+                            <input id="placa" placeholder="EJ: ABC-123" oninput="this.value = this.value.toUpperCase()">
+                        </div>
+                        <div class="input-group">
+                            <label>Conductor (Auto)</label>
+                            <input id="Contratista" placeholder="Nombre Conductor" readonly class="input-readonly">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Zona</label>
+                            <select id="zona">
+                                <option value="" disabled selected>Seleccione...</option>
+                                <option>Zona Norte</option>
+                                <option>Zona Sur</option>
+                                <option>Zona Oriente</option>
+                                <option>Zona Occidente</option>
+                                <option>Nacional</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Día</label>
+                            <select id="Día">
+                                <option value="" disabled selected>Seleccione...</option>
+                                <option>Lunes</option>
+                                <option>Martes</option>
+                                <option>Miercoles</option>
+                                <option>Jueves</option>
+                                <option>Viernes</option>
+                                <option>Sabado</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Población</label>
+                            <select id="Poblacíon">
+                                <option value="" disabled selected>Seleccione...</option>
+                                <option>Pereira</option>
+                                <option>Dosquebradas</option>
+                                <option>Manizales</option>
+                                <option>Armenia</option>
+                                <option>Cartago</option>
+                                <option>Cuba</option>
+                                <option>Parque Industrial</option>
+                                <option>Sta Rosa</option>
+                                <option>Quimbaya</option>
+                                <option>Viterbo</option>
+                                <option>Vereda</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Nombres Auxiliares</label>
+                            <input id="Auxiliares" type="text" placeholder="Separados por coma">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Cant. Auxiliares</label>
+                            <select id="No. Auxiliares">
+                                <option value="0">0</option>
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label>No. Pedidos</label>
+                            <input id="NoPedi" type="number" placeholder="0">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Valor Ruta (COP)</label>
+                            <input id="Valor Ruta" type="text" placeholder="$ 0" class="money-input">
+                        </div>
+
+                        <div class="input-group">
+                            <label>¿Adicionales?</label>
+                            <select id="Adicionales?">
+                                <option value="No">No</option>
+                                <option value="Si">Si (+ $60.000)</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group full-width">
+                            <label>Total Flete (Automatico)</label>
+                            <input id="totalflete" type="text" placeholder="$ 0" readonly class="input-total">
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button id="btnGestionarFlete" class="btn btn-primary btn-glow" onclick="crearFlete()">
+                            <i class="ri-save-3-line"></i> Guardar Flete
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABLA Y FILTROS -->
+            <div class="card glass-card">
+                <div class="card-header flex-header">
+                    <h2><i class="ri-search-eye-line"></i> Buscar Fletes</h2>
+                    <div class="filters">
+                        <input id="buscarFlete" placeholder="Buscar placa o conductor..." onkeyup="buscarFletes()">
+                        <select id="filtroZona" onchange="buscarFletes()">
+                            <option value="">Todas las Zonas</option>
+                            <option>Zona Norte</option>
+                            <option>Zona Sur</option>
+                            <option>Zona Oriente</option>
+                            <option>Zona Occidente</option>
+                            <option>Nacional</option>
+                        </select>
+                        <input type="date" id="filtroFecha" onchange="buscarFletes()">
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Conductor</th>
+                                <th>Placa</th>
+                                <th>Zona</th>
+                                <th>Precio Final</th>
+                                <th class="actions-col">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaFletes">
+                            <!-- JS Renders Rows Here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- 📊 SECCIÓN ESTADÍSTICAS -->
+        <section id="estadisticas" class="tab-content fade-in">
+            <div class="grid-2">
+                <div class="card glass-card chart-container">
+                    <h3>Ingresos por Mes</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="chartIngresos"></canvas>
+                    </div>
+                </div>
+                <div class="card glass-card chart-container">
+                    <h3>Fletes por Zona</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="chartZonas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
 
     </main>
 
-    <div id="toastContainer"></div>
-
+    <!-- MODAL EDICIÓN -->
     <div id="modalEdicionFlete" class="modal-overlay">
-        <div class="modal-content">
+        <div class="modal-glass">
             <div class="modal-header">
                 <h2>✏️ Editar Flete</h2>
-                <button class="close-btn" onclick="ocultarModalEdicion()">×</button>
+                <button class="close-btn" onclick="ocultarModalEdicion()"><i class="ri-close-line"></i></button>
             </div>
-            
+
             <div class="modal-body">
                 <div class="form-grid">
-                    <input id="modal-placa" placeholder="Placa (ABC-123)">
-                    <input id="modal-Contratista" placeholder="Conductor"> 
-                    
-                    <select id="modal-zona">
-                        <option value="" disabled selected>Zona</option>
-                        <option>Zona Norte</option>
-                        <option>Zona Sur</option>
-                        <option>Zona Oriente</option>
-                        <option>Zona Occidente</option>
-                        <option>Nacional</option>
-                    </select>
-                    <select id="modal-Día">
-                        <option value="" disabled selected>Día</option>
-                        <option>Lunes</option>
-                        <option>Martes</option>
-                        <option>Miercoles</option>
-                        <option>Jueves</option>
-                        <option>Viernes</option>
-                        <option>Sabado</option>
-                    </select>
-                    <select id="modal-Poblacíon">
-                        <option value="" disabled selected>Población</option>
-                        <option>Pereira</option>
-                        <option>Dosquebradas</option>
-                        <option>Manizales</option>
-                        <option>Armenia</option>
-                        <option>Cartago</option>
-                        <option>Cuba</option>
-                        <option>Parque IndustriaL</option>
-                        <option>Sta Rosa</option>
-                        <option>Quimbaya</option>
-                        <option>Viterbo</option>
-                        <option>Vereda</option>
-                    </select>   
-                    <input id="modal-Auxiliares" type="text" placeholder="Nombre(s) Auxiliares" >
-                    <select id="modal-No. Auxiliares">
-                        <option value="" disabled selected>No. Auxiliares</option>
-                        <option>1</option>
-                        <option>2</option>
-                    </select>
-                    <input id="modal-NoPedi" type="number" placeholder="No. Pedidos">
-                    
-                    <input id="modal-Valor Ruta" type="text" step="0.01" pattern="[0-9]+(\.[0-9]{1,2})?" placeholder="Valor Ruta">
-                    
-                    <select id="modal-Adicionales?">
-                        <option value="" selected disabled>Adicionales?</option>
-                        <option>Si</option>
-                        <option>No</option>
-                    </select>
-                    
-                    <input id="modal-totalflete" type="text" step="0.01" pattern="[0-9]+(\.[0-9]{1,2})?" placeholder="Total Flete" readonly>
+                    <!-- Mismos campos con prefijo modal- -->
+                    <div class="input-group"> <label>Placa</label> <input id="modal-placa"
+                            oninput="this.value = this.value.toUpperCase()"> </div>
+                    <div class="input-group"> <label>Conductor</label> <input id="modal-Contratista" readonly
+                            class="input-readonly"> </div>
+
+                    <div class="input-group">
+                        <label>Zona</label>
+                        <select id="modal-zona">
+                            <option>Zona Norte</option>
+                            <option>Zona Sur</option>
+                            <option>Zona Oriente</option>
+                            <option>Zona Occidente</option>
+                            <option>Nacional</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group"> <label>Día</label> <select id="modal-Día">
+                            <option>Lunes</option>
+                            <option>Martes</option>
+                            <option>Miercoles</option>
+                            <option>Jueves</option>
+                            <option>Viernes</option>
+                            <option>Sabado</option>
+                        </select> </div>
+
+                    <div class="input-group"> <label>Población</label> <select id="modal-Poblacíon">
+                            <option>Pereira</option>
+                            <option>Dosquebradas</option>
+                            <option>Manizales</option>
+                            <option>Armenia</option>
+                            <option>Cartago</option>
+                            <option>Cuba</option>
+                            <option>Parque Industrial</option>
+                            <option>Sta Rosa</option>
+                            <option>Quimbaya</option>
+                            <option>Viterbo</option>
+                            <option>Vereda</option>
+                        </select> </div>
+
+                    <div class="input-group"> <label>Auxiliares</label> <input id="modal-Auxiliares" type="text"> </div>
+                    <div class="input-group"> <label>No. Aux</label> <select id="modal-No. Auxiliares">
+                            <option>0</option>
+                            <option>1</option>
+                            <option>2</option>
+                        </select> </div>
+                    <div class="input-group"> <label>No. Pedidos</label> <input id="modal-NoPedi" type="number"> </div>
+
+                    <div class="input-group"> <label>Valor Ruta</label> <input id="modal-Valor Ruta" type="text"
+                            class="money-input"> </div>
+
+                    <div class="input-group">
+                        <label>¿Adicionales?</label>
+                        <select id="modal-Adicionales?">
+                            <option value="No">No</option>
+                            <option value="Si">Si</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group full-width"> <label>Total</label> <input id="modal-totalflete" type="text"
+                            readonly class="input-total"> </div>
                 </div>
             </div>
-            
+
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="ocultarModalEdicion()">Cancelar</button>
-                <button id="btnGuardarModal" class="btn btn-primary" onclick="guardarCambiosFlete()">Guardar Cambios</button>
+                <button id="btnGuardarModal" class="btn btn-primary" onclick="guardarCambiosFlete()">Guardar
+                    Cambios</button>
             </div>
         </div>
     </div>
-    </body>
-    </html>
+
+</body>
+
+</html>

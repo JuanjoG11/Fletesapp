@@ -1,46 +1,83 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login | Fletes App</title>
-<link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Fletes App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .logo-lg {
+            width: 120px;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
-<body class="login-body">
 
-<div class="login-box">
-    <!-- Logo de la empresa -->
-    <div class="logo">
-        <img src="logo_tym.png" alt="Logo Fletes App">
+<body>
+
+    <div class="glass-card login-card">
+        <img src="logo_tym.png" alt="Logo" class="logo-lg">
+        <h2 style="margin-bottom: 20px;">Bienvenido</h2>
+
+        <div class="form-grid" style="grid-template-columns: 1fr;">
+            <div class="input-group">
+                <input id="user" type="text" placeholder="Usuario">
+            </div>
+            <div class="input-group">
+                <input id="pass" type="password" placeholder="Contraseña">
+            </div>
+            <button class="btn btn-primary btn-glow" onclick="login()" style="width: 100%;">
+                Ingresar
+            </button>
+        </div>
+
+        <p style="margin-top: 20px; font-size: 0.8rem; color: var(--text-muted);">
+            Credenciales Demo:<br>
+            Admin: <b>admin / admin</b><br>
+            Operario: <b>operario / 123</b>
+        </p>
     </div>
 
-    <h2>Bienvenido a Fletes App</h2>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function login() {
+            const u = document.getElementById("user").value.trim();
+            const p = document.getElementById("pass").value.trim();
 
-    <div class="input-group">
-        <input id="user" type="text" placeholder="Usuario">
-    </div>
-    <div class="input-group">
-        <input id="pass" type="password" placeholder="Contraseña">
-    </div>
+            if (u === 'admin' && p === 'admin') {
+                localStorage.setItem('role', 'admin');
+                window.location.href = 'dashboard.html';
+            } else if (u === 'operario' && p === '123') {
+                localStorage.setItem('role', 'operario');
+                window.location.href = 'dashboard.html';
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Credenciales incorrectas',
+                    background: '#1e293b', color: '#fff'
+                });
+            }
+        }
 
-    <button class="btn btn-primary" onclick="login()">Ingresar</button>
-
-    <p class="footer-text">© 2025 Fletes App. Todos los derechos reservados.</p>
-</div>
-
-<script>
-function login() {
-    const user = document.getElementById("user").value.trim();
-    const pass = document.getElementById("pass").value.trim();
-
-    if(!user || !pass){
-        alert("Por favor, completa todos los campos.");
-        return;
-    }
-
-    window.location.href = "dashboard.html";
-}
-</script>
+        // Check if already logged in
+        if (localStorage.getItem('role')) window.location.href = 'dashboard.html';
+    </script>
 
 </body>
+
 </html>

@@ -130,8 +130,43 @@ function listarVehiculos() {
             <td><span class="badge-plate">${v.placa}</span></td>
             <td>${v.conductor}</td>
             <td style="color: var(--text-muted)">${v.modelo || 'N/A'}</td>
+            <td class="actions-cell">
+                <button class="btn-icon delete" onclick="eliminarVehiculo('${v.placa}')" title="Eliminar Vehículo">
+                    <i class="ri-delete-bin-line"></i>
+                </button>
+            </td>
         `;
         tbody.appendChild(tr);
+    });
+}
+
+function eliminarVehiculo(placa) {
+    Swal.fire({
+        title: '¿Eliminar Vehículo?',
+        text: `Se eliminará la placa ${placa} de la base de datos.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        background: '#1e293b',
+        color: '#f8fafc'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            FLOTA_VEHICULOS = FLOTA_VEHICULOS.filter(v => v.placa !== placa);
+            updateFleetStorage();
+            listarVehiculos();
+            actualizarKPI();
+            Swal.fire({
+                title: 'Eliminado',
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false,
+                background: '#1e293b',
+                color: '#f8fafc'
+            });
+        }
     });
 }
 
@@ -139,9 +174,11 @@ function listarVehiculos() {
 function registrarVehiculoOperario() {
     const placaInput = document.getElementById("op_placa");
     const condInput = document.getElementById("op_conductor");
+    const modInput = document.getElementById("op_modelo");
 
     const placa = placaInput.value.toUpperCase().trim();
     const conductor = condInput.value.trim();
+    const modelo = modInput.value.trim() || "Estándar";
 
     if (!placa || !conductor) {
         return Swal.fire({ icon: 'warning', title: 'Faltan Datos', text: 'Ingrese Placa y Conductor', background: '#1a1a1a', color: '#fff' });
@@ -153,12 +190,13 @@ function registrarVehiculoOperario() {
         return Swal.fire({ icon: 'info', title: 'Ya existe', text: `La placa ${placa} ya está registrada a ${exists.conductor}.`, background: '#1a1a1a', color: '#fff' });
     }
 
-    FLOTA_VEHICULOS.push({ placa, conductor, capacidad: "N/A", modelo: "Estándar" });
+    FLOTA_VEHICULOS.push({ placa, conductor, capacidad: "N/A", modelo: modelo });
     updateFleetStorage();
     listarVehiculos(); // Update table
 
     placaInput.value = "";
     condInput.value = "";
+    if (modInput) modInput.value = "";
 
     Swal.fire({
         icon: 'success', title: 'Vehículo Registrado',
@@ -236,7 +274,7 @@ function obtenerDatosFormulario(prefix = "") {
         valorRuta: parseMoney(valorRutaRaw),
         precio: parseMoney(precioRaw),
         adicionales, noPedidos, auxiliares, noAux,
-        fecha: new Date().toISOString().split('T')[0]
+        fecha: prefix.includes("modal") ? (load("fletes").find(f => f.id === ID_FLETE_EDITANDO)?.fecha || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0]
     };
 }
 
@@ -273,7 +311,7 @@ function crearFlete() {
 }
 
 function guardarCambiosFlete() {
-    const data = obtenerDatosFormulario("modal_");
+    const data = obtenerDatosFormulario("modal-");
     let fletes = load("fletes");
 
     fletes = fletes.map(f => f.id === ID_FLETE_EDITANDO ? data : f);
@@ -357,7 +395,7 @@ window.editarFlete = function (id) {
     if (!f) return;
 
     const set = (k, v) => {
-        const el = document.getElementById("modal_" + k);
+        const el = document.getElementById("modal-" + k);
         if (el) el.value = v;
     };
 
@@ -400,7 +438,7 @@ window.eliminarFlete = function (id) {
 
 function ocultarModalEdicion() {
     document.getElementById("modalEdicionFlete").classList.remove("visible");
-    limpiarFormulario("modal_");
+    limpiarFormulario("modal-");
     ID_FLETE_EDITANDO = null;
 }
 
@@ -654,10 +692,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 5. Configuración Lógica
         buscarConductorPorPlaca("placa", "contratista");
-        buscarConductorPorPlaca("modal_placa", "modal_contratista");
+        buscarConductorPorPlaca("modal-placa", "modal-contratista");
 
         setupCalculators("");
-        setupCalculators("modal_");
+        setupCalculators("modal-");
 
         // 6. Carga Inicial
         listarFletes();

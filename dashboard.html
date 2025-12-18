@@ -32,17 +32,27 @@
 
         <nav class="nav-links">
             <a class="nav-item active" data-tab="inicio">
-                <i class="ri-home-4-line"></i> Inicio
+                <i class="ri-dashboard-3-line"></i> Dashboard
             </a>
-            <a class="nav-item" data-tab="fletes">
-                <i class="ri-file-list-3-line"></i> Gestión Fletes
+            <!-- Tab para Admin (Gestión Completa) y Operario (Solo Lectura) -->
+            <a class="nav-item" data-tab="fletes" id="navFletes">
+                <i class="ri-file-list-3-line"></i> Listado Fletes
             </a>
-            <a class="nav-item" data-tab="estadisticas" id="btnEstadisticas">
+            <!-- Tab Exclusiva Operario -->
+            <a class="nav-item" data-tab="operario-vehiculos" id="navVehiculos" style="display: none;">
+                <i class="ri-roadster-line"></i> Nuevo Vehículo
+            </a>
+            <!-- Tab Exclusiva Admin -->
+            <a class="nav-item" data-tab="admin-crear" id="navCrearFlete">
+                <i class="ri-add-circle-line"></i> Crear Flete
+            </a>
+            <a class="nav-item" data-tab="estadisticas" id="navEstadisticas">
                 <i class="ri-pie-chart-2-line"></i> Estadísticas
             </a>
         </nav>
 
         <div class="sidebar-footer">
+            <!-- Export buttons remain here -->
             <div class="actions">
                 <button onclick="exportarExcel()" class="action-btn" title="Exportar Excel">
                     <i class="ri-file-excel-2-line"></i>
@@ -51,7 +61,7 @@
                     <i class="ri-file-pdf-2-line"></i>
                 </button>
             </div>
-
+            <!-- Theme switch remains -->
             <div class="theme-switch-wrapper">
                 <label class="theme-switch" for="themeToggle">
                     <input type="checkbox" id="themeToggle" />
@@ -61,7 +71,6 @@
                     </div>
                 </label>
             </div>
-
             <a class="logout-btn" href="index.html" onclick="logout()">
                 <i class="ri-logout-box-r-line"></i> Salir
             </a>
@@ -70,11 +79,10 @@
 
     <!-- 🔵 MAIN CONTENT -->
     <main class="main-content">
-
-        <!-- HEADER MÓVIL / TOPBAR -->
+        <!-- TOPBAR -->
         <header class="topbar glass-header">
             <button id="menuToggleBtn" class="menu-btn"><i class="ri-menu-2-line"></i></button>
-            <h1 id="pageTitle">Dashboard General</h1>
+            <h1 id="pageTitle">Resumen General</h1>
             <div class="user-profile">
                 <span class="badget" id="userRoleBadge">Admin</span>
                 <div class="avatar">
@@ -85,23 +93,39 @@
 
         <!-- 🏠 SECCIÓN INICIO -->
         <section id="inicio" class="tab-content visible fade-in">
+            <div class="dashboard-welcome">
+                <h2>Bienvenido a FletesApp</h2>
+                <p>Sistema Integral de Gestión Logística</p>
+            </div>
+
             <div class="kpi-grid">
                 <div class="card glass-card kpi-card">
-                    <div class="kpi-icon"><i class="ri-truck-line"></i></div>
+                    <div class="kpi-icon icon-blue"><i class="ri-truck-line"></i></div>
                     <div class="kpi-info">
                         <h3>Total Fletes</h3>
                         <p id="cantFletes" class="kpi-value">0</p>
                     </div>
                 </div>
-                <!-- Se pueden agregar más KPIs aquí -->
+                <div class="card glass-card kpi-card">
+                    <div class="kpi-icon icon-green"><i class="ri-money-dollar-circle-line"></i></div>
+                    <div class="kpi-info">
+                        <h3>Ingresos del Mes</h3>
+                        <p id="kpiIngresos" class="kpi-value">$ 0</p>
+                    </div>
+                </div>
+                <div class="card glass-card kpi-card">
+                    <div class="kpi-icon icon-orange"><i class="ri-steering-2-line"></i></div>
+                    <div class="kpi-info">
+                        <h3>Vehículos Activos</h3>
+                        <p id="kpiVehiculos" class="kpi-value">0</p>
+                    </div>
+                </div>
             </div>
         </section>
 
-        <!-- 📝 SECCIÓN GESTIÓN FLETES -->
-        <section id="fletes" class="tab-content fade-in">
-
-            <!-- FORMULARIO DE REGISTRO -->
-            <div class="card glass-card">
+        <!-- 📝 SECCIÓN CREAR FLETE (ADMIN) -->
+        <section id="admin-crear" class="tab-content fade-in">
+            <div id="card-admin" class="card glass-card">
                 <div class="card-header">
                     <h2><i class="ri-add-circle-line"></i> Registrar Nuevo Flete</h2>
                 </div>
@@ -113,7 +137,7 @@
                         </div>
                         <div class="input-group">
                             <label>Conductor (Auto)</label>
-                            <input id="Contratista" placeholder="Nombre Conductor" readonly class="input-readonly">
+                            <input id="contratista" placeholder="Nombre Conductor" readonly class="input-readonly">
                         </div>
 
                         <div class="input-group">
@@ -130,7 +154,7 @@
 
                         <div class="input-group">
                             <label>Día</label>
-                            <select id="Día">
+                            <select id="dia">
                                 <option value="" disabled selected>Seleccione...</option>
                                 <option>Lunes</option>
                                 <option>Martes</option>
@@ -143,7 +167,7 @@
 
                         <div class="input-group">
                             <label>Población</label>
-                            <select id="Poblacíon">
+                            <select id="poblacion">
                                 <option value="" disabled selected>Seleccione...</option>
                                 <option>Pereira</option>
                                 <option>Dosquebradas</option>
@@ -161,12 +185,12 @@
 
                         <div class="input-group">
                             <label>Nombres Auxiliares</label>
-                            <input id="Auxiliares" type="text" placeholder="Separados por coma">
+                            <input id="auxiliares" type="text" placeholder="Separados por coma">
                         </div>
 
                         <div class="input-group">
                             <label>Cant. Auxiliares</label>
-                            <select id="No. Auxiliares">
+                            <select id="no_auxiliares">
                                 <option value="0">0</option>
                                 <option>1</option>
                                 <option>2</option>
@@ -176,17 +200,17 @@
 
                         <div class="input-group">
                             <label>No. Pedidos</label>
-                            <input id="NoPedi" type="number" placeholder="0">
+                            <input id="no_pedidos" type="number" placeholder="0">
                         </div>
 
                         <div class="input-group">
                             <label>Valor Ruta (COP)</label>
-                            <input id="Valor Ruta" type="text" placeholder="$ 0" class="money-input">
+                            <input id="valor_ruta" type="text" placeholder="$ 0" class="money-input">
                         </div>
 
                         <div class="input-group">
                             <label>¿Adicionales?</label>
-                            <select id="Adicionales?">
+                            <select id="is_adicionales">
                                 <option value="No">No</option>
                                 <option value="Si">Si (+ $60.000)</option>
                             </select>
@@ -194,7 +218,7 @@
 
                         <div class="input-group full-width">
                             <label>Total Flete (Automatico)</label>
-                            <input id="totalflete" type="text" placeholder="$ 0" readonly class="input-total">
+                            <input id="total_flete" type="text" placeholder="$ 0" readonly class="input-total">
                         </div>
                     </div>
 
@@ -205,11 +229,63 @@
                     </div>
                 </div>
             </div>
+        </section>
 
-            <!-- TABLA Y FILTROS -->
-            <div class="card glass-card">
+        <!-- 👷 SECCIÓN OPERARIO: REGISTRAR VEHÍCULO -->
+        <section id="operario-vehiculos" class="tab-content fade-in">
+            <div id="card-operario" class="card glass-card">
+                <div class="card-header">
+                    <h2><i class="ri-truck-line"></i> Registrar Nuevo Vehículo</h2>
+                    <p class="text-muted">Ingrese la placa y el conductor para habilitarlo en el sistema.</p>
+                </div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>Placa Vehículo</label>
+                            <input id="op_placa" placeholder="EJ: XYZ-789"
+                                oninput="this.value = this.value.toUpperCase()">
+                        </div>
+                        <div class="input-group">
+                            <label>Nombre Conductor</label>
+                            <input id="op_conductor" placeholder="Nombre Completo">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button id="btnRegistrarVehiculo" class="btn btn-secondary btn-glow">
+                            <i class="ri-user-add-line"></i> Registrar Conductor
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Lista de Flota (Visible para Operario) -->
+                <div class="glass-card"
+                    style="margin-top:20px; border-top:1px solid var(--glass-border); padding-top:20px">
+                    <div class="card-header">
+                        <h2><i class="ri-list-check-2"></i> Flota Registrada</h2>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Placa</th>
+                                    <th>Conductor</th>
+                                    <th>Modelo/Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaVehiculos">
+                                <!-- JS Renders Fleet Here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 📋 SECCIÓN LISTADO FLETES (TODOS) -->
+        <section id="fletes" class="tab-content fade-in">
+            <div class="card glass-card" id="card-listado-fletes">
                 <div class="card-header flex-header">
-                    <h2><i class="ri-search-eye-line"></i> Buscar Fletes</h2>
+                    <h2><i class="ri-search-eye-line"></i> Base de Datos Fletes</h2>
                     <div class="filters">
                         <input id="buscarFlete" placeholder="Buscar placa o conductor..." onkeyup="buscarFletes()">
                         <select id="filtroZona" onchange="buscarFletes()">
@@ -229,10 +305,12 @@
                         <thead>
                             <tr>
                                 <th>Fecha</th>
+                                <th>Día</th>
                                 <th>Conductor</th>
                                 <th>Placa</th>
-                                <th>Zona</th>
-                                <th>Precio Final</th>
+                                <th>Población</th>
+                                <th>Auxiliares</th>
+                                <th>Total Pagar</th>
                                 <th class="actions-col">Acciones</th>
                             </tr>
                         </thead>
@@ -242,7 +320,6 @@
                     </table>
                 </div>
             </div>
-
         </section>
 
         <!-- 📊 SECCIÓN ESTADÍSTICAS -->
@@ -278,7 +355,7 @@
                     <!-- Mismos campos con prefijo modal- -->
                     <div class="input-group"> <label>Placa</label> <input id="modal-placa"
                             oninput="this.value = this.value.toUpperCase()"> </div>
-                    <div class="input-group"> <label>Conductor</label> <input id="modal-Contratista" readonly
+                    <div class="input-group"> <label>Conductor</label> <input id="modal-contratista" readonly
                             class="input-readonly"> </div>
 
                     <div class="input-group">
@@ -292,7 +369,7 @@
                         </select>
                     </div>
 
-                    <div class="input-group"> <label>Día</label> <select id="modal-Día">
+                    <div class="input-group"> <label>Día</label> <select id="modal-dia">
                             <option>Lunes</option>
                             <option>Martes</option>
                             <option>Miercoles</option>
@@ -301,7 +378,7 @@
                             <option>Sabado</option>
                         </select> </div>
 
-                    <div class="input-group"> <label>Población</label> <select id="modal-Poblacíon">
+                    <div class="input-group"> <label>Población</label> <select id="modal-poblacion">
                             <option>Pereira</option>
                             <option>Dosquebradas</option>
                             <option>Manizales</option>
@@ -315,26 +392,27 @@
                             <option>Vereda</option>
                         </select> </div>
 
-                    <div class="input-group"> <label>Auxiliares</label> <input id="modal-Auxiliares" type="text"> </div>
-                    <div class="input-group"> <label>No. Aux</label> <select id="modal-No. Auxiliares">
+                    <div class="input-group"> <label>Auxiliares</label> <input id="modal-auxiliares" type="text"> </div>
+                    <div class="input-group"> <label>No. Aux</label> <select id="modal-no_auxiliares">
                             <option>0</option>
                             <option>1</option>
                             <option>2</option>
                         </select> </div>
-                    <div class="input-group"> <label>No. Pedidos</label> <input id="modal-NoPedi" type="number"> </div>
+                    <div class="input-group"> <label>No. Pedidos</label> <input id="modal-no_pedidos" type="number">
+                    </div>
 
-                    <div class="input-group"> <label>Valor Ruta</label> <input id="modal-Valor Ruta" type="text"
+                    <div class="input-group"> <label>Valor Ruta</label> <input id="modal-valor_ruta" type="text"
                             class="money-input"> </div>
 
                     <div class="input-group">
                         <label>¿Adicionales?</label>
-                        <select id="modal-Adicionales?">
+                        <select id="modal-is_adicionales">
                             <option value="No">No</option>
                             <option value="Si">Si</option>
                         </select>
                     </div>
 
-                    <div class="input-group full-width"> <label>Total</label> <input id="modal-totalflete" type="text"
+                    <div class="input-group full-width"> <label>Total</label> <input id="modal-total_flete" type="text"
                             readonly class="input-total"> </div>
                 </div>
             </div>

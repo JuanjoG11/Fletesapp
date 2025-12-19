@@ -59,8 +59,8 @@ function checkAuth() {
     const navCrear = document.getElementById("navCrearFlete");
     const navStats = document.getElementById("navEstadisticas");
 
-    if (role === 'operario') {
-        // PERFIL OPERARIO
+    if (role === 'admin') {
+        // PERFIL ADMIN (AHORA GESTIONA VEHÍCULOS)
         if (navFletes) navFletes.style.display = 'flex';       // Puede ver lista
         if (navVehiculos) navVehiculos.style.display = 'flex'; // Puede registrar vehiculos
         if (navCrear) navCrear.style.display = 'none';         // No crea fletes
@@ -72,9 +72,9 @@ function checkAuth() {
             document.querySelector('[data-tab="inicio"]')?.click();
         }
     } else {
-        // PERFIL ADMIN
+        // PERFIL OPERARIO (AHORA CREA FLETES Y VE ESTADÍSTICAS)
         if (navFletes) navFletes.style.display = 'flex';
-        if (navVehiculos) navVehiculos.style.display = 'none'; // Admin usa Crear Flete
+        if (navVehiculos) navVehiculos.style.display = 'none'; // Operario usa Crear Flete
         if (navCrear) navCrear.style.display = 'flex';
         if (navStats) navStats.style.display = 'flex';
     }
@@ -364,7 +364,7 @@ function listarFletes() {
 
     filtered.reverse().slice(0, 50).forEach(f => {
         const tr = document.createElement("tr");
-        const actions = role === 'admin' ? `
+        const actions = role === 'operario' ? `
             <button class="btn-icon edit" onclick="editarFlete(${f.id})"><i class="ri-pencil-line"></i></button>
             <button class="btn-icon delete" onclick="eliminarFlete(${f.id})"><i class="ri-delete-bin-line"></i></button>
         ` : `<span style="font-size:0.8rem; opacity:0.7">Solo Lectura</span>`;
@@ -387,8 +387,8 @@ function listarFletes() {
 function buscarFletes() { listarFletes(); }
 
 window.editarFlete = function (id) {
-    // Solo admins editan
-    if (localStorage.getItem("role") === 'operario') return;
+    // Solo operarios editan
+    if (localStorage.getItem("role") === 'admin') return;
 
     ID_FLETE_EDITANDO = id;
     const f = load("fletes").find(x => x.id === id);
@@ -416,7 +416,7 @@ window.editarFlete = function (id) {
 };
 
 window.eliminarFlete = function (id) {
-    if (localStorage.getItem("role") === 'operario') {
+    if (localStorage.getItem("role") === 'admin') {
         Swal.fire({ icon: 'error', title: 'Acceso Denegado', background: '#1a1a1a', color: '#fff' });
         return;
     }
@@ -508,7 +508,9 @@ async function generarPDF() {
 
     const data = fletes.map(f => [
         f.fecha, f.placa, f.contratista, f.zona,
-        moneyFormatter.format(f.precio), f.noPedidos
+        moneyFormatter.format(f.precio), f.noPedidos,
+        '', // Firma Conductor
+        ''  // Firma Operaciones
     ]);
 
     const { jsPDF } = window.jspdf;
@@ -538,22 +540,16 @@ async function generarPDF() {
     doc.text(`Fecha de Impresión: ${new Date().toLocaleDateString()} `, 50, 28);
 
     doc.autoTable({
-        head: [['Fecha', 'Placa', 'Conductor', 'Zona', 'Valor', 'Pedidos']],
+        head: [['Fecha', 'Placa', 'Conductor', 'Zona', 'Valor', 'Pedidos', 'Firma Conductor', 'Firma Operaciones']],
         body: data,
         startY: 45, // Lower start Y to avoid logo overlap
         theme: 'grid',
-        styles: { fontSize: 10, cellPadding: 3 },
+        styles: { fontSize: 9, cellPadding: 3, minCellHeight: 15 },
+        columnStyles: {
+            6: { cellWidth: 25 }, // Firma Conductor column
+            7: { cellWidth: 25 }  // Firma Operaciones column
+        }
     });
-
-    let finalY = doc.lastAutoTable.finalY + 40;
-    if (finalY > 250) { doc.addPage(); finalY = 40; }
-
-    doc.setLineWidth(0.5);
-    doc.line(20, finalY, 80, finalY);
-    doc.text("Entregado por (Conductor)", 20, finalY + 10);
-
-    doc.line(120, finalY, 180, finalY);
-    doc.text("Recibido por (Operaciones)", 120, finalY + 10);
 
     doc.save("Reporte_Fletes.pdf");
 }
@@ -567,8 +563,8 @@ let myChart = null;
 let myChart2 = null;
 
 function generarGraficos() {
-    // Si rol operario, no renderizar
-    if (localStorage.getItem("role") === 'operario') return;
+    // Si rol admin, no renderizar
+    if (localStorage.getItem("role") === 'admin') return;
 
     // Validar existencia elementos
     const ctx = document.getElementById("chartZonas");
@@ -660,8 +656,8 @@ document.addEventListener("DOMContentLoaded", () => {
             t.addEventListener("click", () => {
                 const target = t.dataset.tab;
 
-                // Prevent operario entering statistics
-                if (localStorage.getItem("role") === 'operario' && target === 'estadisticas') return;
+                // Prevent admin entering statistics
+                if (localStorage.getItem("role") === 'admin' && target === 'estadisticas') return;
 
                 document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("visible"));
                 document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
@@ -673,7 +669,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         // 2. Botones Principales
-        document.getElementById("btnGestionarFlete")?.addEventListener("click", crearFlete);
+        // btnGestionarFlete already has onclick in HTML - removed duplicate addEventListener to prevent double save
+        // document.getElementById("btnGestionarFlete")?.addEventListener("click", crearFlete);
         document.getElementById("btnRegistrarVehiculo")?.addEventListener("click", registrarVehiculoOperario); // NEW BOTON
 
         document.getElementById("btnGuardarModal")?.addEventListener("click", guardarCambiosFlete);

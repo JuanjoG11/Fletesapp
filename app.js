@@ -206,45 +206,82 @@ function registrarVehiculoOperario() {
 }
 
 // ==========================================================
-// 💰 CÁLCULO DE TOTALES
+// 💰 CÁLCULO DE TOTALES BASADO EN POBLACIÓN
 // ==========================================================
+
+// Precios por población
+const PRECIOS_POBLACION = {
+    "Pereira": 320000,
+    "Dosquebradas": 280000,
+    "Manizales": 450000,
+    "Armenia": 400000,
+    "Cartago": 380000,
+    "Cuba": 250000,
+    "Parque Industrial": 300000,
+    "Sta Rosa": 350000,
+    "Quimbaya": 370000,
+    "Viterbo": 420000,
+    "Vereda": 200000
+};
+
+const COSTO_ADICIONAL = 60000;
+const COSTO_POR_AUXILIAR = 30000; // Costo adicional por cada auxiliar
+
 function calcularTotal(prefix = "") {
-    const rutaId = prefix + "valor_ruta";
+    const poblacionId = prefix + "poblacion";
     const adicId = prefix + "is_adicionales";
+    const noAuxId = prefix + "no_auxiliares";
     const totalId = prefix + "total_flete";
 
-    const valorRutaEl = document.getElementById(rutaId);
+    const poblacionEl = document.getElementById(poblacionId);
     const adicionalesEl = document.getElementById(adicId);
+    const noAuxEl = document.getElementById(noAuxId);
     const totalEl = document.getElementById(totalId);
 
-    if (!valorRutaEl || !totalEl) return;
+    if (!poblacionEl || !totalEl) return;
 
-    const base = parseMoney(valorRutaEl.value);
+    const poblacion = poblacionEl.value;
+    const precioBase = PRECIOS_POBLACION[poblacion] || 0;
+
+    // Calcular Valor Flete (total a pagar) basado en población
+    let total = precioBase;
+
+    // Sumar costo de adicionales
     const tieneAdicional = adicionalesEl?.value === "Si";
-    const ADICIONAL_COSTO = 60000;
+    if (tieneAdicional) total += COSTO_ADICIONAL;
 
-    let total = base;
-    if (tieneAdicional) total += ADICIONAL_COSTO;
+    // Sumar costo por auxiliares
+    const numAuxiliares = parseInt(noAuxEl?.value || 0);
+    total += (numAuxiliares * COSTO_POR_AUXILIAR);
 
     totalEl.value = moneyFormatter.format(total);
 }
 
 function setupCalculators(prefix = "") {
-    const rutaId = prefix + "valor_ruta";
+    const poblacionId = prefix + "poblacion";
     const adicId = prefix + "is_adicionales";
+    const noAuxId = prefix + "no_auxiliares";
+    const rutaId = prefix + "valor_ruta";
 
-    const inputRuta = document.getElementById(rutaId);
+    const selectPoblacion = document.getElementById(poblacionId);
     const selectAdicional = document.getElementById(adicId);
+    const selectNoAux = document.getElementById(noAuxId);
+    const inputRuta = document.getElementById(rutaId);
 
-    if (inputRuta) {
-        inputRuta.addEventListener("input", () => calcularTotal(prefix));
-        inputRuta.addEventListener("blur", function () {
-            formatMoneyInput(this);
-            calcularTotal(prefix);
-        });
+    if (selectPoblacion) {
+        selectPoblacion.addEventListener("change", () => calcularTotal(prefix));
     }
     if (selectAdicional) {
         selectAdicional.addEventListener("change", () => calcularTotal(prefix));
+    }
+    if (selectNoAux) {
+        selectNoAux.addEventListener("change", () => calcularTotal(prefix));
+    }
+    // Formatear valor ruta cuando el usuario lo ingresa manualmente
+    if (inputRuta) {
+        inputRuta.addEventListener("blur", function () {
+            formatMoneyInput(this);
+        });
     }
 }
 
@@ -377,7 +414,8 @@ function listarFletes() {
             <td><span class="badge-plate">${f.placa}</span></td>
             <td>${f.poblacion || 'Pereira'}</td>
             <td>${f.noAux || 0} (${f.auxiliares || '-'})</td>
-             <td class="price-cell">${moneyFormatter.format(f.precio)}</td>
+            <td class="price-cell">${moneyFormatter.format(f.valorRuta || 0)}</td>
+            <td class="price-cell">${moneyFormatter.format(f.precio)}</td>
             <td class="actions-cell">${actions}</td>
         `;
         tbody.appendChild(tr);
@@ -507,10 +545,14 @@ async function generarPDF() {
     if (fletes.length === 0) return Swal.fire("Info", "Sin datos para exportar", "info");
 
     const data = fletes.map(f => [
-        f.fecha, f.placa, f.contratista, f.zona,
-        moneyFormatter.format(f.precio), f.noPedidos,
-        '', // Firma Conductor
-        ''  // Firma Operaciones
+        f.fecha,
+        f.placa,
+        f.contratista,
+        f.zona,
+        moneyFormatter.format(f.valorRuta || 0),  // Valor Ruta (base)
+        moneyFormatter.format(f.precio),          // Valor Flete (total a pagar)
+        f.noPedidos,
+        '' // Firma Conductor
     ]);
 
     const { jsPDF } = window.jspdf;
@@ -540,14 +582,15 @@ async function generarPDF() {
     doc.text(`Fecha de Impresión: ${new Date().toLocaleDateString()} `, 50, 28);
 
     doc.autoTable({
-        head: [['Fecha', 'Placa', 'Conductor', 'Zona', 'Valor', 'Pedidos', 'Firma Conductor', 'Firma Operaciones']],
+        head: [['Fecha', 'Placa', 'Conductor', 'Zona', 'Valor Ruta', 'Valor Flete', 'Pedidos', 'Firma Conductor']],
         body: data,
         startY: 45, // Lower start Y to avoid logo overlap
         theme: 'grid',
         styles: { fontSize: 9, cellPadding: 3, minCellHeight: 15 },
         columnStyles: {
-            6: { cellWidth: 25 }, // Firma Conductor column
-            7: { cellWidth: 25 }  // Firma Operaciones column
+            4: { cellWidth: 22 }, // Valor Ruta
+            5: { cellWidth: 22 }, // Valor Flete
+            7: { cellWidth: 25 }  // Firma Conductor column
         }
     });
 

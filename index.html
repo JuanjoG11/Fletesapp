@@ -35,7 +35,7 @@
 
         <div class="form-grid" style="grid-template-columns: 1fr;">
             <div class="input-group">
-                <input id="user" type="text" placeholder="Usuario">
+                <input id="user" type="email" placeholder="Email">
             </div>
             <div class="input-group">
                 <input id="pass" type="password" placeholder="Contraseña">
@@ -47,35 +47,105 @@
 
         <p style="margin-top: 20px; font-size: 0.8rem; color: var(--text-muted);">
             Credenciales Demo:<br>
-            Admin: <b>admin / admin</b><br>
-            Operario: <b>operario / 123</b>
+            Admin: <b>admin_fletes@gmail.com / admin123</b><br>
+            Operario: <b>operario_fletes@gmail.com / operario123</b>
         </p>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        function login() {
-            const u = document.getElementById("user").value.trim();
-            const p = document.getElementById("pass").value.trim();
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-            if (u === 'admin' && p === 'admin') {
-                localStorage.setItem('role', 'admin');
-                window.location.href = 'dashboard.html';
-            } else if (u === 'operario' && p === '123') {
-                localStorage.setItem('role', 'operario');
-                window.location.href = 'dashboard.html';
-            } else {
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Supabase Client -->
+    <script src="supabase-client.js"></script>
+
+    <script>
+        async function login() {
+            const email = document.getElementById("user").value.trim();
+            const password = document.getElementById("pass").value.trim();
+
+            if (!email || !password) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Campos vacíos',
+                    text: 'Por favor ingresa email y contraseña',
+                    background: '#1e293b',
+                    color: '#fff'
+                });
+                return;
+            }
+
+            // Mostrar indicador de carga
+            Swal.fire({
+                title: 'Iniciando sesión...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading(),
+                background: '#1e293b',
+                color: '#fff'
+            });
+
+            try {
+                const resultado = await window.supabaseClient.iniciarSesion(email, password);
+
+                if (resultado.success) {
+                    // Guardar rol en localStorage para compatibilidad
+                    localStorage.setItem('role', resultado.user.rol);
+                    localStorage.setItem('userId', resultado.user.id);
+                    localStorage.setItem('userName', resultado.user.nombre);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Bienvenido!',
+                        text: `Hola ${resultado.user.nombre}`,
+                        timer: 1500,
+                        showConfirmButton: false,
+                        background: '#1e293b',
+                        color: '#fff'
+                    }).then(() => {
+                        window.location.href = 'dashboard.html';
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de autenticación',
+                        text: resultado.error || 'Credenciales incorrectas',
+                        background: '#1e293b',
+                        color: '#fff'
+                    });
+                }
+            } catch (error) {
+                console.error('Error en login:', error);
                 Swal.fire({
                     icon: 'error',
-                    title: 'Error',
-                    text: 'Credenciales incorrectas',
-                    background: '#1e293b', color: '#fff'
+                    title: 'Error de Conexión',
+                    text: `No se pudo conectar: ${error.message || 'Error desconocido'}. Revisa la consola (F12) para más detalles.`,
+                    background: '#1e293b',
+                    color: '#fff'
                 });
             }
         }
 
-        // Check if already logged in
-        if (localStorage.getItem('role')) window.location.href = 'dashboard.html';
+        // Permitir login con Enter
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('pass').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') login();
+            });
+        });
+
+        // Comentado para evitar auto-logins no deseados y permitir cambio de roles
+        /*
+        (async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('logout')) return;
+
+            try {
+                const { session, user } = await window.supabaseClient.obtenerSesionActual();
+                if (session && user) window.location.href = 'dashboard.html';
+            } catch (err) {}
+        })();
+        */
     </script>
 
 </body>

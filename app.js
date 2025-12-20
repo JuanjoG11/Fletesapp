@@ -1,23 +1,14 @@
-// ==========================================================
-// 🚀 DATA INICIAL — FLOTA (Persistencia Storage + Defaults)
-// ==========================================================
-const FLOTA_DEFAULTS = [
-    { placa: "ABC-123", conductor: "Juan Pérez", capacidad: "20 Ton", modelo: "Camión Pesado" },
-    { placa: "DEF-456", conductor: "Carlos Ruiz", capacidad: "8 Ton", modelo: "Furgón Mediano" },
-    { placa: "GHI-789", conductor: "Maria Diaz", capacidad: "35 Ton", modelo: "Tractomula" },
-    { placa: "JKL-012", conductor: "Pedro Gomez", capacidad: "2 Ton", modelo: "Van de Reparto" }
-];
-
-// Cargar Flota de Storage o usar Defaults
-let FLOTA_VEHICULOS = JSON.parse(localStorage.getItem("flota")) || FLOTA_DEFAULTS;
-
+let FLOTA_VEHICULOS = [];
 let ID_FLETE_EDITANDO = null;
+let CURRENT_SESSION = null; // Cache para la sesión
+let CACHED_FLETES = [];     // Cache para listados rápidos
 
 // ==========================================================
 // 🛠️ UTILS & FORMATTERS
 // ==========================================================
-function save(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
-function load(key) { return JSON.parse(localStorage.getItem(key)) || []; }
+// Nota: save y load ya no se usarán para datos de negocio, solo para UI/Tema
+function saveUI(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+function loadUI(key) { return JSON.parse(localStorage.getItem(key)) || null; }
 
 const moneyFormatter = new Intl.NumberFormat('es-CO', {
     style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0
@@ -40,15 +31,24 @@ function formatMoneyInput(input) {
 // ==========================================================
 // 🔐 ROLES & PERMISOS
 // ==========================================================
-function checkAuth() {
-    const role = localStorage.getItem("role");
-    const userRoleBadge = document.getElementById("userRoleBadge");
+async function checkAuth() {
+    // Usar cache de sesión si existe y tiene el perfil
+    if (!CURRENT_SESSION || !CURRENT_SESSION.profile) {
+        const { session, user: profile } = await window.supabaseClient.obtenerSesionActual();
+        if (session) {
+            CURRENT_SESSION = { ...session, profile };
+        }
+    }
+    const session = CURRENT_SESSION;
 
-    if (!role) {
+    if (!session) {
         window.location.href = "index.html";
         return;
     }
 
+    const role = session.profile?.rol || session.user?.user_metadata?.rol || 'operario';
+
+    const userRoleBadge = document.getElementById("userRoleBadge");
     if (userRoleBadge) {
         userRoleBadge.textContent = role === 'admin' ? 'Administrador' : 'Operario Logístico';
     }
@@ -61,10 +61,10 @@ function checkAuth() {
 
     if (role === 'admin') {
         // PERFIL ADMIN (AHORA GESTIONA VEHÍCULOS)
-        if (navFletes) navFletes.style.display = 'flex';       // Puede ver lista
-        if (navVehiculos) navVehiculos.style.display = 'flex'; // Puede registrar vehiculos
-        if (navCrear) navCrear.style.display = 'none';         // No crea fletes
-        if (navStats) navStats.style.display = 'none';         // No ve stats
+        if (navFletes) navFletes.style.display = 'flex';
+        if (navVehiculos) navVehiculos.style.display = 'flex';
+        if (navCrear) navCrear.style.display = 'none';
+        if (navStats) navStats.style.display = 'none';
 
         // Redirect if on forbidden tab
         const activeTab = document.querySelector('.nav-item.active')?.dataset.tab;
@@ -74,24 +74,21 @@ function checkAuth() {
     } else {
         // PERFIL OPERARIO (AHORA CREA FLETES Y VE ESTADÍSTICAS)
         if (navFletes) navFletes.style.display = 'flex';
-        if (navVehiculos) navVehiculos.style.display = 'none'; // Operario usa Crear Flete
+        if (navVehiculos) navVehiculos.style.display = 'none';
         if (navCrear) navCrear.style.display = 'flex';
         if (navStats) navStats.style.display = 'flex';
     }
 }
 
-function logout() {
-    localStorage.removeItem("role");
-    window.location.href = "index.html";
+async function logout() {
+    await SupabaseClient.auth.logout();
+    CURRENT_SESSION = null;
+    window.location.href = "index.html?logout=true";
 }
 
 // ==========================================================
 // 🚗 AUTO-FILL LOGIC & FLEET MANAGEMENT
 // ==========================================================
-function updateFleetStorage() {
-    save("flota", FLOTA_VEHICULOS);
-}
-
 function buscarConductorPorPlaca(placaId, conductorId) {
     const placaInput = document.getElementById(placaId);
     const conductorInput = document.getElementById(conductorId);
@@ -100,9 +97,9 @@ function buscarConductorPorPlaca(placaId, conductorId) {
 
     placaInput.addEventListener("input", function () {
         const val = this.value.toUpperCase();
-        // Recargar flota por si hubo cambios recientes
-        FLOTA_VEHICULOS = JSON.parse(localStorage.getItem("flota")) || FLOTA_DEFAULTS;
+        if (val.length < 3) return;
 
+        // Buscar en cache local primero
         const vehiculo = FLOTA_VEHICULOS.find(v => v.placa === val);
 
         if (vehiculo) {
@@ -110,28 +107,36 @@ function buscarConductorPorPlaca(placaId, conductorId) {
             conductorInput.style.borderColor = "#10b981";
             conductorInput.style.boxShadow = "0 0 10px rgba(16, 185, 129, 0.2)";
         } else {
-            conductorInput.value = ""; // Clear if not found
-            conductorInput.style.borderColor = "var(--glass-border)"; // Reset
+            // Si no está en cache, no borramos para dejar que el usuario escriba
+            conductorInput.style.borderColor = "var(--glass-border)";
             conductorInput.style.boxShadow = "none";
         }
     });
 }
 
-function listarVehiculos() {
+async function listarVehiculos() {
     const tbody = document.getElementById("tablaVehiculos");
     if (!tbody) return;
 
-    tbody.innerHTML = "";
-    const flota = JSON.parse(localStorage.getItem("flota")) || FLOTA_DEFAULTS;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center"><i class="ri-loader-4-line rotate"></i> Cargando vehículos...</td></tr>`;
 
-    flota.slice().reverse().forEach(v => {
+    const res = await SupabaseClient.vehiculos.getAll();
+    FLOTA_VEHICULOS = res.success ? res.data : [];
+
+    tbody.innerHTML = "";
+    if (FLOTA_VEHICULOS.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center">No hay vehículos registrados</td></tr>`;
+        return;
+    }
+
+    FLOTA_VEHICULOS.forEach(v => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td><span class="badge-plate">${v.placa}</span></td>
             <td>${v.conductor}</td>
             <td style="color: var(--text-muted)">${v.modelo || 'N/A'}</td>
             <td class="actions-cell">
-                <button class="btn-icon delete" onclick="eliminarVehiculo('${v.placa}')" title="Eliminar Vehículo">
+                <button class="btn-icon delete" onclick="eliminarVehiculo('${v.id}', '${v.placa}')" title="Eliminar Vehículo">
                     <i class="ri-delete-bin-line"></i>
                 </button>
             </td>
@@ -140,8 +145,8 @@ function listarVehiculos() {
     });
 }
 
-function eliminarVehiculo(placa) {
-    Swal.fire({
+async function eliminarVehiculo(id, placa) {
+    const { isConfirmed } = await Swal.fire({
         title: '¿Eliminar Vehículo?',
         text: `Se eliminará la placa ${placa} de la base de datos.`,
         icon: 'warning',
@@ -152,12 +157,13 @@ function eliminarVehiculo(placa) {
         cancelButtonText: 'Cancelar',
         background: '#1e293b',
         color: '#f8fafc'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            FLOTA_VEHICULOS = FLOTA_VEHICULOS.filter(v => v.placa !== placa);
-            updateFleetStorage();
-            listarVehiculos();
-            actualizarKPI();
+    });
+
+    if (isConfirmed) {
+        const result = await SupabaseClient.vehiculos.delete(id);
+        if (result) {
+            await listarVehiculos();
+            await actualizarKPI();
             Swal.fire({
                 title: 'Eliminado',
                 icon: 'success',
@@ -166,12 +172,13 @@ function eliminarVehiculo(placa) {
                 background: '#1e293b',
                 color: '#f8fafc'
             });
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar el vehículo. Verifique sus permisos.', background: '#1e293b', color: '#f8fafc' });
         }
-    });
+    }
 }
 
-// Función Operario: Registrar Vehículo
-function registrarVehiculoOperario() {
+async function registrarVehiculoOperario() {
     const placaInput = document.getElementById("op_placa");
     const condInput = document.getElementById("op_conductor");
     const modInput = document.getElementById("op_modelo");
@@ -184,25 +191,29 @@ function registrarVehiculoOperario() {
         return Swal.fire({ icon: 'warning', title: 'Faltan Datos', text: 'Ingrese Placa y Conductor', background: '#1a1a1a', color: '#fff' });
     }
 
-    // Check existing
-    const exists = FLOTA_VEHICULOS.find(v => v.placa === placa);
-    if (exists) {
-        return Swal.fire({ icon: 'info', title: 'Ya existe', text: `La placa ${placa} ya está registrada a ${exists.conductor}.`, background: '#1a1a1a', color: '#fff' });
-    }
+    const { user } = await SupabaseClient.auth.getSession();
 
-    FLOTA_VEHICULOS.push({ placa, conductor, capacidad: "N/A", modelo: modelo });
-    updateFleetStorage();
-    listarVehiculos(); // Update table
-
-    placaInput.value = "";
-    condInput.value = "";
-    if (modInput) modInput.value = "";
-
-    Swal.fire({
-        icon: 'success', title: 'Vehículo Registrado',
-        text: 'Ahora el Administrador podrá ver este vehículo.',
-        timer: 1500, showConfirmButton: false, background: '#1a1a1a', color: '#fff'
+    const result = await SupabaseClient.vehiculos.create({
+        placa,
+        conductor,
+        modelo,
+        created_by: user.id
     });
+
+    if (result.success) {
+        await listarVehiculos();
+        placaInput.value = "";
+        condInput.value = "";
+        if (modInput) modInput.value = "";
+
+        Swal.fire({
+            icon: 'success', title: 'Vehículo Registrado',
+            text: 'El vehículo ha sido guardado exitosamente.',
+            timer: 1500, showConfirmButton: false, background: '#1a1a1a', color: '#fff'
+        });
+    } else {
+        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo registrar el vehículo: ' + (result.error || 'Placa duplicada'), background: '#1a1a1a', color: '#fff' });
+    }
 }
 
 // ==========================================================
@@ -288,7 +299,7 @@ function setupCalculators(prefix = "") {
 // ==========================================================
 // 📝 FLETES C.R.U.D
 // ==========================================================
-function obtenerDatosFormulario(prefix = "") {
+async function obtenerDatosFormulario(prefix = "") {
     const p = prefix;
     const val = (id) => document.getElementById(p + id)?.value || "";
 
@@ -305,20 +316,58 @@ function obtenerDatosFormulario(prefix = "") {
     const valorRutaRaw = val("valor_ruta");
     const precioRaw = val("total_flete");
 
-    return {
-        id: prefix.includes("modal") ? ID_FLETE_EDITANDO : Date.now(),
-        placa, contratista, zona, dia, poblacion,
-        valorRuta: parseMoney(valorRutaRaw),
-        precio: parseMoney(precioRaw),
-        adicionales, noPedidos, auxiliares, noAux,
-        fecha: prefix.includes("modal") ? (load("fletes").find(f => f.id === ID_FLETE_EDITANDO)?.fecha || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0]
+    const { user } = await SupabaseClient.auth.getSession();
+
+    // Buscar el ID del vehículo por placa
+    let resV = await SupabaseClient.vehiculos.getByPlaca(placa);
+    let vehiculo = resV.data;
+
+    if (!vehiculo && placa && contratista) {
+        // Opcional: registrar vehículo si no existe
+        const res = await SupabaseClient.vehiculos.create({
+            placa,
+            conductor: contratista,
+            modelo: 'Autocreado'
+        });
+        if (res.success) {
+            vehiculo = res.data;
+        }
+    }
+
+    const finalData = {
+        // Campos para la Base de Datos
+        db: {
+            vehiculo_id: vehiculo?.id,
+            user_id: user.id,
+            contratista,
+            zona,
+            dia,
+            poblacion,
+            valor_ruta: parseMoney(valorRutaRaw),
+            precio: parseMoney(precioRaw),
+            adicionales,
+            no_pedidos: parseInt(noPedidos || 0),
+            auxiliares,
+            no_auxiliares: parseInt(noAux || 0),
+            fecha: val("fecha") || new Date().toISOString().split('T')[0]
+        },
+        // Campos para validación UI
+        ui: {
+            placa
+        }
     };
+
+    if (prefix.includes("modal")) {
+        finalData.db.id = ID_FLETE_EDITANDO;
+    }
+
+    return finalData;
 }
 
-function crearFlete() {
-    const data = obtenerDatosFormulario("");
+async function crearFlete() {
+    const { db, ui } = await obtenerDatosFormulario("");
 
-    if (!data.placa || !data.contratista || !data.zona || data.precio <= 0) {
+    if (!ui.placa || !db.contratista || !db.zona || db.precio <= 0) {
         Swal.fire({
             icon: 'warning', title: 'Faltan Datos', text: 'Verifique Placa, Conductor, Zona y Valor.',
             background: '#1a1a1a', color: '#fff'
@@ -326,41 +375,42 @@ function crearFlete() {
         return;
     }
 
-    // Auto-save new fleet entry if admin manually typed a new one
-    const exists = FLOTA_VEHICULOS.find(v => v.placa === data.placa);
-    if (!exists) {
-        FLOTA_VEHICULOS.push({ placa: data.placa, conductor: data.contratista, capacidad: "N/A", modelo: "N/A" });
-        updateFleetStorage();
+    const result = await SupabaseClient.fletes.create(db);
+
+    if (result.success) {
+        limpiarFormulario("");
+        await listarFletes();
+        await actualizarKPI();
+
+        Swal.fire({
+            icon: 'success', title: 'Guardado', text: `Flete de ${ui.placa} registrado en la nube.`,
+            timer: 1500, showConfirmButton: false, background: '#1a1a1a', color: '#fff'
+        });
+    } else {
+        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo guardar el flete: ' + (result.error || 'Error desconocido'), background: '#1a1a1a', color: '#fff' });
     }
-
-    const fletes = load("fletes");
-    fletes.push(data);
-    save("fletes", fletes);
-
-    limpiarFormulario("");
-    listarFletes();
-    actualizarKPI();
-
-    Swal.fire({
-        icon: 'success', title: 'Guardado', text: `Flete de ${data.placa} registrado.`,
-        timer: 1500, showConfirmButton: false, background: '#1a1a1a', color: '#fff'
-    });
 }
 
-function guardarCambiosFlete() {
-    const data = obtenerDatosFormulario("modal-");
-    let fletes = load("fletes");
+async function guardarCambiosFlete() {
+    const { db, ui } = await obtenerDatosFormulario("modal-");
 
-    fletes = fletes.map(f => f.id === ID_FLETE_EDITANDO ? data : f);
-    save("fletes", fletes);
+    if (!ui.placa || !db.contratista || !db.zona || db.precio <= 0) {
+        return Swal.fire({ icon: 'warning', title: 'Faltan Datos', background: '#1a1a1a', color: '#fff' });
+    }
 
-    ocultarModalEdicion();
-    listarFletes();
-    actualizarKPI();
+    const result = await SupabaseClient.fletes.update(ID_FLETE_EDITANDO, db);
 
-    Swal.fire({
-        icon: 'success', title: 'Actualizado', background: '#1a1a1a', color: '#fff', timer: 1500, showConfirmButton: false
-    });
+    if (result.success) {
+        ocultarModalEdicion();
+        await listarFletes();
+        await actualizarKPI();
+
+        Swal.fire({
+            icon: 'success', title: 'Actualizado', background: '#1a1a1a', color: '#fff', timer: 1500, showConfirmButton: false
+        });
+    } else {
+        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar el flete: ' + (result.error || 'Error desconocido'), background: '#1a1a1a', color: '#fff' });
+    }
 }
 
 function limpiarFormulario(prefix) {
@@ -379,42 +429,66 @@ function limpiarFormulario(prefix) {
 // ==========================================================
 // 📋 LISTADOS & ACCIONES
 // ==========================================================
-function listarFletes() {
-    const fletes = load("fletes");
+async function listarFletes(useCache = false) {
     const tbody = document.getElementById("tablaFletes");
     if (!tbody) return;
 
-    tbody.innerHTML = "";
-    const role = localStorage.getItem("role");
+    if (!useCache) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center"><i class="ri-loader-4-line rotate"></i> Cargando fletes...</td></tr>`;
+        const { data, error } = await SupabaseClient.supabase
+            .from('vista_fletes_completos')
+            .select('*')
+            .order('fecha', { ascending: false });
 
-    // Filtros
+        if (error) {
+            console.error("Error cargando fletes:", error);
+            tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color: #ef4444">Error al cargar datos</td></tr>`;
+            return;
+        }
+        CACHED_FLETES = data;
+    }
+
+    // Filtros sobre cache (Instantáneo)
     const q = document.getElementById("buscarFlete")?.value.toLowerCase() || "";
     const fZona = document.getElementById("filtroZona")?.value || "";
     const fFecha = document.getElementById("filtroFecha")?.value || "";
 
-    const filtered = fletes.filter(f => {
-        const matchQ = (f.placa.toLowerCase().includes(q) || f.contratista.toLowerCase().includes(q));
+    const session = CURRENT_SESSION;
+    const role = session?.profile?.rol || session?.user?.user_metadata?.rol || 'operario';
+    const currentUserId = session?.user?.id;
+
+    const filtered = CACHED_FLETES.filter(f => {
+        const contratista = f.contratista || '';
+        const placa = f.placa || '';
+        const matchQ = (placa.toLowerCase().includes(q) || contratista.toLowerCase().includes(q));
         const matchZ = fZona ? f.zona === fZona : true;
         const matchF = fFecha ? f.fecha === fFecha : true;
         return matchQ && matchZ && matchF;
     });
 
-    filtered.reverse().slice(0, 50).forEach(f => {
-        const tr = document.createElement("tr");
-        const actions = role === 'operario' ? `
-            <button class="btn-icon edit" onclick="editarFlete(${f.id})"><i class="ri-pencil-line"></i></button>
-            <button class="btn-icon delete" onclick="eliminarFlete(${f.id})"><i class="ri-delete-bin-line"></i></button>
-        ` : `<span style="font-size:0.8rem; opacity:0.7">Solo Lectura</span>`;
+    tbody.innerHTML = "";
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center">No se encontraron fletes</td></tr>`;
+        return;
+    }
 
-        // Datos reales completos
+    filtered.forEach(f => {
+        const tr = document.createElement("tr");
+        const canEdit = role === 'operario' && f.user_id === currentUserId;
+
+        const actions = canEdit ? `
+            <button class="btn-icon edit" onclick="editarFlete('${f.id}')"><i class="ri-pencil-line"></i></button>
+            <button class="btn-icon delete" onclick="eliminarFlete('${f.id}')"><i class="ri-delete-bin-line"></i></button>
+        ` : `<span style="font-size:0.7rem; opacity:0.5">${role === 'admin' ? 'Solo Lectura' : 'No Propietario'}</span>`;
+
         tr.innerHTML = `
             <td>${f.fecha}</td>
             <td>${f.dia || '-'}</td>
             <td><strong>${f.contratista}</strong></td>
             <td><span class="badge-plate">${f.placa}</span></td>
-            <td>${f.poblacion || 'Pereira'}</td>
-            <td>${f.noAux || 0} (${f.auxiliares || '-'})</td>
-            <td class="price-cell">${moneyFormatter.format(f.valorRuta || 0)}</td>
+            <td>${f.poblacion || 'N/A'}</td>
+            <td>${f.no_auxiliares || 0} (${f.auxiliares || '-'})</td>
+            <td class="price-cell">${moneyFormatter.format(f.valor_ruta || 0)}</td>
             <td class="price-cell">${moneyFormatter.format(f.precio)}</td>
             <td class="actions-cell">${actions}</td>
         `;
@@ -422,15 +496,22 @@ function listarFletes() {
     });
 }
 
-function buscarFletes() { listarFletes(); }
+function buscarFletes() { listarFletes(true); }
 
-window.editarFlete = function (id) {
-    // Solo operarios editan
-    if (localStorage.getItem("role") === 'admin') return;
+window.editarFlete = async function (id) {
+    const { session } = await SupabaseClient.auth.getSession();
+    if (session?.user?.user_metadata?.rol === 'admin') return;
 
     ID_FLETE_EDITANDO = id;
-    const f = load("fletes").find(x => x.id === id);
-    if (!f) return;
+
+    // Obtener flete específico de la base de datos
+    const { data: f, error } = await SupabaseClient.supabase
+        .from('vista_fletes_completos')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+    if (error || !f) return;
 
     const set = (k, v) => {
         const el = document.getElementById("modal-" + k);
@@ -443,35 +524,39 @@ window.editarFlete = function (id) {
     set("dia", f.dia);
     set("poblacion", f.poblacion);
     set("auxiliares", f.auxiliares);
-    set("no_auxiliares", f.noAux);
-    set("no_pedidos", f.noPedidos);
+    set("no_auxiliares", f.no_auxiliares);
+    set("no_pedidos", f.no_pedidos);
 
-    set("valor_ruta", moneyFormatter.format(f.valorRuta));
+    set("valor_ruta", moneyFormatter.format(f.valor_ruta));
     set("is_adicionales", f.adicionales);
     set("total_flete", moneyFormatter.format(f.precio));
 
     document.getElementById("modalEdicionFlete").classList.add("visible");
 };
 
-window.eliminarFlete = function (id) {
-    if (localStorage.getItem("role") === 'admin') {
-        Swal.fire({ icon: 'error', title: 'Acceso Denegado', background: '#1a1a1a', color: '#fff' });
+window.eliminarFlete = async function (id) {
+    const { session } = await SupabaseClient.auth.getSession();
+    if (session?.user?.user_metadata?.rol === 'admin') {
+        Swal.fire({ icon: 'error', title: 'Acceso Denegado', text: 'Solo los operarios pueden eliminar fletes.', background: '#1a1a1a', color: '#fff' });
         return;
     }
-    Swal.fire({
+
+    const { isConfirmed } = await Swal.fire({
         title: '¿Eliminar Flete?', icon: 'warning',
         showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Eliminar',
         background: '#1a1a1a', color: '#fff'
-    }).then((r) => {
-        if (r.isConfirmed) {
-            let fletes = load("fletes");
-            fletes = fletes.filter(f => f.id !== id);
-            save("fletes", fletes);
-            listarFletes();
-            actualizarKPI();
-            Swal.fire({ title: 'Eliminado', icon: 'success', background: '#1a1a1a', color: '#fff', timer: 1000, showConfirmButton: false });
-        }
     });
+
+    if (isConfirmed) {
+        const result = await SupabaseClient.fletes.delete(id);
+        if (result) {
+            await listarFletes();
+            await actualizarKPI();
+            Swal.fire({ title: 'Eliminado', icon: 'success', background: '#1a1a1a', color: '#fff', timer: 1000, showConfirmButton: false });
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar el flete. Verifique que sea el propietario.', background: '#1a1a1a', color: '#fff' });
+        }
+    }
 };
 
 function ocultarModalEdicion() {
@@ -483,29 +568,23 @@ function ocultarModalEdicion() {
 // ==========================================================
 // 📊 KPI & DASHBOARD ENRICHMENT
 // ==========================================================
-function actualizarKPI() {
-    const fletes = load("fletes");
-    const flota = JSON.parse(localStorage.getItem("flota")) || FLOTA_DEFAULTS;
+async function actualizarKPI() {
+    // Obtener estadísticas desde SupabaseClient
+    const stats = await SupabaseClient.fletes.getStats();
 
     // 1. Total Fletes
     const el = document.getElementById("cantFletes");
-    if (el) el.innerText = fletes.length;
+    if (el) el.innerText = stats.totalFletes;
 
     // 2. Ingresos Mes Actual
-    const now = new Date();
-    const currentMonth = now.toISOString().substring(0, 7); // YYYY-MM
-    const totalMes = fletes
-        .filter(f => f.fecha.startsWith(currentMonth))
-        .reduce((sum, f) => sum + f.precio, 0);
-
     const kpiIngresos = document.getElementById("kpiIngresos");
-    if (kpiIngresos) kpiIngresos.innerText = moneyFormatter.format(totalMes);
+    if (kpiIngresos) kpiIngresos.innerText = moneyFormatter.format(stats.ingresosMes);
 
     // 3. Vehiculos Activos
     const kpiVehiculos = document.getElementById("kpiVehiculos");
-    if (kpiVehiculos) kpiVehiculos.innerText = flota.length;
+    if (kpiVehiculos) kpiVehiculos.innerText = stats.vehiculosActivos;
 
-    generarGraficos();
+    await generarGraficos();
 }
 
 // ==========================================================
@@ -531,9 +610,13 @@ function setupTheme() {
 // ==========================================================
 // 📂 EXPORTS
 // ==========================================================
-function exportarExcel() {
-    const fletes = load("fletes");
-    if (fletes.length === 0) return Swal.fire("Info", "Sin datos para exportar", "info");
+async function exportarExcel() {
+    const { data: fletes, error } = await SupabaseClient.supabase
+        .from('vista_fletes_completos')
+        .select('*');
+
+    if (error || !fletes || fletes.length === 0) return Swal.fire("Info", "Sin datos para exportar", "info");
+
     const ws = XLSX.utils.json_to_sheet(fletes);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Fletes");
@@ -541,27 +624,35 @@ function exportarExcel() {
 }
 
 async function generarPDF() {
-    const fletes = load("fletes");
-    if (fletes.length === 0) return Swal.fire("Info", "Sin datos para exportar", "info");
+    const { data: fletes, error } = await SupabaseClient.supabase
+        .from('vista_fletes_completos')
+        .select('*');
+
+    if (error || !fletes || fletes.length === 0) return Swal.fire("Info", "Sin datos para exportar", "info");
 
     const data = fletes.map(f => [
         f.fecha,
         f.placa,
         f.contratista,
         f.zona,
-        moneyFormatter.format(f.valorRuta || 0),  // Valor Ruta (base)
-        moneyFormatter.format(f.precio),          // Valor Flete (total a pagar)
-        f.noPedidos,
-        '' // Firma Conductor
+        moneyFormatter.format(f.valor_ruta || 0),
+        moneyFormatter.format(f.precio),
+        f.no_pedidos || 0,
+        ''
     ]);
 
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+
+    // 1. INICIALIZACIÓN EN HORIZONTAL (landscape)
+    const doc = new jsPDF({
+        orientation: 'l', // 'l' es para landscape
+        unit: 'mm',
+        format: 'a4'
+    });
 
     // LOGO INTEGRATION
     const imgEl = document.querySelector(".logo-img");
     if (imgEl) {
-        // Simple way: create canvas, draw img, get b64
         const canvas = document.createElement("canvas");
         canvas.width = imgEl.naturalWidth;
         canvas.height = imgEl.naturalHeight;
@@ -569,28 +660,28 @@ async function generarPDF() {
         ctx.drawImage(imgEl, 0, 0);
         try {
             const imgData = canvas.toDataURL("image/png");
-            doc.addImage(imgData, 'PNG', 14, 10, 30, 0); // x, y, w, h(auto)
+            doc.addImage(imgData, 'PNG', 14, 10, 30, 0);
         } catch (e) {
-            console.warn("No se pudo cargar logo al PDF (CORS/Format)", e);
+            console.warn("Error con el logo", e);
         }
     }
 
+    // 2. AJUSTE DE TEXTOS (Ahora el ancho es 297mm)
     doc.setFontSize(18);
-    // Adjust Text Y based on logo
     doc.text("Planilla de Despacho - FletesApp", 50, 20);
     doc.setFontSize(11);
-    doc.text(`Fecha de Impresión: ${new Date().toLocaleDateString()} `, 50, 28);
+    doc.text(`Fecha de Impresión: ${new Date().toLocaleDateString()}`, 50, 28);
 
+    // 3. TABLA AUTOMÁTICA
     doc.autoTable({
         head: [['Fecha', 'Placa', 'Conductor', 'Zona', 'Valor Ruta', 'Valor Flete', 'Pedidos', 'Firma Conductor']],
         body: data,
-        startY: 45, // Lower start Y to avoid logo overlap
+        startY: 45,
         theme: 'grid',
-        styles: { fontSize: 9, cellPadding: 3, minCellHeight: 15 },
+        styles: { fontSize: 10, cellPadding: 3 }, // Subí un poco el tamaño de fuente ya que hay más espacio
+        // Opcional: ajustar anchos de columna para aprovechar el espacio horizontal
         columnStyles: {
-            4: { cellWidth: 22 }, // Valor Ruta
-            5: { cellWidth: 22 }, // Valor Flete
-            7: { cellWidth: 25 }  // Firma Conductor column
+            7: { cellWidth: 40 } // Más espacio para la firma
         }
     });
 
@@ -605,31 +696,29 @@ window.generarPDFReporte = generarPDF; // Alias for HTML button
 let myChart = null;
 let myChart2 = null;
 
-function generarGraficos() {
-    // Si rol admin, no renderizar
-    if (localStorage.getItem("role") === 'admin') return;
+async function generarGraficos() {
+    const { session } = await SupabaseClient.auth.getSession();
+    // Permitir a todos ver gráficos si están en la pestaña
 
-    // Validar existencia elementos
     const ctx = document.getElementById("chartZonas");
     const ctx2 = document.getElementById("chartIngresos");
+    if (!ctx) return;
 
-    if (!ctx) return; // Si no estamos en tab stats
-
-    const fletes = load("fletes");
+    // Obtener todos los fletes para graficar
+    const { data: fletes, error } = await SupabaseClient.supabase.from('fletes').select('zona, precio, fecha');
+    if (error || !fletes) return;
 
     // --- Chart 1: Zonas ---
     const count = {};
     fletes.forEach(f => count[f.zona] = (count[f.zona] || 0) + 1);
 
     if (myChart) myChart.destroy();
-
     myChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: Object.keys(count),
             datasets: [{
                 data: Object.values(count),
-                // 🎨 VIBRANT PALETTE
                 backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'],
                 borderWidth: 0
             }]
@@ -641,23 +730,18 @@ function generarGraficos() {
         }
     });
 
-    // --- Chart 2: Ingresos por Mes (Real Data) ---
+    // --- Chart 2: Ingresos por Mes ---
     if (!ctx2) return;
-
-    // Agrupar ingresos por mes (YY-MM)
     const ingresosPorMes = {};
     fletes.forEach(f => {
-        // f.fecha is YYYY-MM-DD
-        const mesKey = f.fecha.substring(0, 7); // "2023-10"
-        ingresosPorMes[mesKey] = (ingresosPorMes[mesKey] || 0) + f.precio;
+        const mesKey = f.fecha.substring(0, 7);
+        ingresosPorMes[mesKey] = (ingresosPorMes[mesKey] || 0) + parseFloat(f.precio);
     });
 
-    // Ordenar cronológicamente
     const labels = Object.keys(ingresosPorMes).sort();
     const dataVals = labels.map(k => ingresosPorMes[k]);
 
     if (myChart2) myChart2.destroy();
-
     myChart2 = new Chart(ctx2, {
         type: 'bar',
         data: {
@@ -685,45 +769,59 @@ function generarGraficos() {
 // ==========================================================
 // 🚀 INIT - DOM LOADED
 // ==========================================================
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     try {
-        console.log("🚀 FletesApp Inicializando...");
+        console.log("🚀 FletesApp Inicializando con Supabase...");
 
         setupTheme(); // Init Theme
-        checkAuth();  // Init Auth & Role UI
-        listarVehiculos(); // List Fleet (Operario)
+        await checkAuth();  // Init Auth & Role UI (Async)
+
+        // Carga inicial de datos en paralelo
+        Promise.all([
+            listarVehiculos(),
+            listarFletes(),
+            actualizarKPI()
+        ]).then(() => console.log("✅ Datos cargados"));
 
         // 1. Navigation
         const tabs = document.querySelectorAll(".nav-item");
         tabs.forEach(t => {
-            t.addEventListener("click", () => {
+            t.addEventListener("click", async () => {
                 const target = t.dataset.tab;
+                const session = CURRENT_SESSION;
+                const role = session?.user?.user_metadata?.rol;
 
-                // Prevent admin entering statistics
-                if (localStorage.getItem("role") === 'admin' && target === 'estadisticas') return;
+                if (role === 'admin' && target === 'estadisticas') return;
 
                 document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("visible"));
                 document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
 
                 document.getElementById(target).classList.add("visible");
                 t.classList.add("active");
-                if (target === 'estadisticas') generarGraficos();
+                if (target === 'estadisticas') await generarGraficos();
             });
         });
 
-        // 2. Botones Principales
-        // btnGestionarFlete already has onclick in HTML - removed duplicate addEventListener to prevent double save
-        // document.getElementById("btnGestionarFlete")?.addEventListener("click", crearFlete);
-        document.getElementById("btnRegistrarVehiculo")?.addEventListener("click", registrarVehiculoOperario); // NEW BOTON
+        // 2. Event Listeners
+        document.getElementById("btnGestionarFlete")?.addEventListener("click", async (e) => {
+            e.preventDefault();
+            await crearFlete();
+        });
 
+        document.getElementById("btnRegistrarVehiculo")?.addEventListener("click", registrarVehiculoOperario);
         document.getElementById("btnGuardarModal")?.addEventListener("click", guardarCambiosFlete);
         document.getElementById("btnCancelarModal")?.addEventListener("click", ocultarModalEdicion);
         document.getElementById("btnCloseModal")?.addEventListener("click", ocultarModalEdicion);
         document.getElementById("btnLogout")?.addEventListener("click", logout);
 
         // 3. Exportaciones
-        document.getElementById("btnExportarExcel")?.addEventListener("click", exportarExcel);
-        document.getElementById("btnExportarPDF")?.addEventListener("click", generarPDF);
+        document.getElementById("btnExportarExcel")?.addEventListener("click", async () => {
+            await exportarExcel();
+        });
+
+        document.getElementById("btnExportarPDF")?.addEventListener("click", async () => {
+            await generarPDF();
+        });
 
         // 4. Filtros
         document.getElementById("buscarFlete")?.addEventListener("keyup", buscarFletes);
@@ -737,16 +835,12 @@ document.addEventListener("DOMContentLoaded", () => {
         setupCalculators("");
         setupCalculators("modal-");
 
-        // 6. Carga Inicial
-        listarFletes();
-        actualizarKPI();
-
         // 7. Menu Mobile
         document.getElementById("menuToggleBtn")?.addEventListener("click", () => {
             document.querySelector(".sidebar").classList.toggle("open");
         });
 
     } catch (error) {
-        console.error("❌ Error Crítico:", error);
+        console.error("❌ Error Crítico en inicialización:", error);
     }
 });

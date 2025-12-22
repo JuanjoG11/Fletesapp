@@ -481,6 +481,7 @@ async function guardarCambiosFlete() {
     if (btn) btn.disabled = true;
 
     const { db, ui } = await obtenerDatosFormulario("modal-");
+    delete db.id; // IMPORTANTE: Supabase falla si intentas actualizar la PK 'id'
 
     if (!ui.placa || !db.contratista || !db.zona || db.precio <= 0) {
         if (btn) btn.disabled = false;
@@ -496,8 +497,9 @@ async function guardarCambiosFlete() {
         renderTable(CACHED_FLETES);
     }
 
+    const idToUpdate = ID_FLETE_EDITANDO;
     ocultarModalEdicion();
-    const result = await SupabaseClient.fletes.update(ID_FLETE_EDITANDO, db);
+    const result = await SupabaseClient.fletes.update(idToUpdate, db);
 
     if (result.success) {
         await listarFletes(true);
@@ -505,23 +507,33 @@ async function guardarCambiosFlete() {
         Swal.fire({ icon: 'success', title: 'Actualizado', background: '#1a1a1a', color: '#fff', timer: 1000, showConfirmButton: false });
     } else {
         // Revertir
-        if (oldFlete) CACHED_FLETES[index] = oldFlete;
+        if (oldFlete && index !== -1) CACHED_FLETES[index] = oldFlete;
         renderTable(CACHED_FLETES);
-        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar.', background: '#1a1a1a', color: '#fff' });
+        console.error("Error al actualizar flete:", result.error);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar: ' + (result.error || 'Error desconocido'), background: '#1a1a1a', color: '#fff' });
     }
 
     if (btn) btn.disabled = false;
 }
 
 function limpiarFormulario(prefix) {
-    const inputs = document.querySelectorAll(`[id^="${prefix}"]`);
-    inputs.forEach(i => {
-        if (i.tagName === 'SELECT') {
-            i.selectedIndex = 0;
-            // Forzar disparo de cambio para actualizar totales si es necesario
-            i.dispatchEvent(new Event('change'));
+    const fields = [
+        "placa", "contratista", "zona", "dia", "poblacion",
+        "auxiliares", "no_auxiliares", "no_pedidos",
+        "valor_ruta", "is_adicionales", "total_flete",
+        "porcentaje_ruta", "fecha"
+    ];
+
+    fields.forEach(f => {
+        const el = document.getElementById(prefix + f);
+        if (!el) return;
+
+        if (el.tagName === 'SELECT') {
+            el.selectedIndex = 0;
+            // Solo disparar change si no es el total (para evitar bucles)
+            if (f !== "total_flete") el.dispatchEvent(new Event('change'));
         } else {
-            i.value = "";
+            el.value = "";
         }
     });
 
@@ -553,7 +565,7 @@ async function listarFletes(silencioso = false) {
     const { data, error } = await SupabaseClient.supabase
         .from('vista_fletes_completos')
         .select('*')
-        .order('fecha', { ascending: false });
+        .order('created_at', { ascending: false });
 
     if (!error && data) {
         CACHED_FLETES = data;
@@ -605,6 +617,7 @@ function renderTable(fletes) {
             <td>${f.dia || '-'}</td>
             <td><strong>${f.contratista}</strong></td>
             <td><span class="badge-plate">${f.placa}</span></td>
+            <td>${f.zona || '-'}</td>
             <td>${f.poblacion || 'N/A'}</td>
             <td>${f.no_auxiliares || 0} (${f.auxiliares || '-'})</td>
             <td class="price-cell">${moneyFormatter.format(f.valor_ruta || 0)}</td>
@@ -637,6 +650,7 @@ window.editarFlete = async function (id) {
         if (el) el.value = v;
     };
 
+    set("fecha", f.fecha);
     set("placa", f.placa);
     set("contratista", f.contratista);
     set("zona", f.zona);

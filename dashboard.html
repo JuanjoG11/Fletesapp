@@ -186,6 +186,12 @@
                                 <option>25027</option>
                                 <option>25028</option>
                                 <option>25029</option>
+                                <option>PC01</option>
+                                <option>PC02</option>
+                                <option>PC03</option>
+                                <option>PQ01</option>
+                                <option>PQ02</option>
+                                <option>PQ03</option>
                             </select>
                         </div>
 
@@ -268,7 +274,8 @@
 
                         <div class="input-group">
                             <label>Nombres Auxiliares</label>
-                            <input id="auxiliares" type="text" placeholder="Separados por coma">
+                            <input id="auxiliares" type="text" placeholder="Separados por coma"
+                                oninput="this.value = this.value.toUpperCase()">
                         </div>
 
                         <div class="input-group">
@@ -426,6 +433,12 @@
                             <option>25027</option>
                             <option>25028</option>
                             <option>25029</option>
+                            <option>PC01</option>
+                            <option>PC02</option>
+                            <option>PC03</option>
+                            <option>PQ01</option>
+                            <option>PQ02</option>
+                            <option>PQ03</option>
                         </select>
                         <input type="date" id="filtroFecha" onchange="buscarFletes()">
                     </div>
@@ -439,6 +452,7 @@
                                 <th>Día</th>
                                 <th>Conductor</th>
                                 <th>Placa</th>
+                                <th>Zona</th>
                                 <th>Población</th>
                                 <th>Auxiliares</th>
                                 <th>Valor Ruta</th>
@@ -485,6 +499,7 @@
             <div class="modal-body">
                 <div class="form-grid">
                     <!-- Mismos campos con prefijo modal- -->
+                    <div class="input-group"> <label>Fecha</label> <input id="modal-fecha" type="date"> </div>
                     <div class="input-group"> <label>Placa</label> <input id="modal-placa"
                             oninput="this.value = this.value.toUpperCase().replace('-', '')"> </div>
                     <div class="input-group"> <label>Conductor</label> <input id="modal-contratista" readonly
@@ -530,6 +545,12 @@
                             <option>25027</option>
                             <option>25028</option>
                             <option>25029</option>
+                            <option>PC01</option>
+                            <option>PC02</option>
+                            <option>PC03</option>
+                            <option>PQ01</option>
+                            <option>PQ02</option>
+                            <option>PQ03</option>
                         </select>
                     </div>
 
@@ -602,7 +623,8 @@
                             <option>VITERBO</option>
                         </select> </div>
 
-                    <div class="input-group"> <label>Auxiliares</label> <input id="modal-auxiliares" type="text"> </div>
+                    <div class="input-group"> <label>Auxiliares</label> <input id="modal-auxiliares" type="text"
+                            oninput="this.value = this.value.toUpperCase()"> </div>
                     <div class="input-group"> <label>No. Aux</label> <select id="modal-no_auxiliares">
                             <option>0</option>
                             <option>1</option>

@@ -164,7 +164,7 @@ async function buscarVehiculoPorPlaca(placa) {
         const { data, error } = await _supabase
             .from('vehiculos')
             .select('*')
-            .eq('placa', placa.toUpperCase())
+            .eq('placa', placa.toUpperCase().replace(/[\s-]/g, ''))
             .single();
 
         if (error && error.code !== 'PGRST116') throw error;
@@ -188,7 +188,7 @@ async function crearVehiculo(vehiculoData) {
             .from('vehiculos')
             .insert([{
                 ...vehiculoData,
-                placa: vehiculoData.placa.toUpperCase(),
+                placa: vehiculoData.placa.toUpperCase().replace(/[\s-]/g, ''),
                 created_by: session?.session?.user?.id
             }])
             .select()
@@ -213,7 +213,7 @@ async function importarVehiculos(vehiculos) {
         const userId = sessionData?.session?.user?.id;
 
         const dataToInsert = vehiculos.map(v => ({
-            placa: v.placa.toUpperCase(),
+            placa: v.placa.toString().toUpperCase().replace(/[\s-]/g, ''),
             conductor: v.conductor,
             modelo: v.modelo || 'Estándar',
             activo: true,

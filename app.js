@@ -183,7 +183,8 @@ async function registrarVehiculoOperario() {
     const condInput = document.getElementById("op_conductor");
     const modInput = document.getElementById("op_modelo");
 
-    const placa = placaInput.value.toUpperCase().trim();
+    // Sanitizar placa: Mayúsculas, sin espacios, sin guiones
+    const placa = placaInput.value.toUpperCase().replace(/[\s-]/g, '').trim();
     const conductor = condInput.value.trim();
     const modelo = modInput.value.trim() || "Estándar";
 
@@ -222,17 +223,63 @@ async function registrarVehiculoOperario() {
 
 // Precios por población
 const PRECIOS_POBLACION = {
-    "Pereira": 320000,
-    "Dosquebradas": 280000,
-    "Manizales": 450000,
-    "Armenia": 400000,
-    "Cartago": 380000,
-    "Cuba": 250000,
-    "Parque Industrial": 300000,
-    "Sta Rosa": 350000,
-    "Quimbaya": 370000,
-    "Viterbo": 420000,
-    "Vereda": 200000
+    "AGUADAS": 690000,
+    "AGUADAS-PACORA": 740000,
+    "AGUILA-ANSERMA NUEVO": 317000,
+    "ALCALA ULLOA": 235000,
+    "ANSERMA": 332000,
+    "ANSERMA NUEVO": 280000,
+    "APIA- PUEBLO RICO": 320000,
+    "ARABIA - ALTAGRACIA": 230000,
+    "ARANZAZU FILADELFIA": 425000,
+    "ARGELIA EL CAIRO": 335000,
+    "ARGELIA-EL CAIRO": 338000,
+    "ARMENIA": 295000,
+    "BALBOA LA CELIA": 350000,
+    "BELAL RDA SJOSE": 320000,
+    "BELEN": 305000,
+    "BELEN MISTRATO": 425000,
+    "CAICEDONIA": 336000,
+    "CAIMO BARCELONA": 315000,
+    "CALARCA": 312000,
+    "CARTAGO": 250000,
+    "CHINCHINA": 250000,
+    "CIRCASIA": 294000,
+    "CORDOBA PIJAO BVISTA": 350000,
+    "CUBA": 200000,
+    "DOSQUEBRADAS": 208000,
+    "EL AGUILA": 305000,
+    "EL AGUILA - VILLANUEVA": 330000,
+    "FILANDIA": 350000,
+    "GENOVA": 385000,
+    "GUATICA": 368000,
+    "IRRA LA FELISA LA MERCED": 445000,
+    "LA VIRGINIA": 230000,
+    "LA VIRGINA -BELALCAZAR": 282000,
+    "MANIZALES": 245000,
+    "MANIZALES - VILLAMARIA": 305000,
+    "MANIZALES-DESDE PEREIRA-CARGA EXTRA": 295000,
+    "MARMATO": 499000,
+    "MARSELLA": 259000,
+    "MISTRATO": 362000,
+    "MONTENEGRO": 260000,
+    "MONTENEGRO - P TAPAO": 275000,
+    "NEIRA": 340000,
+    "PACORA": 670000,
+    "PALESTINA ARAUCA LA PLATA": 280000,
+    "PEREIRA": 208000,
+    "PUEBLO RICO": 305000,
+    "QUIMBAYA": 245000,
+    "QUINCHIA": 439000,
+    "RIOSUCIO": 545000,
+    "SANTA CECILIA": 368000,
+    "SANTA ROSA": 212000,
+    "SANTUARIO": 284000,
+    "SANTUARIO APIA": 284000,
+    "SUPIA": 505000,
+    "SUPIA-MARMATO": 590000,
+    "TEBAIDA": 305000,
+    "VITERBO": 323000
 };
 
 const COSTO_ADICIONAL = 60000;
@@ -303,7 +350,7 @@ async function obtenerDatosFormulario(prefix = "") {
     const p = prefix;
     const val = (id) => document.getElementById(p + id)?.value || "";
 
-    const placa = val("placa").trim().toUpperCase();
+    const placa = val("placa").toUpperCase().replace(/[\s-]/g, '').trim();
     const contratista = val("contratista");
     const zona = val("zona");
     const dia = val("dia");
@@ -375,19 +422,28 @@ async function crearFlete() {
         return;
     }
 
+    // --- Optimistic UI Update ---
+    // Guardamos una copia temporal para la UI
+    const tempFlete = { ...db, id: 'temp-' + Date.now(), placa: ui.placa };
+    CACHED_FLETES.unshift(tempFlete);
+    renderTable(CACHED_FLETES);
+    limpiarFormulario("");
+
     const result = await SupabaseClient.fletes.create(db);
 
     if (result.success) {
-        limpiarFormulario("");
-        await listarFletes();
-        await actualizarKPI();
+        // Reemplazar el temporal con el real o refrescar
+        await listarFletes(true);
+        actualizarKPI();
 
         Swal.fire({
-            icon: 'success', title: 'Guardado', text: `Flete de ${ui.placa} registrado en la nube.`,
+            icon: 'success', title: 'Guardado', text: `Flete de ${ui.placa} registrado.`,
             timer: 1500, showConfirmButton: false, background: '#1a1a1a', color: '#fff'
         });
     } else {
-        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo guardar el flete: ' + (result.error || 'Error desconocido'), background: '#1a1a1a', color: '#fff' });
+        // Revertir cambio local si falla
+        await listarFletes(true);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo guardar: ' + (result.error || 'Error'), background: '#1a1a1a', color: '#fff' });
     }
 }
 
@@ -398,18 +454,27 @@ async function guardarCambiosFlete() {
         return Swal.fire({ icon: 'warning', title: 'Faltan Datos', background: '#1a1a1a', color: '#fff' });
     }
 
+    // Optimismo: Actualizar localmente inmediatamente
+    const index = CACHED_FLETES.findIndex(f => f.id === ID_FLETE_EDITANDO);
+    const oldFlete = index !== -1 ? { ...CACHED_FLETES[index] } : null;
+
+    if (index !== -1) {
+        CACHED_FLETES[index] = { ...CACHED_FLETES[index], ...db, placa: ui.placa };
+        renderTable(CACHED_FLETES);
+    }
+
+    ocultarModalEdicion();
     const result = await SupabaseClient.fletes.update(ID_FLETE_EDITANDO, db);
 
     if (result.success) {
-        ocultarModalEdicion();
-        await listarFletes();
-        await actualizarKPI();
-
-        Swal.fire({
-            icon: 'success', title: 'Actualizado', background: '#1a1a1a', color: '#fff', timer: 1500, showConfirmButton: false
-        });
+        await listarFletes(true);
+        actualizarKPI();
+        Swal.fire({ icon: 'success', title: 'Actualizado', background: '#1a1a1a', color: '#fff', timer: 1500, showConfirmButton: false });
     } else {
-        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar el flete: ' + (result.error || 'Error desconocido'), background: '#1a1a1a', color: '#fff' });
+        // Revertir
+        if (oldFlete) CACHED_FLETES[index] = oldFlete;
+        renderTable(CACHED_FLETES);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar.', background: '#1a1a1a', color: '#fff' });
     }
 }
 
@@ -429,24 +494,28 @@ function limpiarFormulario(prefix) {
 // ==========================================================
 // 📋 LISTADOS & ACCIONES
 // ==========================================================
-async function listarFletes(useCache = false) {
+async function listarFletes(silencioso = false) {
     const tbody = document.getElementById("tablaFletes");
     if (!tbody) return;
 
-    if (!useCache) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center"><i class="ri-loader-4-line rotate"></i> Cargando fletes...</td></tr>`;
-        const { data, error } = await SupabaseClient.supabase
-            .from('vista_fletes_completos')
-            .select('*')
-            .order('fecha', { ascending: false });
-
-        if (error) {
-            console.error("Error cargando fletes:", error);
-            tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color: #ef4444">Error al cargar datos</td></tr>`;
-            return;
-        }
-        CACHED_FLETES = data;
+    if (!silencioso && CACHED_FLETES.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center"><i class="ri-loader-4-line rotate"></i> Cargando...</td></tr>`;
     }
+
+    const { data, error } = await SupabaseClient.supabase
+        .from('vista_fletes_completos')
+        .select('*')
+        .order('fecha', { ascending: false });
+
+    if (!error && data) {
+        CACHED_FLETES = data;
+        renderTable(CACHED_FLETES);
+    }
+}
+
+function renderTable(fletes) {
+    const tbody = document.getElementById("tablaFletes");
+    if (!tbody) return;
 
     // Filtros sobre cache (Instantáneo)
     const q = document.getElementById("buscarFlete")?.value.toLowerCase() || "";
@@ -457,7 +526,7 @@ async function listarFletes(useCache = false) {
     const role = session?.profile?.rol || session?.user?.user_metadata?.rol || 'operario';
     const currentUserId = session?.user?.id;
 
-    const filtered = CACHED_FLETES.filter(f => {
+    const filtered = fletes.filter(f => {
         const contratista = f.contratista || '';
         const placa = f.placa || '';
         const matchQ = (placa.toLowerCase().includes(q) || contratista.toLowerCase().includes(q));
@@ -474,11 +543,13 @@ async function listarFletes(useCache = false) {
 
     filtered.forEach(f => {
         const tr = document.createElement("tr");
+        if (f.id && f.id.toString().startsWith('temp-')) tr.style.opacity = "0.5";
+
         const canEdit = role === 'operario' && f.user_id === currentUserId;
 
         const actions = canEdit ? `
-            <button class="btn-icon edit" onclick="editarFlete('${f.id}')"><i class="ri-pencil-line"></i></button>
-            <button class="btn-icon delete" onclick="eliminarFlete('${f.id}')"><i class="ri-delete-bin-line"></i></button>
+            <button class="btn-icon edit" onclick="editarFlete('${f.id}')" title="Editar"><i class="ri-edit-line"></i></button>
+            <button class="btn-icon delete" onclick="eliminarFlete('${f.id}')" title="Eliminar"><i class="ri-delete-bin-line"></i></button>
         ` : `<span style="font-size:0.7rem; opacity:0.5">${role === 'admin' ? 'Solo Lectura' : 'No Propietario'}</span>`;
 
         tr.innerHTML = `
@@ -537,24 +608,34 @@ window.editarFlete = async function (id) {
 window.eliminarFlete = async function (id) {
     const { session } = await SupabaseClient.auth.getSession();
     if (session?.user?.user_metadata?.rol === 'admin') {
-        Swal.fire({ icon: 'error', title: 'Acceso Denegado', text: 'Solo los operarios pueden eliminar fletes.', background: '#1a1a1a', color: '#fff' });
+        Swal.fire({ icon: 'error', title: 'Acceso Denegado', background: '#1a1a1a', color: '#fff' });
         return;
     }
 
     const { isConfirmed } = await Swal.fire({
-        title: '¿Eliminar Flete?', icon: 'warning',
-        showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Eliminar',
-        background: '#1a1a1a', color: '#fff'
+        title: '¿Eliminar?', icon: 'warning', showCancelButton: true,
+        confirmButtonColor: '#d33', confirmButtonText: 'Eliminar', background: '#1a1a1a', color: '#fff'
     });
 
     if (isConfirmed) {
+        // Optimismo: Eliminar localmente
+        const index = CACHED_FLETES.findIndex(f => f.id === id);
+        const removed = index !== -1 ? CACHED_FLETES[index] : null;
+
+        if (index !== -1) {
+            CACHED_FLETES.splice(index, 1);
+            renderTable(CACHED_FLETES);
+        }
+
         const result = await SupabaseClient.fletes.delete(id);
         if (result) {
-            await listarFletes();
-            await actualizarKPI();
+            actualizarKPI();
             Swal.fire({ title: 'Eliminado', icon: 'success', background: '#1a1a1a', color: '#fff', timer: 1000, showConfirmButton: false });
         } else {
-            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar el flete. Verifique que sea el propietario.', background: '#1a1a1a', color: '#fff' });
+            // Revertir
+            if (removed) CACHED_FLETES.splice(index, 0, removed);
+            renderTable(CACHED_FLETES);
+            Swal.fire({ icon: 'error', title: 'Error', background: '#1a1a1a', color: '#fff' });
         }
     }
 };
@@ -797,20 +878,34 @@ async function procesarExcelVehiculos(event) {
             }
 
             // Normalizar y mapear datos
-            const vehiculos = jsonData.map(row => {
+            const mapVehiculos = new Map();
+
+            jsonData.forEach(row => {
                 // Buscamos columnas que se parezcan a Placa, Conductor, Modelo
-                const placa = row.Placa || row.PLACA || row.placa || Object.values(row)[0];
-                const conductor = row.Conductor || row.CONDUCTOR || row.conductor || Object.values(row)[1];
-                const modelo = row.Modelo || row.MODELO || row.modelo || Object.values(row)[2];
+                let placaRaw = row.Placa || row.PLACA || row.placa || Object.values(row)[0];
+                let conductor = row.Conductor || row.CONDUCTOR || row.conductor || Object.values(row)[1];
+                let modelo = row.Modelo || row.MODELO || row.modelo || Object.values(row)[2];
 
-                return { placa, conductor, modelo };
-            }).filter(v => v.placa && v.conductor);
+                if (placaRaw && conductor) {
+                    // Sanitizar placa: Mayúsculas, sin espacios, sin guiones
+                    const placa = placaRaw.toString().toUpperCase().replace(/[\s-]/g, '');
 
-            if (vehiculos.length === 0) {
-                throw new Error("No se encontraron vehículos válidos. Asegúrate de tener columnas: Placa y Conductor.");
+                    // Guardar en Map (si la placa ya existe, se sobrescribe con la última del Excel)
+                    mapVehiculos.set(placa, {
+                        placa,
+                        conductor: conductor.toString().trim(),
+                        modelo: (modelo || 'Estándar').toString().trim()
+                    });
+                }
+            });
+
+            const vehiculosArr = Array.from(mapVehiculos.values());
+
+            if (vehiculosArr.length === 0) {
+                throw new Error("No se encontraron vehículos válidos. Asegúrate de tener al menos las columnas Placa y Conductor.");
             }
 
-            const result = await SupabaseClient.vehiculos.importar(vehiculos);
+            const result = await SupabaseClient.vehiculos.importar(vehiculosArr);
 
             if (result.success) {
                 await listarVehiculos();

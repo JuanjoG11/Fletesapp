@@ -257,10 +257,17 @@
                             <input id="op_modelo" placeholder="Ej: Camión Turbo, Van, etc.">
                         </div>
                     </div>
-                    <div class="form-actions">
+                    <div class="form-actions" style="gap: 10px; flex-wrap: wrap;">
                         <button id="btnRegistrarVehiculo" class="btn btn-secondary btn-glow">
                             <i class="ri-user-add-line"></i> Registrar Conductor
                         </button>
+                        <button class="btn btn-primary btn-glow"
+                            onclick="document.getElementById('inputImportExcel').click()"
+                            style="background: var(--accent-blue);">
+                            <i class="ri-file-excel-2-line"></i> Importar desde Excel
+                        </button>
+                        <input type="file" id="inputImportExcel" accept=".xlsx, .xls" style="display: none;"
+                            onchange="procesarExcelVehiculos(event)">
                     </div>
                 </div>
 

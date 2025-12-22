@@ -203,6 +203,37 @@ async function crearVehiculo(vehiculoData) {
 }
 
 /**
+ * Importar múltiples vehículos (Bulk Insert)
+ * @param {Array} vehiculos - Lista de vehículos
+ * @returns {Promise<{success: boolean, count?: number, error?: string}>}
+ */
+async function importarVehiculos(vehiculos) {
+    try {
+        const { data: sessionData } = await _supabase.auth.getSession();
+        const userId = sessionData?.session?.user?.id;
+
+        const dataToInsert = vehiculos.map(v => ({
+            placa: v.placa.toUpperCase(),
+            conductor: v.conductor,
+            modelo: v.modelo || 'Estándar',
+            activo: true,
+            created_by: userId
+        }));
+
+        const { data, error } = await _supabase
+            .from('vehiculos')
+            .upsert(dataToInsert, { onConflict: 'placa' })
+            .select();
+
+        if (error) throw error;
+        return { success: true, count: data.length };
+    } catch (error) {
+        console.error('Error al importar vehículos:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
  * Eliminar vehículo
  * @param {string} vehiculoId - ID del vehículo
  * @returns {Promise<{success: boolean, error?: string}>}
@@ -436,6 +467,7 @@ const SupabaseClientAPI = {
         getAll: obtenerVehiculos,
         getByPlaca: buscarVehiculoPorPlaca,
         create: crearVehiculo,
+        importar: importarVehiculos,
         delete: eliminarVehiculo
     },
     // Módulo de Fletes
@@ -459,6 +491,7 @@ window.SupabaseClient = SupabaseClientAPI;
 window.supabaseClient.iniciarSesion = iniciarSesion;
 window.supabaseClient.registrarUsuario = registrarUsuario;
 window.supabaseClient.crearVehiculo = crearVehiculo;
+window.supabaseClient.importarVehiculos = importarVehiculos;
 window.supabaseClient.crearFlete = crearFlete;
 window.supabaseClient.buscarVehiculoPorPlaca = buscarVehiculoPorPlaca;
 window.supabaseClient.obtenerSesionActual = obtenerSesionActual;

@@ -767,6 +767,87 @@ async function generarGraficos() {
 
 
 // ==========================================================
+// 📂 IMPORTACIÓN MASIVA DESDE EXCEL
+// ==========================================================
+async function procesarExcelVehiculos(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    Swal.fire({
+        title: 'Procesando Excel...',
+        text: 'Estamos validando y cargando tus vehículos',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+        background: '#1e293b',
+        color: '#fff'
+    });
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+            if (jsonData.length === 0) {
+                throw new Error("El archivo Excel está vacío.");
+            }
+
+            // Normalizar y mapear datos
+            const vehiculos = jsonData.map(row => {
+                // Buscamos columnas que se parezcan a Placa, Conductor, Modelo
+                const placa = row.Placa || row.PLACA || row.placa || Object.values(row)[0];
+                const conductor = row.Conductor || row.CONDUCTOR || row.conductor || Object.values(row)[1];
+                const modelo = row.Modelo || row.MODELO || row.modelo || Object.values(row)[2];
+
+                return { placa, conductor, modelo };
+            }).filter(v => v.placa && v.conductor);
+
+            if (vehiculos.length === 0) {
+                throw new Error("No se encontraron vehículos válidos. Asegúrate de tener columnas: Placa y Conductor.");
+            }
+
+            const result = await SupabaseClient.vehiculos.importar(vehiculos);
+
+            if (result.success) {
+                await listarVehiculos();
+                await actualizarKPI();
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Importación Exitosa!',
+                    text: `Se han registrado ${result.count} vehículos correctamente.`,
+                    background: '#1e293b',
+                    color: '#fff'
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error en la Importación',
+                    text: result.error,
+                    background: '#1e293b',
+                    color: '#fff'
+                });
+            }
+        } catch (error) {
+            console.error("Error procesando Excel:", error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de Lectura',
+                text: error.message || 'Verifica el formato del archivo Excel.',
+                background: '#1e293b',
+                color: '#fff'
+            });
+        } finally {
+            event.target.value = ''; // Limpiar input
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+// ==========================================================
 // 🚀 INIT - DOM LOADED
 // ==========================================================
 document.addEventListener("DOMContentLoaded", async () => {

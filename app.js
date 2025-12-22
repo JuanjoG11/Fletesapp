@@ -290,11 +290,15 @@ function calcularTotal(prefix = "") {
     const adicId = prefix + "is_adicionales";
     const noAuxId = prefix + "no_auxiliares";
     const totalId = prefix + "total_flete";
+    const rutaId = prefix + "valor_ruta";
+    const porcId = prefix + "porcentaje_ruta";
 
     const poblacionEl = document.getElementById(poblacionId);
     const adicionalesEl = document.getElementById(adicId);
     const noAuxEl = document.getElementById(noAuxId);
     const totalEl = document.getElementById(totalId);
+    const rutaEl = document.getElementById(rutaId);
+    const porcEl = document.getElementById(porcId);
 
     if (!poblacionEl || !totalEl) return;
 
@@ -313,6 +317,24 @@ function calcularTotal(prefix = "") {
     total += (numAuxiliares * COSTO_POR_AUXILIAR);
 
     totalEl.value = moneyFormatter.format(total);
+
+    // Lógica del 4% (Valor Ruta / Total Flete)
+    if (rutaEl && porcEl) {
+        const valorPedidos = parseMoney(rutaEl.value);
+        if (total > 0 && valorPedidos > 0) {
+            const porcentaje = (total / valorPedidos) * 100;
+            porcEl.value = porcentaje.toFixed(1) + "%";
+
+            if (porcentaje > 4) {
+                porcEl.style.color = "#ff4d4d"; // Rojo vibrante
+            } else {
+                porcEl.style.color = "var(--secondary)"; // Verde esmeralda para valores correctos
+            }
+        } else {
+            porcEl.value = "0%";
+            porcEl.style.color = "inherit";
+        }
+    }
 }
 
 function setupCalculators(prefix = "") {
@@ -337,8 +359,10 @@ function setupCalculators(prefix = "") {
     }
     // Formatear valor ruta cuando el usuario lo ingresa manualmente
     if (inputRuta) {
+        inputRuta.addEventListener("input", () => calcularTotal(prefix));
         inputRuta.addEventListener("blur", function () {
             formatMoneyInput(this);
+            calcularTotal(prefix);
         });
     }
 }
@@ -412,6 +436,9 @@ async function obtenerDatosFormulario(prefix = "") {
 }
 
 async function crearFlete() {
+    const btn = document.getElementById("btnGestionarFlete");
+    if (btn) btn.disabled = true;
+
     const { db, ui } = await obtenerDatosFormulario("");
 
     if (!ui.placa || !db.contratista || !db.zona || db.precio <= 0) {
@@ -419,6 +446,7 @@ async function crearFlete() {
             icon: 'warning', title: 'Faltan Datos', text: 'Verifique Placa, Conductor, Zona y Valor.',
             background: '#1a1a1a', color: '#fff'
         });
+        if (btn) btn.disabled = false;
         return;
     }
 
@@ -427,30 +455,35 @@ async function crearFlete() {
     const tempFlete = { ...db, id: 'temp-' + Date.now(), placa: ui.placa };
     CACHED_FLETES.unshift(tempFlete);
     renderTable(CACHED_FLETES);
-    limpiarFormulario("");
+    limpiarFormulario(""); // Limpiar inmediatamente
 
     const result = await SupabaseClient.fletes.create(db);
 
     if (result.success) {
-        // Reemplazar el temporal con el real o refrescar
         await listarFletes(true);
         actualizarKPI();
 
         Swal.fire({
             icon: 'success', title: 'Guardado', text: `Flete de ${ui.placa} registrado.`,
-            timer: 1500, showConfirmButton: false, background: '#1a1a1a', color: '#fff'
+            timer: 1000, showConfirmButton: false, background: '#1a1a1a', color: '#fff'
         });
     } else {
         // Revertir cambio local si falla
         await listarFletes(true);
         Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo guardar: ' + (result.error || 'Error'), background: '#1a1a1a', color: '#fff' });
     }
+
+    if (btn) btn.disabled = false;
 }
 
 async function guardarCambiosFlete() {
+    const btn = document.getElementById("btnGuardarModal");
+    if (btn) btn.disabled = true;
+
     const { db, ui } = await obtenerDatosFormulario("modal-");
 
     if (!ui.placa || !db.contratista || !db.zona || db.precio <= 0) {
+        if (btn) btn.disabled = false;
         return Swal.fire({ icon: 'warning', title: 'Faltan Datos', background: '#1a1a1a', color: '#fff' });
     }
 
@@ -469,25 +502,40 @@ async function guardarCambiosFlete() {
     if (result.success) {
         await listarFletes(true);
         actualizarKPI();
-        Swal.fire({ icon: 'success', title: 'Actualizado', background: '#1a1a1a', color: '#fff', timer: 1500, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Actualizado', background: '#1a1a1a', color: '#fff', timer: 1000, showConfirmButton: false });
     } else {
         // Revertir
         if (oldFlete) CACHED_FLETES[index] = oldFlete;
         renderTable(CACHED_FLETES);
         Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar.', background: '#1a1a1a', color: '#fff' });
     }
+
+    if (btn) btn.disabled = false;
 }
 
 function limpiarFormulario(prefix) {
     const inputs = document.querySelectorAll(`[id^="${prefix}"]`);
     inputs.forEach(i => {
-        if (i.tagName === 'SELECT') i.selectedIndex = 0;
-        else i.value = "";
+        if (i.tagName === 'SELECT') {
+            i.selectedIndex = 0;
+            // Forzar disparo de cambio para actualizar totales si es necesario
+            i.dispatchEvent(new Event('change'));
+        } else {
+            i.value = "";
+        }
     });
+
+    // Limpiar estilos específicos
     const cond = document.getElementById(prefix + "contratista");
     if (cond) {
         cond.style.borderColor = "var(--glass-border)";
         cond.style.boxShadow = "none";
+    }
+
+    const porc = document.getElementById(prefix + "porcentaje_ruta");
+    if (porc) {
+        porc.style.color = "inherit";
+        porc.value = "0%";
     }
 }
 
@@ -602,6 +650,8 @@ window.editarFlete = async function (id) {
     set("is_adicionales", f.adicionales);
     set("total_flete", moneyFormatter.format(f.precio));
 
+    calcularTotal("modal-"); // Calcular porcentaje inicial en el modal
+
     document.getElementById("modalEdicionFlete").classList.add("visible");
 };
 
@@ -711,22 +761,50 @@ async function generarPDF() {
 
     if (error || !fletes || fletes.length === 0) return Swal.fire("Info", "Sin datos para exportar", "info");
 
-    const data = fletes.map(f => [
-        f.fecha,
-        f.placa,
-        f.contratista,
-        f.zona,
-        moneyFormatter.format(f.valor_ruta || 0),
-        moneyFormatter.format(f.precio),
-        f.no_pedidos || 0,
-        ''
+    let totalRuta = 0;
+    let totalFletes = 0;
+    let totalPedidosCount = 0;
+
+    const data = fletes.map(f => {
+        const vRuta = f.valor_ruta || 0;
+        const vFlete = f.precio || 0;
+        const numPed = f.no_pedidos || 0;
+
+        totalRuta += vRuta;
+        totalFletes += vFlete;
+        totalPedidosCount += numPed;
+
+        const participacion = vRuta > 0 ? ((vFlete / vRuta) * 100).toFixed(1) + '%' : '0%';
+
+        return [
+            f.zona || '',
+            f.placa,
+            f.contratista,
+            f.auxiliares || '',
+            numPed,
+            moneyFormatter.format(vRuta),
+            f.poblacion || '',
+            moneyFormatter.format(vFlete),
+            participacion,
+            ''
+        ];
+    });
+
+    // Añadir fila de totales
+    data.push([
+        { content: 'TOTALES', colSpan: 4, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+        { content: totalPedidosCount, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+        { content: moneyFormatter.format(totalRuta), styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+        { content: '', styles: { fillColor: [240, 240, 240] } },
+        { content: moneyFormatter.format(totalFletes), styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+        { content: (totalRuta > 0 ? (totalFletes / totalRuta * 100).toFixed(1) + '%' : '0%'), styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+        { content: '', styles: { fillColor: [240, 240, 240] } }
     ]);
 
     const { jsPDF } = window.jspdf;
 
-    // 1. INICIALIZACIÓN EN HORIZONTAL (landscape)
     const doc = new jsPDF({
-        orientation: 'l', // 'l' es para landscape
+        orientation: 'l',
         unit: 'mm',
         format: 'a4'
     });
@@ -741,28 +819,32 @@ async function generarPDF() {
         ctx.drawImage(imgEl, 0, 0);
         try {
             const imgData = canvas.toDataURL("image/png");
-            doc.addImage(imgData, 'PNG', 14, 10, 30, 0);
+            doc.addImage(imgData, 'PNG', 10, 10, 20, 0);
         } catch (e) {
             console.warn("Error con el logo", e);
         }
     }
 
-    // 2. AJUSTE DE TEXTOS (Ahora el ancho es 297mm)
-    doc.setFontSize(18);
-    doc.text("Planilla de Despacho - FletesApp", 50, 20);
-    doc.setFontSize(11);
-    doc.text(`Fecha de Impresión: ${new Date().toLocaleDateString()}`, 50, 28);
+    // CABECERA SEGÚN MUESTRA
+    const fechaActual = new Date().toLocaleDateString();
+    const title = `PLANILLA FLETES TIENDAS Y MARCAS EJE CAFETERO NIT 9009739329 - ${fechaActual}`;
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text(title, doc.internal.pageSize.getWidth() / 2, 18, { align: 'center' });
 
-    // 3. TABLA AUTOMÁTICA
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'normal');
+
+    // 3. TABLA AUTOMÁTICA (Match exacto con imagen)
     doc.autoTable({
-        head: [['Fecha', 'Placa', 'Conductor', 'Zona', 'Valor Ruta', 'Valor Flete', 'Pedidos', 'Firma Conductor']],
+        head: [['RUTA', 'PLACA', 'CONDUCTOR', 'AUXILIAR', '# PEDIDO', 'VR. PEDIDO', 'POBLACIÓN', 'VALOR FLETE', 'PARTICIPACION', 'FIRMA CONDUCTOR']],
         body: data,
-        startY: 45,
+        startY: 30,
         theme: 'grid',
-        styles: { fontSize: 10, cellPadding: 3 }, // Subí un poco el tamaño de fuente ya que hay más espacio
-        // Opcional: ajustar anchos de columna para aprovechar el espacio horizontal
+        styles: { fontSize: 7.5, cellPadding: 1.5 },
+        headStyles: { fillColor: [220, 220, 220], textColor: [0, 0, 0], fontStyle: 'bold' },
         columnStyles: {
-            7: { cellWidth: 40 } // Más espacio para la firma
+            9: { cellWidth: 30 } // Espacio firma
         }
     });
 

@@ -137,7 +137,8 @@
                     <div class="form-grid">
                         <div class="input-group">
                             <label>Placa Vehículo</label>
-                            <input id="placa" placeholder="EJ: ABC-123" oninput="this.value = this.value.toUpperCase()">
+                            <input id="placa" placeholder="EJ: ABC123"
+                                oninput="this.value = this.value.toUpperCase().replace('-', '')">
                         </div>
                         <div class="input-group">
                             <label>Conductor (Auto)</label>
@@ -285,7 +286,7 @@
                         </div>
 
                         <div class="input-group">
-                            <label>Valor Ruta (COP)</label>
+                            <label>Valor Total Pedidos (COP)</label>
                             <input id="valor_ruta" type="text" placeholder="$ 0" class="money-input">
                         </div>
 
@@ -297,14 +298,19 @@
                             </select>
                         </div>
 
-                        <div class="input-group full-width">
+                        <div class="input-group">
                             <label>Total Flete (Automático)</label>
                             <input id="total_flete" type="text" placeholder="$ 0" readonly class="input-total">
+                        </div>
+                        <div class="input-group">
+                            <label>Participación %</label>
+                            <input id="porcentaje_ruta" type="text" placeholder="0%" readonly
+                                style="font-weight: bold;">
                         </div>
                     </div>
 
                     <div class="form-actions">
-                        <button id="btnGestionarFlete" class="btn btn-primary btn-glow" onclick="crearFlete()">
+                        <button id="btnGestionarFlete" class="btn btn-primary btn-glow">
                             <i class="ri-save-3-line"></i> Guardar Flete
                         </button>
                     </div>
@@ -323,8 +329,8 @@
                     <div class="form-grid">
                         <div class="input-group">
                             <label>Placa Vehículo</label>
-                            <input id="op_placa" placeholder="EJ: XYZ-789"
-                                oninput="this.value = this.value.toUpperCase()">
+                            <input id="op_placa" placeholder="EJ: XYZ789"
+                                oninput="this.value = this.value.toUpperCase().replace('-', '')">
                         </div>
                         <div class="input-group">
                             <label>Nombre Conductor</label>
@@ -480,7 +486,7 @@
                 <div class="form-grid">
                     <!-- Mismos campos con prefijo modal- -->
                     <div class="input-group"> <label>Placa</label> <input id="modal-placa"
-                            oninput="this.value = this.value.toUpperCase()"> </div>
+                            oninput="this.value = this.value.toUpperCase().replace('-', '')"> </div>
                     <div class="input-group"> <label>Conductor</label> <input id="modal-contratista" readonly
                             class="input-readonly"> </div>
 
@@ -605,8 +611,8 @@
                     <div class="input-group"> <label>No. Pedidos</label> <input id="modal-no_pedidos" type="number">
                     </div>
 
-                    <div class="input-group"> <label>Valor Ruta</label> <input id="modal-valor_ruta" type="text"
-                            class="money-input"> </div>
+                    <div class="input-group"> <label>Valor Total Pedidos</label> <input id="modal-valor_ruta"
+                            type="text" class="money-input"> </div>
 
                     <div class="input-group">
                         <label>¿Adicionales?</label>
@@ -616,14 +622,16 @@
                         </select>
                     </div>
 
-                    <div class="input-group full-width"> <label>Total</label> <input id="modal-total_flete" type="text"
-                            readonly class="input-total"> </div>
+                    <div class="input-group"> <label>Total</label> <input id="modal-total_flete" type="text" readonly
+                            class="input-total"> </div>
+                    <div class="input-group"> <label>Participación %</label> <input id="modal-porcentaje_ruta"
+                            type="text" readonly style="font-weight: bold;"> </div>
                 </div>
             </div>
 
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="ocultarModalEdicion()">Cancelar</button>
-                <button id="btnGuardarModal" class="btn btn-primary" onclick="guardarCambiosFlete()">Guardar
+                <button id="btnGuardarModal" class="btn btn-primary">Guardar
                     Cambios</button>
             </div>
         </div>

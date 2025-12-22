@@ -48,9 +48,7 @@
             <a class="nav-item" data-tab="admin-crear" id="navCrearFlete">
                 <i class="ri-add-circle-line"></i> Crear Flete
             </a>
-            <a class="nav-item" data-tab="estadisticas" id="navEstadisticas">
-                <i class="ri-pie-chart-2-line"></i> Estadísticas
-            </a>
+
         </nav>
 
         <div class="sidebar-footer">
@@ -122,6 +120,22 @@
                     <div class="kpi-info">
                         <h3>Vehículos Activos</h3>
                         <p id="kpiVehiculos" class="kpi-value">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 📊 SECCIÓN ESTADÍSTICAS INTEGRADAS -->
+            <div class="grid-2" style="margin-top: 20px;">
+                <div class="card glass-card chart-container">
+                    <h3>Ingresos por Mes</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="chartIngresos"></canvas>
+                    </div>
+                </div>
+                <div class="card glass-card chart-container">
+                    <h3>Fletes por Zona</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="chartZonas"></canvas>
                     </div>
                 </div>
             </div>
@@ -468,23 +482,7 @@
             </div>
         </section>
 
-        <!-- 📊 SECCIÓN ESTADÍSTICAS -->
-        <section id="estadisticas" class="tab-content fade-in">
-            <div class="grid-2">
-                <div class="card glass-card chart-container">
-                    <h3>Ingresos por Mes</h3>
-                    <div class="chart-wrapper">
-                        <canvas id="chartIngresos"></canvas>
-                    </div>
-                </div>
-                <div class="card glass-card chart-container">
-                    <h3>Fletes por Zona</h3>
-                    <div class="chart-wrapper">
-                        <canvas id="chartZonas"></canvas>
-                    </div>
-                </div>
-            </div>
-        </section>
+
 
     </main>
 

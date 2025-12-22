@@ -64,11 +64,10 @@ async function checkAuth() {
         if (navFletes) navFletes.style.display = 'flex';
         if (navVehiculos) navVehiculos.style.display = 'flex';
         if (navCrear) navCrear.style.display = 'none';
-        if (navStats) navStats.style.display = 'none';
 
         // Redirect if on forbidden tab
         const activeTab = document.querySelector('.nav-item.active')?.dataset.tab;
-        if (['admin-crear', 'estadisticas'].includes(activeTab)) {
+        if (['admin-crear'].includes(activeTab)) {
             document.querySelector('[data-tab="inicio"]')?.click();
         }
     } else {
@@ -76,7 +75,6 @@ async function checkAuth() {
         if (navFletes) navFletes.style.display = 'flex';
         if (navVehiculos) navVehiculos.style.display = 'none';
         if (navCrear) navCrear.style.display = 'flex';
-        if (navStats) navStats.style.display = 'flex';
     }
 }
 
@@ -926,18 +924,50 @@ async function generarGraficos() {
             datasets: [{
                 label: 'Ingresos Mensuales',
                 data: dataVals,
-                backgroundColor: '#3b82f6',
-                borderRadius: 4
+                backgroundColor: [
+                    '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e', '#fb923c', '#22c55e', '#06b6d4', '#3b82f6'
+                ],
+                borderRadius: 8,
+                hoverBackgroundColor: '#ffffff',
+                borderWidth: 0
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                y: { beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
-                x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#94a3b8',
+                        callback: function (value) {
+                            return '$ ' + value.toLocaleString();
+                        }
+                    },
+                    grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                },
+                x: {
+                    ticks: { color: '#94a3b8' },
+                    grid: { display: false }
+                }
             },
-            plugins: { legend: { labels: { color: '#94a3b8' } } }
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1e293b',
+                    titleColor: '#f8fafc',
+                    bodyColor: '#f8fafc',
+                    padding: 12,
+                    borderColor: '#334155',
+                    borderWidth: 1,
+                    displayColors: false,
+                    callbacks: {
+                        label: function (context) {
+                            return 'Total: ' + moneyFormatter.format(context.raw);
+                        }
+                    }
+                }
+            }
         }
     });
 }
@@ -1063,14 +1093,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const session = CURRENT_SESSION;
                 const role = session?.user?.user_metadata?.rol;
 
-                if (role === 'admin' && target === 'estadisticas') return;
+                if (role === 'admin' && target === 'estadisticas') return; // Fallback removal logic
 
                 document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("visible"));
                 document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
 
                 document.getElementById(target).classList.add("visible");
                 t.classList.add("active");
-                if (target === 'estadisticas') await generarGraficos();
             });
         });
 

@@ -65,18 +65,12 @@ async function checkAuth() {
     const navStats = document.getElementById("navEstadisticas");
 
     if (role === 'admin') {
-        // PERFIL ADMIN (AHORA GESTIONA VEHÍCULOS)
+        // PERFIL ADMIN (GESTIONA VEHÍCULOS)
         if (navFletes) navFletes.style.display = 'flex';
         if (navVehiculos) navVehiculos.style.display = 'flex';
         if (navCrear) navCrear.style.display = 'none';
-
-        // Redirect if on forbidden tab
-        const activeTab = document.querySelector('.nav-item.active')?.dataset.tab;
-        if (['admin-crear'].includes(activeTab)) {
-            document.querySelector('[data-tab="inicio"]')?.click();
-        }
     } else {
-        // PERFIL OPERARIO (AHORA CREA FLETES Y VE ESTADÍSTICAS)
+        // PERFIL OPERARIO (GESTIONA FLETES)
         if (navFletes) navFletes.style.display = 'flex';
         if (navVehiculos) navVehiculos.style.display = 'none';
         if (navCrear) navCrear.style.display = 'flex';
@@ -608,12 +602,12 @@ function renderTable(fletes) {
         const tr = document.createElement("tr");
         if (f.id && f.id.toString().startsWith('temp-')) tr.style.opacity = "0.5";
 
-        const canEdit = role === 'operario' && f.user_id === currentUserId;
+        const canEdit = role === 'operario';
 
         const actions = canEdit ? `
             <button class="btn-icon edit" onclick="editarFlete('${f.id}')" title="Editar"><i class="ri-edit-line"></i></button>
             <button class="btn-icon delete" onclick="eliminarFlete('${f.id}')" title="Eliminar"><i class="ri-delete-bin-line"></i></button>
-        ` : `<span style="font-size:0.7rem; opacity:0.5">${role === 'admin' ? 'Solo Lectura' : 'No Propietario'}</span>`;
+        ` : `<span style="font-size:0.7rem; opacity:0.5">Solo Lectura</span>`;
 
         tr.innerHTML = `
             <td>${f.fecha}</td>

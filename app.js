@@ -1250,8 +1250,26 @@ document.addEventListener("DOMContentLoaded", async () => {
         setupCalculators("modal-");
 
         // 7. Menu Mobile
-        document.getElementById("menuToggleBtn")?.addEventListener("click", () => {
-            document.querySelector(".sidebar").classList.toggle("open");
+        const menuBtn = document.getElementById("menuToggleBtn");
+        const sidebar = document.querySelector(".sidebar");
+
+        menuBtn?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            sidebar.classList.toggle("open");
+        });
+
+        // Cerrar al clickear fuera
+        document.addEventListener("click", (e) => {
+            if (sidebar.classList.contains("open") && !sidebar.contains(e.target) && e.target !== menuBtn) {
+                sidebar.classList.remove("open");
+            }
+        });
+
+        // Cerrar al clickear opciones internas (evitando el toggle de tema)
+        sidebar?.addEventListener("click", (e) => {
+            if (e.target.closest(".nav-item") || e.target.closest(".action-btn") || e.target.closest(".logout-btn")) {
+                sidebar.classList.remove("open");
+            }
         });
 
     } catch (error) {

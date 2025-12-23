@@ -905,65 +905,139 @@ async function generarGraficos() {
         }
     });
 
-    // --- Chart 2: Ingresos por Mes ---
+    // --- Chart 2: Ingresos por Día (Desde el primer flete registrado) ---
     if (!ctx2) return;
-    const ingresosPorMes = {};
+
+    if (fletes.length === 0) return;
+
+    // Agrupar ingresos por dia y encontrar la fecha mas antigua
+    const ingresosPorDia = {};
+    let minDate = new Date(); // Por defecto hoy
+
     fletes.forEach(f => {
-        const mesKey = f.fecha.substring(0, 7);
-        ingresosPorMes[mesKey] = (ingresosPorMes[mesKey] || 0) + parseFloat(f.precio);
+        const dayKey = f.fecha; // YYYY-MM-DD
+        ingresosPorDia[dayKey] = (ingresosPorDia[dayKey] || 0) + parseFloat(f.precio);
+
+        const currentFleteDate = new Date(dayKey + 'T00:00:00'); // Asegurar local time
+        if (currentFleteDate < minDate) {
+            minDate = currentFleteDate;
+        }
     });
 
-    const labels = Object.keys(ingresosPorMes).sort();
-    const dataVals = labels.map(k => ingresosPorMes[k]);
+    const labelsAll = [];
+    const fullLabelsAll = [];
+    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+    // Generar días desde la fecha mínima hasta hoy
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(minDate);
+    start.setHours(0, 0, 0, 0);
+
+    let tempDate = new Date(start);
+    while (tempDate <= today) {
+        const day = tempDate.getDate().toString().padStart(2, '0');
+        const month = (tempDate.getMonth() + 1).toString().padStart(2, '0');
+        const year = tempDate.getFullYear();
+        const isoKey = tempDate.toISOString().split('T')[0];
+
+        labelsAll.push(`${day}/${month}`);
+        fullLabelsAll.push({
+            date: `${day}/${month}/${year}`,
+            dayName: dayNames[tempDate.getDay()],
+            key: isoKey
+        });
+
+        tempDate.setDate(tempDate.getDate() + 1);
+    }
+
+    // Si hay demasiados días (ej: mas de 14), limitamos a los últimos 14 para mantener estética, 
+    // o dejamos que el usuario vea todo si prefiere. Por ahora, mostramos todo desde el inicio.
+    // Pero si es mucho, Chart.js lo manejará.
+
+    const dataVals = fullLabelsAll.map(l => ingresosPorDia[l.key] || 0);
+
+    // Paleta Neon (se repetirá con modulo si hay mas de 7 días)
+    const neonPalette = ['#FF3D71', '#3366FF', '#00D68F', '#FFAA00', '#FF8918', '#8F00FF', '#00E096'];
 
     if (myChart2) myChart2.destroy();
+
+    const ctxTemp = ctx2.getContext('2d');
+    const backgroundColors = fullLabelsAll.map((_, i) => {
+        const color = neonPalette[i % neonPalette.length];
+        const g = ctxTemp.createLinearGradient(0, 0, 0, 300);
+        g.addColorStop(0, color);
+        g.addColorStop(1, color + '66');
+        return g;
+    });
+    const borderColors = fullLabelsAll.map((_, i) => neonPalette[i % neonPalette.length]);
+
     myChart2 = new Chart(ctx2, {
         type: 'bar',
         data: {
-            labels: labels,
+            labels: labelsAll,
             datasets: [{
-                label: 'Ingresos Mensuales',
+                label: 'Ingresos Diarios',
                 data: dataVals,
-                backgroundColor: [
-                    '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e', '#fb923c', '#22c55e', '#06b6d4', '#3b82f6'
-                ],
+                backgroundColor: backgroundColors,
+                borderColor: borderColors,
+                borderWidth: 1,
                 borderRadius: 8,
-                hoverBackgroundColor: '#ffffff',
-                borderWidth: 0
+                borderSkipped: false,
+                hoverBorderColor: '#fff',
+                hoverBorderWidth: 3,
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: { padding: { top: 30 } },
             scales: {
                 y: {
                     beginAtZero: true,
+                    title: {
+                        display: false
+                    },
                     ticks: {
                         color: '#94a3b8',
+                        font: { family: 'Inter', size: 11, weight: '600' },
                         callback: function (value) {
-                            return '$ ' + value.toLocaleString();
+                            return moneyFormatter.format(value);
                         }
                     },
-                    grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                    grid: { color: 'rgba(148, 163, 184, 0.05)', drawBorder: false }
                 },
                 x: {
-                    ticks: { color: '#94a3b8' },
+                    ticks: {
+                        color: '#94a3b8',
+                        font: { family: 'Inter', size: 10, weight: '600' },
+                        maxRotation: labelsAll.length > 7 ? 45 : 0
+                    },
                     grid: { display: false }
                 }
             },
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: '#1e293b',
-                    titleColor: '#f8fafc',
-                    bodyColor: '#f8fafc',
-                    padding: 12,
-                    borderColor: '#334155',
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleColor: '#fff',
+                    titleFont: { family: 'Inter', size: 14, weight: 'bold' },
+                    bodyColor: '#fff',
+                    bodyFont: { family: 'Inter', size: 13 },
+                    padding: 15,
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
                     borderWidth: 1,
-                    displayColors: false,
+                    cornerRadius: 12,
+                    displayColors: true,
+                    boxPadding: 6,
                     callbacks: {
+                        title: function (context) {
+                            const idx = context[0].dataIndex;
+                            const info = fullLabelsAll[idx];
+                            return `${info.dayName}, ${info.date}`;
+                        },
                         label: function (context) {
-                            return 'Total: ' + moneyFormatter.format(context.raw);
+                            return ' 💰 Ingresos: ' + moneyFormatter.format(context.raw) + ' COP';
                         }
                     }
                 }

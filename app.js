@@ -42,7 +42,7 @@ async function checkAuth() {
     const session = CURRENT_SESSION;
 
     if (!session) {
-        window.location.href = "index.html";
+        window.location.href = "/";
         return;
     }
 
@@ -81,7 +81,7 @@ async function checkAuth() {
 async function logout() {
     await SupabaseClient.auth.logout();
     CURRENT_SESSION = null;
-    window.location.href = "index.html?logout=true";
+    window.location.href = "/?logout=true";
 }
 
 // ==========================================================

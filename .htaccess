@@ -1,0 +1,10 @@
+RewriteEngine On
+
+# Si el archivo tiene .html, redirigir a la version sin extension
+RewriteCond %{THE_REQUEST} ^[A-Z]{3,9}\ /.*\.html\ HTTP/
+RewriteRule ^(.*)\.html$ /$1 [R=301,L]
+
+# Si se solicita una ruta sin extension, buscar el archivo .html correspondiente internamente
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.html -f
+RewriteRule ^(.*)$ $1.html [L]

@@ -746,6 +746,8 @@ function setupTheme() {
             const newTheme = e.target.checked ? "light" : "dark";
             document.documentElement.setAttribute("data-theme", newTheme);
             localStorage.setItem("theme", newTheme);
+            // Re-generar gráficos para aplicar nuevos colores de tema
+            generarGraficos();
         });
     }
 }
@@ -957,20 +959,27 @@ async function generarGraficos() {
 
     const dataVals = fullLabelsAll.map(l => ingresosPorDia[l.key] || 0);
 
-    // Paleta Neon (se repetirá con modulo si hay mas de 7 días)
-    const neonPalette = ['#FF3D71', '#3366FF', '#00D68F', '#FFAA00', '#FF8918', '#8F00FF', '#00E096'];
+    const theme = document.documentElement.getAttribute("data-theme") || "dark";
+
+    // Paletas según el tema
+    const darkNeonPalette = ['#FF3D71', '#3366FF', '#00D68F', '#FFAA00', '#FF8918', '#8F00FF', '#00E096'];
+    const lightHarmonyPalette = ['#3b82f6', '#f59e0b', '#60a5fa', '#fbbf24', '#2563eb', '#f97316', '#34d399'];
+
+    const activePalette = theme === 'light' ? lightHarmonyPalette : darkNeonPalette;
+    const textColor = theme === 'light' ? '#64748b' : '#94a3b8';
+    const gridColor = theme === 'light' ? 'rgba(0, 0, 0, 0.05)' : 'rgba(148, 163, 184, 0.05)';
 
     if (myChart2) myChart2.destroy();
 
     const ctxTemp = ctx2.getContext('2d');
     const backgroundColors = fullLabelsAll.map((_, i) => {
-        const color = neonPalette[i % neonPalette.length];
+        const color = activePalette[i % activePalette.length];
         const g = ctxTemp.createLinearGradient(0, 0, 0, 300);
         g.addColorStop(0, color);
-        g.addColorStop(1, color + '66');
+        g.addColorStop(1, color + (theme === 'light' ? '99' : '66')); // Ajuste opacidad según fondo
         return g;
     });
-    const borderColors = fullLabelsAll.map((_, i) => neonPalette[i % neonPalette.length]);
+    const borderColors = fullLabelsAll.map((_, i) => activePalette[i % activePalette.length]);
 
     myChart2 = new Chart(ctx2, {
         type: 'bar',
@@ -984,7 +993,7 @@ async function generarGraficos() {
                 borderWidth: 1,
                 borderRadius: 8,
                 borderSkipped: false,
-                hoverBorderColor: '#fff',
+                hoverBorderColor: theme === 'light' ? '#334155' : '#fff',
                 hoverBorderWidth: 3,
             }]
         },
@@ -999,17 +1008,17 @@ async function generarGraficos() {
                         display: false
                     },
                     ticks: {
-                        color: '#94a3b8',
+                        color: textColor,
                         font: { family: 'Inter', size: 11, weight: '600' },
                         callback: function (value) {
                             return moneyFormatter.format(value);
                         }
                     },
-                    grid: { color: 'rgba(148, 163, 184, 0.05)', drawBorder: false }
+                    grid: { color: gridColor, drawBorder: false }
                 },
                 x: {
                     ticks: {
-                        color: '#94a3b8',
+                        color: textColor,
                         font: { family: 'Inter', size: 10, weight: '600' },
                         maxRotation: labelsAll.length > 7 ? 45 : 0
                     },
@@ -1019,13 +1028,13 @@ async function generarGraficos() {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    titleColor: '#fff',
+                    backgroundColor: theme === 'light' ? 'rgba(255, 255, 255, 0.95)' : 'rgba(15, 23, 42, 0.95)',
+                    titleColor: theme === 'light' ? '#0f172a' : '#fff',
                     titleFont: { family: 'Inter', size: 14, weight: 'bold' },
-                    bodyColor: '#fff',
+                    bodyColor: theme === 'light' ? '#0f172a' : '#fff',
                     bodyFont: { family: 'Inter', size: 13 },
                     padding: 15,
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderColor: theme === 'light' ? 'rgba(0,0,0,0.1)' : 'rgba(255, 255, 255, 0.1)',
                     borderWidth: 1,
                     cornerRadius: 12,
                     displayColors: true,

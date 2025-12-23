@@ -41,15 +41,18 @@
         <h2 style="margin-bottom: 20px;">Bienvenido</h2>
 
         <div class="form-grid" style="grid-template-columns: 1fr;">
+
             <div class="input-group">
                 <input id="user" type="email" placeholder="Email">
             </div>
             <div class="input-group">
                 <input id="pass" type="password" placeholder="Contraseña">
             </div>
+
             <button class="btn btn-primary btn-glow" onclick="login()" style="width: 100%;">
                 Ingresar
             </button>
+
         </div>
 
 
@@ -107,7 +110,7 @@
                         background: '#1e293b',
                         color: '#fff'
                     }).then(() => {
-                        window.location.href = 'dashboard';
+                        window.location.href = 'dashboard.html';
                     });
                 } else {
                     Swal.fire({
@@ -137,7 +140,6 @@
             });
         });
 
-        // Comentado para evitar auto-logins no deseados y permitir cambio de roles
         /*
         (async () => {
             const urlParams = new URLSearchParams(window.location.search);

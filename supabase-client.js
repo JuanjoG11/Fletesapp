@@ -366,28 +366,27 @@ async function eliminarFleteDB(fleteId) {
  */
 async function obtenerKPIs() {
     try {
-        // Total de fletes
-        const { count: totalFletes } = await _supabase
+        const { count: totalFletes, error: e1 } = await _supabase
             .from('fletes')
             .select('*', { count: 'exact', head: true });
+        if (e1) throw e1;
 
-        // Ingresos del mes actual
         const fechaActual = new Date();
-        const primerDiaMes = new Date(fechaActual.getFullYear(), fechaActual.getMonth(), 1)
-            .toISOString().split('T')[0];
+        const primerDiaMes = new Date(fechaActual.getFullYear(), fechaActual.getMonth(), 1).toISOString().split('T')[0];
 
-        const { data: fletesDelMes } = await _supabase
+        const { data: fletesDelMes, error: e2 } = await _supabase
             .from('fletes')
             .select('precio')
             .gte('fecha', primerDiaMes);
+        if (e2) throw e2;
 
         const ingresosMes = fletesDelMes?.reduce((sum, f) => sum + parseFloat(f.precio || 0), 0) || 0;
 
-        // Vehículos activos
-        const { count: vehiculosActivos } = await _supabase
+        const { count: vehiculosActivos, error: e3 } = await _supabase
             .from('vehiculos')
             .select('*', { count: 'exact', head: true })
             .eq('activo', true);
+        if (e3) throw e3;
 
         return {
             totalFletes: totalFletes || 0,
@@ -395,8 +394,8 @@ async function obtenerKPIs() {
             vehiculosActivos: vehiculosActivos || 0
         };
     } catch (error) {
-        console.error('Error al obtener KPIs:', error);
-        return { totalFletes: 0, ingresosMes: 0, vehiculosActivos: 0 };
+        console.error('❌ Error al obtener KPIs de Supabase:', error);
+        throw error; // Propagar para que el dashboard lo detecte
     }
 }
 

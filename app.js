@@ -32,25 +32,30 @@ function formatMoneyInput(input) {
 // 🔐 ROLES & PERMISOS
 // ==========================================================
 async function checkAuth() {
-    // Usar cache de sesión si existe y tiene el perfil
-    if (!CURRENT_SESSION || !CURRENT_SESSION.profile) {
+    // Obtener sesión si no existe
+    if (!CURRENT_SESSION) {
         const { session, user: profile } = await window.supabaseClient.obtenerSesionActual();
         if (session) {
             CURRENT_SESSION = { ...session, profile };
         }
     }
-    const session = CURRENT_SESSION;
 
-    if (!session) {
-        window.location.href = "/";
+    const sessionData = CURRENT_SESSION;
+
+    if (!sessionData) {
+        console.warn("⚠️ Sesión no encontrada, redirigiendo a login...");
+        window.location.href = "index.html";
         return;
     }
 
-    const role = session.profile?.rol || session.user?.user_metadata?.rol || 'operario';
+    const userData = sessionData.profile || sessionData.user?.user_metadata;
+    const role = (userData?.rol || 'operario').toLowerCase();
+    const userName = userData?.nombre || 'Usuario';
 
     const userRoleBadge = document.getElementById("userRoleBadge");
     if (userRoleBadge) {
-        userRoleBadge.textContent = role === 'admin' ? 'Administrador' : 'Operario Logístico';
+        const roleText = role === 'admin' ? 'Administrador' : 'Operario Logístico';
+        userRoleBadge.textContent = `${roleText} / ${userName}`;
     }
 
     // Nav Items
@@ -81,7 +86,7 @@ async function checkAuth() {
 async function logout() {
     await SupabaseClient.auth.logout();
     CURRENT_SESSION = null;
-    window.location.href = "/?logout=true";
+    window.location.href = "index.html?logout=true";
 }
 
 // ==========================================================
@@ -883,12 +888,35 @@ async function generarGraficos() {
 
     // Obtener todos los fletes para graficar
     const { data: fletes, error } = await SupabaseClient.supabase.from('fletes').select('zona, precio, fecha');
-    if (error || !fletes) return;
+    if (error) {
+        console.error("❌ Error al obtener fletes para gráficos:", error);
+        return;
+    }
+    if (!fletes) return;
 
     // --- Chart 1: Zonas ---
     const count = {};
     fletes.forEach(f => count[f.zona] = (count[f.zona] || 0) + 1);
 
+    if (fletes.length === 0) {
+        if (myChart) myChart.destroy();
+        if (myChart2) myChart2.destroy();
+
+        // Mostrar mensaje de "Sin datos"
+        [ctx, ctx2].forEach(c => {
+            if (!c) return;
+            const context = c.getContext('2d');
+            context.clearRect(0, 0, c.width, c.height);
+            context.fillStyle = theme === 'light' ? '#64748b' : '#94a3b8';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.font = '14px Inter';
+            context.fillText('No hay fletes registrados aún', c.width / 2, c.height / 2);
+        });
+        return;
+    }
+
+    // --- Chart 1: Zonas ---
     if (myChart) myChart.destroy();
     myChart = new Chart(ctx, {
         type: 'doughnut',
@@ -909,8 +937,6 @@ async function generarGraficos() {
 
     // --- Chart 2: Ingresos por Día (Desde el primer flete registrado) ---
     if (!ctx2) return;
-
-    if (fletes.length === 0) return;
 
     // Agrupar ingresos por dia y encontrar la fecha mas antigua
     const ingresosPorDia = {};
@@ -1166,7 +1192,17 @@ document.addEventListener("DOMContentLoaded", async () => {
             listarVehiculos(),
             listarFletes(),
             actualizarKPI()
-        ]).then(() => console.log("✅ Datos cargados"));
+        ]).then(() => console.log("✅ Datos cargados correctamente"))
+            .catch(err => {
+                console.error("❌ Error cargando datos:", err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de Datos',
+                    text: 'No se pudieron cargar algunos datos del dashboard. Revisa tus permisos o si el perfil está bien creado.',
+                    background: '#1e293b',
+                    color: '#fff'
+                });
+            });
 
         // 1. Navigation
         const tabs = document.querySelectorAll(".nav-item");
@@ -1174,9 +1210,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             t.addEventListener("click", async () => {
                 const target = t.dataset.tab;
                 const session = CURRENT_SESSION;
-                const role = session?.user?.user_metadata?.rol;
+                const role = (session?.profile?.rol || session?.user?.user_metadata?.rol || 'operario').toLowerCase();
 
-                if (role === 'admin' && target === 'estadisticas') return; // Fallback removal logic
+                if (role === 'admin' && target === 'estadisticas') return;
 
                 document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("visible"));
                 document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));

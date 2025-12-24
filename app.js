@@ -115,26 +115,31 @@ async function listarVehiculos() {
     const tbody = document.getElementById("tablaVehiculos");
     if (!tbody) return;
 
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center"><i class="ri-loader-4-line rotate"></i> Cargando vehículos...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center"><i class="ri-loader-4-line rotate"></i> Cargando vehículos...</td></tr>`;
 
     const res = await SupabaseClient.vehiculos.getAll();
     FLOTA_VEHICULOS = res.success ? res.data : [];
 
     tbody.innerHTML = "";
     if (FLOTA_VEHICULOS.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center">No hay vehículos registrados</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center">No hay vehículos registrados</td></tr>`;
         return;
     }
 
     FLOTA_VEHICULOS.forEach(v => {
         const tr = document.createElement("tr");
+        const statusBadge = v.activo
+            ? '<span class="status-badge-active" style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;"><i class="ri-checkbox-circle-line"></i> Activo</span>'
+            : '<span class="status-badge-inactive" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;"><i class="ri-error-warning-line"></i> Inactivo</span>';
+
         tr.innerHTML = `
             <td><span class="badge-plate">${v.placa}</span></td>
             <td>${v.conductor}</td>
             <td style="color: var(--text-muted)">${v.modelo || 'N/A'}</td>
+            <td>${statusBadge}</td>
             <td class="actions-cell">
-                <button class="btn-icon delete" onclick="eliminarVehiculo('${v.id}', '${v.placa}')" title="Eliminar Vehículo">
-                    <i class="ri-delete-bin-line"></i>
+                <button class="btn-icon ${v.activo ? 'delete' : 'edit'}" onclick="toggleEstadoVehiculo('${v.id}', ${v.activo}, '${v.placa}')" title="${v.activo ? 'Inactivar' : 'Activar'} Vehículo">
+                    <i class="${v.activo ? 'ri-close-circle-line' : 'ri-checkbox-circle-line'}"></i>
                 </button>
             </td>
         `;
@@ -142,27 +147,30 @@ async function listarVehiculos() {
     });
 }
 
-async function eliminarVehiculo(id, placa) {
+async function toggleEstadoVehiculo(id, estadoActual, placa) {
+    const nuevoEstado = !estadoActual;
+    const accion = nuevoEstado ? 'Activar' : 'Inactivar';
+
     const { isConfirmed } = await Swal.fire({
-        title: '¿Eliminar Vehículo?',
-        text: `Se eliminará la placa ${placa} de la base de datos.`,
-        icon: 'warning',
+        title: `¿${accion} Vehículo?`,
+        text: `El vehículo con placa ${placa} quedará ${nuevoEstado ? 'activo' : 'inactivo'}. ${nuevoEstado ? '' : 'No se podrán registrar nuevos fletes con este vehículo.'}`,
+        icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: '#ef4444',
+        confirmButtonColor: nuevoEstado ? '#10b981' : '#ef4444',
         cancelButtonColor: '#64748b',
-        confirmButtonText: 'Sí, eliminar',
+        confirmButtonText: `Sí, ${accion.toLowerCase()}`,
         cancelButtonText: 'Cancelar',
         background: '#1e293b',
         color: '#f8fafc'
     });
 
     if (isConfirmed) {
-        const result = await SupabaseClient.vehiculos.delete(id);
-        if (result) {
+        const result = await SupabaseClient.vehiculos.update(id, { activo: nuevoEstado });
+        if (result.success) {
             await listarVehiculos();
             await actualizarKPI();
             Swal.fire({
-                title: 'Eliminado',
+                title: nuevoEstado ? 'Activado' : 'Inactivado',
                 icon: 'success',
                 timer: 1500,
                 showConfirmButton: false,
@@ -170,7 +178,7 @@ async function eliminarVehiculo(id, placa) {
                 color: '#f8fafc'
             });
         } else {
-            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar el vehículo. Verifique sus permisos.', background: '#1e293b', color: '#f8fafc' });
+            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar el estado del vehículo.', background: '#1e293b', color: '#f8fafc' });
         }
     }
 }
@@ -200,6 +208,7 @@ async function registrarVehiculoOperario() {
 
     if (result.success) {
         await listarVehiculos();
+        await actualizarKPI(); // Actualizar contador de vehículos activos
         placaInput.value = "";
         condInput.value = "";
         if (modInput) modInput.value = "";
@@ -373,6 +382,7 @@ async function obtenerDatosFormulario(prefix = "") {
 
     const placa = val("placa").toUpperCase().replace(/[\s-]/g, '').trim();
     const contratista = val("contratista");
+    const proveedor = val("proveedor");
     const zona = val("zona");
     const dia = val("dia");
     const poblacion = val("poblacion");
@@ -395,11 +405,24 @@ async function obtenerDatosFormulario(prefix = "") {
         const res = await SupabaseClient.vehiculos.create({
             placa,
             conductor: contratista,
-            modelo: 'Autocreado'
+            modelo: 'Autocreado',
+            activo: true // Por defecto activo
         });
         if (res.success) {
             vehiculo = res.data;
         }
+    }
+
+    // VALIDACIÓN: Vehículo inactivo
+    if (vehiculo && vehiculo.activo === false) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Vehículo Inactivo',
+            text: `El vehículo con placa ${placa} está inactivo y no puede registrar nuevos fletes. Por favor, actívelo en la gestión de vehículos.`,
+            background: '#1a1a1a',
+            color: '#fff'
+        });
+        return null; // Detener flujo
     }
 
     const finalData = {
@@ -408,6 +431,7 @@ async function obtenerDatosFormulario(prefix = "") {
             vehiculo_id: vehiculo?.id,
             user_id: user.id,
             contratista,
+            proveedor,
             zona,
             dia,
             poblacion,
@@ -432,11 +456,17 @@ async function obtenerDatosFormulario(prefix = "") {
     return finalData;
 }
 
+// Interceptar llamados para manejar el null de validación
 async function crearFlete() {
     const btn = document.getElementById("btnGestionarFlete");
     if (btn) btn.disabled = true;
 
-    const { db, ui } = await obtenerDatosFormulario("");
+    const formData = await obtenerDatosFormulario("");
+    if (!formData) {
+        if (btn) btn.disabled = false;
+        return;
+    }
+    const { db, ui } = formData;
 
     if (!ui.placa || !db.contratista || !db.zona || db.precio <= 0) {
         Swal.fire({
@@ -445,6 +475,30 @@ async function crearFlete() {
         });
         if (btn) btn.disabled = false;
         return;
+    }
+
+    // Alerta de confirmación para Operarios
+    const session = CURRENT_SESSION;
+    const role = (session?.profile?.rol || session?.user?.user_metadata?.rol || 'operario').toLowerCase();
+
+    if (role === 'operario') {
+        const { isConfirmed } = await Swal.fire({
+            title: '¿Confirmar Registro?',
+            text: '¿Está seguro de ingresar este flete? Una vez guardado no podrá editarlo ni eliminarlo.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3b82f6',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, registrar',
+            cancelButtonText: 'Revisar',
+            background: '#1a1a1a',
+            color: '#fff'
+        });
+
+        if (!isConfirmed) {
+            if (btn) btn.disabled = false;
+            return;
+        }
     }
 
     // --- Optimistic UI Update ---
@@ -477,7 +531,12 @@ async function guardarCambiosFlete() {
     const btn = document.getElementById("btnGuardarModal");
     if (btn) btn.disabled = true;
 
-    const { db, ui } = await obtenerDatosFormulario("modal-");
+    const formData = await obtenerDatosFormulario("modal-");
+    if (!formData) {
+        if (btn) btn.disabled = false;
+        return;
+    }
+    const { db, ui } = formData;
     delete db.id; // IMPORTANTE: Supabase falla si intentas actualizar la PK 'id'
 
     if (!ui.placa || !db.contratista || !db.zona || db.precio <= 0) {
@@ -515,7 +574,7 @@ async function guardarCambiosFlete() {
 
 function limpiarFormulario(prefix) {
     const fields = [
-        "placa", "contratista", "zona", "dia", "poblacion",
+        "placa", "contratista", "proveedor", "zona", "dia", "poblacion",
         "auxiliares", "no_auxiliares", "no_pedidos",
         "valor_ruta", "is_adicionales", "total_flete",
         "porcentaje_ruta", "fecha"
@@ -580,13 +639,13 @@ function renderTable(fletes) {
     const fFecha = document.getElementById("filtroFecha")?.value || "";
 
     const session = CURRENT_SESSION;
-    const role = session?.profile?.rol || session?.user?.user_metadata?.rol || 'operario';
+    const role = (session?.profile?.rol || session?.user?.user_metadata?.rol || 'operario').toLowerCase();
     const currentUserId = session?.user?.id;
 
     const filtered = fletes.filter(f => {
         const contratista = f.contratista || '';
         const placa = f.placa || '';
-        const matchQ = (placa.toLowerCase().includes(q) || contratista.toLowerCase().includes(q));
+        const matchQ = (placa.toLowerCase().includes(q) || contratista.toLowerCase().includes(q) || (f.proveedor || '').toLowerCase().includes(q));
         const matchZ = fZona ? f.zona === fZona : true;
         const matchF = fFecha ? f.fecha === fFecha : true;
         return matchQ && matchZ && matchF;
@@ -594,7 +653,7 @@ function renderTable(fletes) {
 
     tbody.innerHTML = "";
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center">No se encontraron fletes</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center">No se encontraron fletes</td></tr>`;
         return;
     }
 
@@ -602,16 +661,17 @@ function renderTable(fletes) {
         const tr = document.createElement("tr");
         if (f.id && f.id.toString().startsWith('temp-')) tr.style.opacity = "0.5";
 
-        const canEdit = role === 'operario';
+        const canEdit = role === 'admin';
 
         const actions = canEdit ? `
             <button class="btn-icon edit" onclick="editarFlete('${f.id}')" title="Editar"><i class="ri-edit-line"></i></button>
             <button class="btn-icon delete" onclick="eliminarFlete('${f.id}')" title="Eliminar"><i class="ri-delete-bin-line"></i></button>
-        ` : `<span style="font-size:0.7rem; opacity:0.5">Solo Lectura</span>`;
+        ` : `<span style="font-size:0.7rem; opacity:0.5"><i class="ri-lock-line"></i> Protegido</span>`;
 
         tr.innerHTML = `
             <td>${f.fecha}</td>
             <td>${f.dia || '-'}</td>
+            <td><span class="badge" style="background: var(--accent-blue); font-size: 0.7rem; padding: 2px 6px;">${f.proveedor || '-'}</span></td>
             <td><strong>${f.contratista}</strong></td>
             <td><span class="badge-plate">${f.placa}</span></td>
             <td>${f.zona || '-'}</td>
@@ -650,6 +710,7 @@ window.editarFlete = async function (id) {
     set("fecha", f.fecha);
     set("placa", f.placa);
     set("contratista", f.contratista);
+    set("proveedor", f.proveedor);
     set("zona", f.zona);
     set("dia", f.dia);
     set("poblacion", f.poblacion);
@@ -718,9 +779,9 @@ async function actualizarKPI() {
     const el = document.getElementById("cantFletes");
     if (el) el.innerText = stats.totalFletes;
 
-    // 2. Ingresos Mes Actual
-    const kpiIngresos = document.getElementById("kpiIngresos");
-    if (kpiIngresos) kpiIngresos.innerText = moneyFormatter.format(stats.ingresosMes);
+    // 2. Registros Mes Actual
+    const kpiRegistros = document.getElementById("kpiRegistros");
+    if (kpiRegistros) kpiRegistros.innerText = moneyFormatter.format(stats.ingresosMes);
 
     // 3. Vehiculos Activos
     const kpiVehiculos = document.getElementById("kpiVehiculos");
@@ -877,7 +938,7 @@ async function generarGraficos() {
     // Permitir a todos ver gráficos si están en la pestaña
 
     const ctx = document.getElementById("chartZonas");
-    const ctx2 = document.getElementById("chartIngresos");
+    const ctx2 = document.getElementById("chartRegistros");
     if (!ctx) return;
 
     // Obtener todos los fletes para graficar
@@ -929,16 +990,16 @@ async function generarGraficos() {
         }
     });
 
-    // --- Chart 2: Ingresos por Día (Desde el primer flete registrado) ---
+    // --- Chart 2: Registros por Día (Desde el primer flete registrado) ---
     if (!ctx2) return;
 
     // Agrupar ingresos por dia y encontrar la fecha mas antigua
-    const ingresosPorDia = {};
+    const registrosPorDia = {};
     let minDate = new Date(); // Por defecto hoy
 
     fletes.forEach(f => {
         const dayKey = f.fecha; // YYYY-MM-DD
-        ingresosPorDia[dayKey] = (ingresosPorDia[dayKey] || 0) + parseFloat(f.precio);
+        registrosPorDia[dayKey] = (registrosPorDia[dayKey] || 0) + parseFloat(f.precio);
 
         const currentFleteDate = new Date(dayKey + 'T00:00:00'); // Asegurar local time
         if (currentFleteDate < minDate) {
@@ -977,7 +1038,7 @@ async function generarGraficos() {
     // o dejamos que el usuario vea todo si prefiere. Por ahora, mostramos todo desde el inicio.
     // Pero si es mucho, Chart.js lo manejará.
 
-    const dataVals = fullLabelsAll.map(l => ingresosPorDia[l.key] || 0);
+    const dataVals = fullLabelsAll.map(l => registrosPorDia[l.key] || 0);
 
     const theme = document.documentElement.getAttribute("data-theme") || "dark";
 
@@ -996,7 +1057,7 @@ async function generarGraficos() {
         const color = activePalette[i % activePalette.length];
         const g = ctxTemp.createLinearGradient(0, 0, 0, 300);
         g.addColorStop(0, color);
-        g.addColorStop(1, color + (theme === 'light' ? '99' : '66')); // Ajuste opacidad según fondo
+        g.addColorStop(1, color + (theme === 'light' ? '99' : '66'));
         return g;
     });
     const borderColors = fullLabelsAll.map((_, i) => activePalette[i % activePalette.length]);
@@ -1006,7 +1067,7 @@ async function generarGraficos() {
         data: {
             labels: labelsAll,
             datasets: [{
-                label: 'Ingresos Diarios',
+                label: 'Fletes Registrados',
                 data: dataVals,
                 backgroundColor: backgroundColors,
                 borderColor: borderColors,
@@ -1021,30 +1082,6 @@ async function generarGraficos() {
             responsive: true,
             maintainAspectRatio: false,
             layout: { padding: { top: 30 } },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: false
-                    },
-                    ticks: {
-                        color: textColor,
-                        font: { family: 'Inter', size: 11, weight: '600' },
-                        callback: function (value) {
-                            return moneyFormatter.format(value);
-                        }
-                    },
-                    grid: { color: gridColor, drawBorder: false }
-                },
-                x: {
-                    ticks: {
-                        color: textColor,
-                        font: { family: 'Inter', size: 10, weight: '600' },
-                        maxRotation: labelsAll.length > 7 ? 45 : 0
-                    },
-                    grid: { display: false }
-                }
-            },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -1066,9 +1103,31 @@ async function generarGraficos() {
                             return `${info.dayName}, ${info.date}`;
                         },
                         label: function (context) {
-                            return ' 💰 Ingresos: ' + moneyFormatter.format(context.raw) + ' COP';
+                            return ' 📝 Registros: ' + context.raw;
                         }
                     }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: false },
+                    ticks: {
+                        color: textColor,
+                        font: { family: 'Inter', size: 11, weight: '600' },
+                        callback: function (value) {
+                            return value.toLocaleString();
+                        }
+                    },
+                    grid: { color: gridColor, drawBorder: false }
+                },
+                x: {
+                    ticks: {
+                        color: textColor,
+                        font: { family: 'Inter', size: 10, weight: '600' },
+                        maxRotation: labelsAll.length > 7 ? 45 : 0
+                    },
+                    grid: { display: false }
                 }
             }
         }

@@ -234,21 +234,22 @@ async function importarVehiculos(vehiculos) {
 }
 
 /**
- * Eliminar vehículo
+ * Actualizar vehículo
  * @param {string} vehiculoId - ID del vehículo
+ * @param {object} vehiculoData - Datos a actualizar
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-async function eliminarVehiculo(vehiculoId) {
+async function actualizarVehiculo(vehiculoId, vehiculoData) {
     try {
         const { error } = await _supabase
             .from('vehiculos')
-            .delete()
+            .update(vehiculoData)
             .eq('id', vehiculoId);
 
         if (error) throw error;
         return { success: true };
     } catch (error) {
-        console.error('Error al eliminar vehículo:', error);
+        console.error('Error al actualizar vehículo:', error);
         return { success: false, error: error.message };
     }
 }
@@ -467,7 +468,7 @@ const SupabaseClientAPI = {
         getByPlaca: buscarVehiculoPorPlaca,
         create: crearVehiculo,
         importar: importarVehiculos,
-        delete: eliminarVehiculo
+        update: actualizarVehiculo
     },
     // Módulo de Fletes
     fletes: {

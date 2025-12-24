@@ -118,8 +118,8 @@
                 <div class="card glass-card kpi-card">
                     <div class="kpi-icon icon-green"><i class="ri-money-dollar-circle-line"></i></div>
                     <div class="kpi-info">
-                        <h3>Ingresos del Mes</h3>
-                        <p id="kpiIngresos" class="kpi-value">$ 0</p>
+                        <h3>Registros del Mes</h3>
+                        <p id="kpiRegistros" class="kpi-value">$ 0</p>
                     </div>
                 </div>
                 <div class="card glass-card kpi-card">
@@ -134,9 +134,9 @@
             <!-- 📊 SECCIÓN ESTADÍSTICAS INTEGRADAS -->
             <div class="grid-2" style="margin-top: 20px;">
                 <div class="card glass-card chart-container">
-                    <h3>Ingresos por Día</h3>
+                    <h3>Registros por Día</h3>
                     <div class="chart-wrapper">
-                        <canvas id="chartIngresos"></canvas>
+                        <canvas id="chartRegistros"></canvas>
                     </div>
                 </div>
                 <div class="card glass-card chart-container">
@@ -164,6 +164,18 @@
                         <div class="input-group">
                             <label>Conductor (Auto)</label>
                             <input id="contratista" placeholder="Nombre Conductor" readonly class="input-readonly">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Proveedor</label>
+                            <select id="proveedor">
+                                <option value="" disabled selected>Seleccione...</option>
+                                <option>ALPINA</option>
+                                <option>ZENU</option>
+                                <option>POLAR</option>
+                                <option>FLEISCHMANN</option>
+                                <option>ALPINA-FLEISCHMANN</option>
+                            </select>
                         </div>
 
                         <div class="input-group">
@@ -396,6 +408,7 @@
                                     <th>Placa</th>
                                     <th>Conductor</th>
                                     <th>Modelo</th>
+                                    <th>Estado</th>
                                     <th class="actions-col">Acciones</th>
                                 </tr>
                             </thead>
@@ -471,6 +484,7 @@
                             <tr>
                                 <th>Fecha</th>
                                 <th>Día</th>
+                                <th>Proveedor</th>
                                 <th>Conductor</th>
                                 <th>Placa</th>
                                 <th>Zona</th>
@@ -509,6 +523,17 @@
                             oninput="this.value = this.value.toUpperCase().replace('-', '')"> </div>
                     <div class="input-group"> <label>Conductor</label> <input id="modal-contratista" readonly
                             class="input-readonly"> </div>
+                    <div class="input-group">
+                        <label>Proveedor</label>
+                        <select id="modal-proveedor">
+                            <option value="" disabled selected>Seleccione...</option>
+                            <option>ALPINA</option>
+                            <option>ZENU</option>
+                            <option>POLAR</option>
+                            <option>FLEISCHMANN</option>
+                            <option>ALPINA-FLEISCHMANN</option>
+                        </select>
+                    </div>
 
                     <div class="input-group">
                         <label>Zona</label>

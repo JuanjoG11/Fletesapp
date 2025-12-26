@@ -69,7 +69,7 @@
                 <button onclick="exportarExcel()" class="action-btn" title="Exportar Excel">
                     <i class="ri-file-excel-2-line"></i>
                 </button>
-                <button onclick="generarPDFReporte()" class="action-btn" title="Generar PDF">
+                <button id="btnExportarPDF" class="action-btn" title="Generar PDF">
                     <i class="ri-file-pdf-2-line"></i>
                 </button>
             </div>
@@ -717,6 +717,19 @@
         </div>
     </div>
 
+    <!-- LIBRERÍAS EXTERNAS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- APP SCRIPTS -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+    <script src="app.js"></script>
 </body>
 
 </html>

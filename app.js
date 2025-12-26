@@ -1052,61 +1052,80 @@ async function exportarExcel() {
 }
 
 async function generarPDF() {
-    const { data: fletes, error } = await SupabaseClient.supabase
-        .from('vista_fletes_completos')
-        .select('*');
+    // Mostrar diálogo de filtros ANTES de generar
+    const { value: formValues } = await Swal.fire({
+        title: '📄 Configurar Reporte PDF',
+        html: `
+            <div style="text-align: left; padding: 10px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Fecha del Reporte (Obligatorio):</label>
+                <input id="pdf-fecha" type="date" class="swal2-input" style="width: 90%;" required>
+                
+                <label style="display: block; margin-top: 15px; margin-bottom: 5px; font-weight: bold;">Proveedor (Opcional):</label>
+                <select id="pdf-proveedor" class="swal2-input" style="width: 90%;">
+                    <option value="">Todos los Proveedores</option>
+                    <option value="ALPINA">ALPINA</option>
+                    <option value="ZENU">ZENU</option>
+                    <option value="POLAR">POLAR</option>
+                    <option value="FLEISCHMANN">FLEISCHMANN</option>
+                </select>
+            </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Generar PDF',
+        cancelButtonText: 'Cancelar',
+        background: '#1e293b',
+        color: '#fff',
+        preConfirm: () => {
+            const fecha = document.getElementById('pdf-fecha').value;
+            const proveedor = document.getElementById('pdf-proveedor').value;
 
-    if (error || !fletes || fletes.length === 0) return Swal.fire("Info", "Sin datos para exportar", "info");
+            if (!fecha) {
+                Swal.showValidationMessage('Por favor selecciona una fecha');
+                return false;
+            }
 
-    let totalRuta = 0;
-    let totalFletes = 0;
-    let totalPedidosCount = 0;
-
-    const data = fletes.map(f => {
-        const vRuta = f.valor_ruta || 0;
-        const vFlete = f.precio || 0;
-        const numPed = f.no_pedidos || 0;
-
-        totalRuta += vRuta;
-        totalFletes += vFlete;
-        totalPedidosCount += numPed;
-
-        const participacion = vRuta > 0 ? ((vFlete / vRuta) * 100).toFixed(1) + '%' : '0%';
-
-        return [
-            f.zona || '',
-            f.placa,
-            f.contratista,
-            f.auxiliares || '',
-            numPed,
-            moneyFormatter.format(vRuta),
-            f.poblacion || '',
-            moneyFormatter.format(vFlete),
-            participacion,
-            ''
-        ];
+            return { fecha, proveedor };
+        }
     });
 
-    // Añadir fila de totales
-    data.push([
-        { content: 'TOTALES', colSpan: 4, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-        { content: totalPedidosCount, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-        { content: moneyFormatter.format(totalRuta), styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-        { content: '', styles: { fillColor: [240, 240, 240] } },
-        { content: moneyFormatter.format(totalFletes), styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-        { content: (totalRuta > 0 ? (totalFletes / totalRuta * 100).toFixed(1) + '%' : '0%'), styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-        { content: '', styles: { fillColor: [240, 240, 240] } }
-    ]);
+    if (!formValues) return; // Usuario canceló
+
+    const { fecha, proveedor } = formValues;
+
+    // Filtrar datos desde la base de datos directamente
+    let query = SupabaseClient.supabase
+        .from('vista_fletes_completos')
+        .select('*')
+        .eq('fecha', fecha);
+
+    if (proveedor) {
+        query = query.eq('proveedor', proveedor);
+    }
+
+    const { data: fletes, error } = await query;
+
+    if (error || !fletes || fletes.length === 0) {
+        return Swal.fire({
+            icon: 'info',
+            title: 'Sin Datos',
+            text: `No hay fletes registrados para ${fecha}${proveedor ? ' del proveedor ' + proveedor : ''}`,
+            background: '#1e293b',
+            color: '#fff'
+        });
+    }
 
     const { jsPDF } = window.jspdf;
-
     const doc = new jsPDF({
         orientation: 'l',
         unit: 'mm',
         format: 'a4'
     });
 
-    // LOGO INTEGRATION
+    // --- Header ---
+    const fechaImpresion = new Date().toLocaleString('es-CO');
+
+    // Logo Integration
     const imgEl = document.querySelector(".logo-img");
     if (imgEl) {
         const canvas = document.createElement("canvas");
@@ -1116,40 +1135,124 @@ async function generarPDF() {
         ctx.drawImage(imgEl, 0, 0);
         try {
             const imgData = canvas.toDataURL("image/png");
-            doc.addImage(imgData, 'PNG', 10, 10, 20, 0);
+            doc.addImage(imgData, 'PNG', 10, 5, 25, 12);
         } catch (e) {
-            console.warn("Error con el logo", e);
+            console.warn("Logo error", e);
         }
     }
 
-    // CABECERA SEGÚN MUESTRA
-    const fechaActual = new Date().toLocaleDateString();
-    const title = `PLANILLA FLETES TIENDAS Y MARCAS EJE CAFETERO NIT 9009739329 - ${fechaActual}`;
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text(title, doc.internal.pageSize.getWidth() / 2, 18, { align: 'center' });
+    doc.setFontSize(16);
+    doc.text(`Reporte de Fletes - ${fecha}`, 40, 15);
+    doc.setFontSize(10);
+    doc.text(`Generado el: ${fechaImpresion}`, 280, 10, { align: 'right' });
+    if (proveedor) {
+        doc.setFontSize(11);
+        doc.text(`Proveedor: ${proveedor}`, 40, 22);
+    }
 
-    doc.setFontSize(9);
-    doc.setFont(undefined, 'normal');
+    // --- Agrupación por Proveedor ---
+    fletes.sort((a, b) => (a.proveedor || '').localeCompare(b.proveedor || ''));
 
-    // 3. TABLA AUTOMÁTICA (Match exacto con imagen)
-    doc.autoTable({
-        head: [['RUTA', 'PLACA', 'CONDUCTOR', 'AUXILIAR', '# PEDIDO', 'VR. PEDIDO', 'POBLACIÓN', 'VALOR FLETE', 'PARTICIPACION', 'FIRMA CONDUCTOR']],
-        body: data,
-        startY: 30,
-        theme: 'grid',
-        styles: { fontSize: 7.5, cellPadding: 1.5 },
-        headStyles: { fillColor: [220, 220, 220], textColor: [0, 0, 0], fontStyle: 'bold' },
-        columnStyles: {
-            9: { cellWidth: 30 } // Espacio firma
-        }
+    const fletesPorProveedor = {};
+    fletes.forEach(f => {
+        const prov = f.proveedor || 'SIN PROVEEDOR';
+        if (!fletesPorProveedor[prov]) fletesPorProveedor[prov] = [];
+        fletesPorProveedor[prov].push(f);
     });
 
-    doc.save("Reporte_Fletes.pdf");
+    let currentY = proveedor ? 28 : 25;
+
+    // Iterar por cada proveedor y crear una tabla separada
+    for (const [proveedor, listaFletes] of Object.entries(fletesPorProveedor)) {
+
+        // Título del Grupo
+        doc.setFontSize(12);
+        doc.setTextColor(41, 128, 185); // Azul corporativo
+        doc.text(`Proveedor: ${proveedor}`, 14, currentY);
+        doc.setTextColor(0, 0, 0); // Reset negro
+
+        currentY += 2;
+
+        // Totales del Grupo
+        let totalRutaGrupo = 0;
+        let totalFleteGrupo = 0;
+        let totalPedidosGrupo = 0;
+
+        const bodyData = listaFletes.map(f => {
+            const vRuta = f.valor_ruta || 0;
+            const vFlete = f.precio || 0;
+            const numPed = f.no_pedidos || 0;
+
+            totalRutaGrupo += vRuta;
+            totalFleteGrupo += vFlete;
+            totalPedidosGrupo += numPed;
+
+            const participacion = vRuta > 0 ? ((vFlete / vRuta) * 100).toFixed(1) + '%' : '0%';
+
+            return [
+                f.fecha,                 // Nueva Columna: Fecha
+                f.zona || '',
+                f.placa,
+                f.contratista,
+                f.auxiliares || '',
+                numPed,
+                moneyFormatter.format(vRuta),
+                f.poblacion || '',
+                moneyFormatter.format(vFlete),
+                participacion
+            ];
+        });
+
+        // Fila de Totales del Grupo
+        const participacionTotal = totalRutaGrupo > 0 ? (totalFleteGrupo / totalRutaGrupo * 100).toFixed(1) + '%' : '0%';
+
+        bodyData.push([
+            { content: 'TOTALES', colSpan: 5, styles: { fontStyle: 'bold', fillColor: [240, 240, 240], halign: 'right' } },
+            { content: totalPedidosGrupo, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+            { content: moneyFormatter.format(totalRutaGrupo), styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+            { content: '', styles: { fillColor: [240, 240, 240] } }, // Población vacía en total
+            { content: moneyFormatter.format(totalFleteGrupo), styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+            { content: participacionTotal, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }
+        ]);
+
+        doc.autoTable({
+            startY: currentY + 3,
+            head: [['Fecha', 'Zona', 'Placa', 'Conductor', 'Aux', 'Ped', 'Valor Ruta', 'Población', 'Valor Flete', '%']],
+            body: bodyData,
+            theme: 'grid',
+            headStyles: { fillColor: [41, 128, 185], fontSize: 8 },
+            bodyStyles: { fontSize: 8 },
+            margin: { top: 30 },
+            pageBreak: 'avoid', // Intentar no romper tablas
+            didDrawPage: (data) => {
+                // Header en nuevas páginas si se rompe
+                if (doc.internal.getNumberOfPages() > 1 && data.pageNumber !== 1) {
+                    // Lógica opcional para headers en paginas siguientes
+                }
+            }
+        });
+
+        currentY = doc.lastAutoTable.finalY + 15; // Espacio para el siguiente grupo
+
+        // Si no hay espacio suficiente para el siguiente título (aprox 20mm), saltar página
+        if (currentY > 180) { // A4 Landscape height is ~210mm
+            doc.addPage();
+            currentY = 20;
+        }
+    }
+
+    doc.save(`Reporte_${proveedor || 'Todos'}_${fecha}.pdf`);
+
+    Swal.fire({
+        icon: 'success',
+        title: '¡PDF Generado!',
+        text: `Se descargó el reporte de ${fecha}`,
+        timer: 2000,
+        showConfirmButton: false,
+        background: '#1e293b',
+        color: '#fff'
+    });
 }
-
-window.generarPDFReporte = generarPDF; // Alias for HTML button
-
 // ==========================================================
 // 📊 GRÁFICOS (COLORFUL)
 // ==========================================================

@@ -853,16 +853,19 @@ async function listarFletes(silencioso = false) {
     if (!tbody) return;
 
     if (!silencioso && CACHED_FLETES.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center"><i class="ri-loader-4-line rotate"></i> Cargando...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center"><i class="ri-loader-4-line rotate"></i> Cargando...</td></tr>`;
     }
 
-    const { data, error } = await SupabaseClient.supabase
-        .from('vista_fletes_completos')
-        .select('*')
-        .order('created_at', { ascending: false });
+    // USAR getAll() DIRECTAMENTE en lugar de la vista para asegurar datos frescos
+    const res = await SupabaseClient.fletes.getAll();
 
-    if (!error && data) {
-        CACHED_FLETES = data;
+    if (res.success && res.data) {
+        // Aplanar datos del vehículo para compatibilidad con el render
+        CACHED_FLETES = res.data.map(f => ({
+            ...f,
+            placa: f.vehiculo?.placa || f.placa || 'N/A',
+            conductor: f.vehiculo?.conductor || f.contratista || 'N/A'
+        }));
         renderTable(CACHED_FLETES);
     }
 }
@@ -899,27 +902,20 @@ function renderTable(fletes) {
         const tr = document.createElement("tr");
         if (f.id && f.id.toString().startsWith('temp-')) tr.style.opacity = "0.5";
 
-        const isAdmin = role === 'admin';
-
-        const actionsTd = isAdmin ? `
-            <td class="actions-cell">
-                <button class="btn-icon edit" onclick="editarFlete('${f.id}')" title="Editar"><i class="ri-edit-line"></i></button>
-                <button class="btn-icon delete" onclick="eliminarFlete('${f.id}')" title="Eliminar"><i class="ri-delete-bin-line"></i></button>
-            </td>
-        ` : "";
-
         tr.innerHTML = `
             <td>${f.fecha}</td>
             <td>${f.dia || '-'}</td>
             <td><span class="badge" style="background: var(--accent-blue); font-size: 0.7rem; padding: 2px 6px;">${f.proveedor || '-'}</span></td>
-            <td><strong>${f.contratista}</strong></td>
+            <td><strong>${f.conductor}</strong></td>
             <td><span class="badge-plate">${f.placa}</span></td>
             <td>${f.zona || '-'}</td>
             <td>${f.poblacion || 'N/A'}</td>
             <td>${f.no_auxiliares || 0} (${f.auxiliares || '-'})</td>
+            <td><span class="badge" style="background: ${f.adicionales === 'Si' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.05)'}; color: ${f.adicionales === 'Si' ? 'var(--secondary)' : 'inherit'}; border: ${f.adicionales === 'Si' ? '1px solid var(--secondary)' : 'none'};">${f.adicionales || 'No'}</span></td>
+            <td class="price-cell" style="color: var(--info);">${moneyFormatter.format(f.valor_adicional_negociacion || 0)}</td>
+            <td style="font-size: 0.85rem; color: var(--text-muted); max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${f.razon_adicional_negociacion || ''}">${f.razon_adicional_negociacion || '-'}</td>
             <td class="price-cell">${moneyFormatter.format(f.valor_ruta || 0)}</td>
             <td class="price-cell">${moneyFormatter.format(f.precio)}</td>
-            ${actionsTd}
         `;
         tbody.appendChild(tr);
     });

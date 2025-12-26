@@ -1125,7 +1125,7 @@ async function generarPDF() {
     // --- Header ---
     const fechaImpresion = new Date().toLocaleString('es-CO');
 
-    // Logo Integration
+    // Logo Integration - Maintain aspect ratio
     const imgEl = document.querySelector(".logo-img");
     if (imgEl) {
         const canvas = document.createElement("canvas");
@@ -1135,111 +1135,118 @@ async function generarPDF() {
         ctx.drawImage(imgEl, 0, 0);
         try {
             const imgData = canvas.toDataURL("image/png");
-            doc.addImage(imgData, 'PNG', 10, 5, 25, 12);
+            // Usar dimensiones cuadradas para mantener proporción (logo es circular)
+            doc.addImage(imgData, 'PNG', 10, 5, 15, 15);
         } catch (e) {
             console.warn("Logo error", e);
         }
     }
 
-    doc.setFontSize(16);
-    doc.text(`Reporte de Fletes - ${fecha}`, 40, 15);
-    doc.setFontSize(10);
-    doc.text(`Generado el: ${fechaImpresion}`, 280, 10, { align: 'right' });
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text(`PLANILLA FLETES TIENDAS Y MARCAS EJE CAFETERO NIT 900973929 - ${fecha}`, 148, 15, { align: 'center' });
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(8);
+    doc.text(`Generado: ${fechaImpresion}`, 280, 10, { align: 'right' });
     if (proveedor) {
-        doc.setFontSize(11);
+        doc.setFontSize(10);
         doc.text(`Proveedor: ${proveedor}`, 40, 22);
     }
 
-    // --- Agrupación por Proveedor ---
+    // --- Ordenar por Proveedor para mejor visualización ---
     fletes.sort((a, b) => (a.proveedor || '').localeCompare(b.proveedor || ''));
-
-    const fletesPorProveedor = {};
-    fletes.forEach(f => {
-        const prov = f.proveedor || 'SIN PROVEEDOR';
-        if (!fletesPorProveedor[prov]) fletesPorProveedor[prov] = [];
-        fletesPorProveedor[prov].push(f);
-    });
 
     let currentY = proveedor ? 28 : 25;
 
-    // Iterar por cada proveedor y crear una tabla separada
-    for (const [proveedor, listaFletes] of Object.entries(fletesPorProveedor)) {
+    // Preparar datos para UNA SOLA TABLA con todos los fletes
+    let totalRutaGeneral = 0;
+    let totalFleteGeneral = 0;
+    let totalPedidosGeneral = 0;
 
-        // Título del Grupo
-        doc.setFontSize(12);
-        doc.setTextColor(41, 128, 185); // Azul corporativo
-        doc.text(`Proveedor: ${proveedor}`, 14, currentY);
-        doc.setTextColor(0, 0, 0); // Reset negro
+    const bodyData = fletes.map(f => {
+        const vRuta = f.valor_ruta || 0;
+        const vFlete = f.precio || 0;
+        const numPed = f.no_pedidos || 0;
 
-        currentY += 2;
+        totalRutaGeneral += vRuta;
+        totalFleteGeneral += vFlete;
+        totalPedidosGeneral += numPed;
 
-        // Totales del Grupo
-        let totalRutaGrupo = 0;
-        let totalFleteGrupo = 0;
-        let totalPedidosGrupo = 0;
+        const participacion = vRuta > 0 ? ((vFlete / vRuta) * 100).toFixed(1) + '%' : '0%';
 
-        const bodyData = listaFletes.map(f => {
-            const vRuta = f.valor_ruta || 0;
-            const vFlete = f.precio || 0;
-            const numPed = f.no_pedidos || 0;
+        return [
+            f.zona || '',            // RUTA
+            f.placa,                 // PLACA
+            f.contratista,           // CONDUCTOR
+            f.auxiliares || '',      // AUXILIAR
+            numPed,                  // # PEDIDO
+            moneyFormatter.format(vRuta),  // VR. PEDIDO
+            f.poblacion || '',       // POBLACIÓN
+            moneyFormatter.format(vFlete), // VALOR FLETE
+            participacion,           // PARTICIPACIÓN
+            ''                       // FIRMA CONDUCTOR (vacío para firma manual)
+        ];
+    });
 
-            totalRutaGrupo += vRuta;
-            totalFleteGrupo += vFlete;
-            totalPedidosGrupo += numPed;
+    // Fila de Totales General (una sola al final)
+    const participacionTotal = totalRutaGeneral > 0 ? (totalFleteGeneral / totalRutaGeneral * 100).toFixed(1) + '%' : '0%';
 
-            const participacion = vRuta > 0 ? ((vFlete / vRuta) * 100).toFixed(1) + '%' : '0%';
+    bodyData.push([
+        { content: 'TOTALES', colSpan: 4, styles: { fontStyle: 'bold', fillColor: [240, 240, 240], halign: 'right' } },
+        { content: totalPedidosGeneral, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+        { content: moneyFormatter.format(totalRutaGeneral), styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+        { content: '', styles: { fillColor: [240, 240, 240] } }, // Población vacía en total
+        { content: moneyFormatter.format(totalFleteGeneral), styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+        { content: participacionTotal, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+        { content: '', styles: { fillColor: [240, 240, 240] } } // Firma vacía en total
+    ]);
 
-            return [
-                f.fecha,                 // Nueva Columna: Fecha
-                f.zona || '',
-                f.placa,
-                f.contratista,
-                f.auxiliares || '',
-                numPed,
-                moneyFormatter.format(vRuta),
-                f.poblacion || '',
-                moneyFormatter.format(vFlete),
-                participacion
-            ];
-        });
-
-        // Fila de Totales del Grupo
-        const participacionTotal = totalRutaGrupo > 0 ? (totalFleteGrupo / totalRutaGrupo * 100).toFixed(1) + '%' : '0%';
-
-        bodyData.push([
-            { content: 'TOTALES', colSpan: 5, styles: { fontStyle: 'bold', fillColor: [240, 240, 240], halign: 'right' } },
-            { content: totalPedidosGrupo, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-            { content: moneyFormatter.format(totalRutaGrupo), styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-            { content: '', styles: { fillColor: [240, 240, 240] } }, // Población vacía en total
-            { content: moneyFormatter.format(totalFleteGrupo), styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-            { content: participacionTotal, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }
-        ]);
-
-        doc.autoTable({
-            startY: currentY + 3,
-            head: [['Fecha', 'Zona', 'Placa', 'Conductor', 'Aux', 'Ped', 'Valor Ruta', 'Población', 'Valor Flete', '%']],
-            body: bodyData,
-            theme: 'grid',
-            headStyles: { fillColor: [41, 128, 185], fontSize: 8 },
-            bodyStyles: { fontSize: 8 },
-            margin: { top: 30 },
-            pageBreak: 'avoid', // Intentar no romper tablas
-            didDrawPage: (data) => {
-                // Header en nuevas páginas si se rompe
-                if (doc.internal.getNumberOfPages() > 1 && data.pageNumber !== 1) {
-                    // Lógica opcional para headers en paginas siguientes
+    // Crear UNA SOLA TABLA con todos los datos
+    doc.autoTable({
+        startY: currentY + 3,
+        head: [['RUTA', 'PLACA', 'CONDUCTOR', 'AUXILIAR', '# PEDIDO', 'VR. PEDIDO', 'POBLACIÓN', 'VALOR FLETE', 'PARTICIPACIÓN', 'FIRMA CONDUCTOR']],
+        body: bodyData,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185], fontSize: 7, halign: 'center' },
+        bodyStyles: { fontSize: 6.5, overflow: 'linebreak', cellPadding: 1.5 },
+        columnStyles: {
+            0: { cellWidth: 18 },  // RUTA (reducido)
+            1: { cellWidth: 16 },  // PLACA (reducido)
+            2: { cellWidth: 45, overflow: 'linebreak' },  // CONDUCTOR (aumentado para nombres largos)
+            3: { cellWidth: 22 },  // AUXILIAR (reducido)
+            4: { cellWidth: 12, halign: 'center' },  // # PEDIDO (reducido)
+            5: { cellWidth: 22, halign: 'right' },   // VR. PEDIDO (reducido)
+            6: { cellWidth: 28 },  // POBLACIÓN (reducido)
+            7: { cellWidth: 22, halign: 'right' },   // VALOR FLETE (reducido)
+            8: { cellWidth: 16, halign: 'center' },  // PARTICIPACIÓN (reducido)
+            9: { cellWidth: 28 }   // FIRMA CONDUCTOR (reducido)
+        },
+        margin: { top: 30 },
+        didDrawPage: (data) => {
+            // Repetir header en páginas adicionales si la tabla se extiende
+            if (doc.internal.getNumberOfPages() > 1 && data.pageNumber !== 1) {
+                // Logo y título en páginas siguientes
+                const imgEl = document.querySelector(".logo-img");
+                if (imgEl) {
+                    const canvas = document.createElement("canvas");
+                    canvas.width = imgEl.naturalWidth;
+                    canvas.height = imgEl.naturalHeight;
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(imgEl, 0, 0);
+                    try {
+                        const imgData = canvas.toDataURL("image/png");
+                        doc.addImage(imgData, 'PNG', 10, 5, 15, 15);
+                    } catch (e) {
+                        console.warn("Logo error", e);
+                    }
                 }
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                doc.text(`PLANILLA FLETES TIENDAS Y MARCAS EJE CAFETERO NIT 900973929 - ${fecha}`, 148, 15, { align: 'center' });
+                doc.setFont(undefined, 'normal');
             }
-        });
-
-        currentY = doc.lastAutoTable.finalY + 15; // Espacio para el siguiente grupo
-
-        // Si no hay espacio suficiente para el siguiente título (aprox 20mm), saltar página
-        if (currentY > 180) { // A4 Landscape height is ~210mm
-            doc.addPage();
-            currentY = 20;
         }
-    }
+    });
 
     doc.save(`Reporte_${proveedor || 'Todos'}_${fecha}.pdf`);
 

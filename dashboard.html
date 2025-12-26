@@ -2,13 +2,16 @@
 <html lang="es" data-theme="dark">
 
 <head>
+    <!-- 
     <script>
         // Limpiar URL: quita .html de la barra de direcciones sin recargar
+        // Comentado para evitar errores 404 en Live Server durante desarrollo
         if (window.location.pathname.endsWith('.html')) {
             const cleanPath = window.location.pathname.replace('.html', '');
             window.history.replaceState(null, '', cleanPath);
         }
     </script>
+    -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | Gestión de Fletes</title>
@@ -174,7 +177,6 @@
                                 <option>ZENU</option>
                                 <option>POLAR</option>
                                 <option>FLEISCHMANN</option>
-                                <option>ALPINA-FLEISCHMANN</option>
                             </select>
                         </div>
 
@@ -225,6 +227,15 @@
                                 <option>PQ01</option>
                                 <option>PQ02</option>
                                 <option>PQ03</option>
+                                <option>FC01</option>
+                                <option>FC02</option>
+                                <option>FC03</option>
+                                <option>FQ04</option>
+                                <option>FQ05</option>
+                                <option>FQ06</option>
+                                <option>FR07</option>
+                                <option>FR08</option>
+                                <option>FR09</option>
                             </select>
                         </div>
 
@@ -326,7 +337,7 @@
                         </div>
 
                         <div class="input-group">
-                            <label>Valor Total Pedidos (COP)</label>
+                            <label>Valor Ruta</label>
                             <input id="valor_ruta" type="text" placeholder="$ 0" class="money-input">
                         </div>
 
@@ -473,6 +484,15 @@
                             <option>PQ01</option>
                             <option>PQ02</option>
                             <option>PQ03</option>
+                            <option>FC01</option>
+                            <option>FC02</option>
+                            <option>FC03</option>
+                            <option>FQ04</option>
+                            <option>FQ05</option>
+                            <option>FQ06</option>
+                            <option>FR07</option>
+                            <option>FR08</option>
+                            <option>FR09</option>
                         </select>
                         <input type="date" id="filtroFecha" onchange="buscarFletes()">
                     </div>
@@ -531,7 +551,6 @@
                             <option>ZENU</option>
                             <option>POLAR</option>
                             <option>FLEISCHMANN</option>
-                            <option>ALPINA-FLEISCHMANN</option>
                         </select>
                     </div>
 
@@ -581,6 +600,15 @@
                             <option>PQ01</option>
                             <option>PQ02</option>
                             <option>PQ03</option>
+                            <option>FC01</option>
+                            <option>FC02</option>
+                            <option>FC03</option>
+                            <option>FQ04</option>
+                            <option>FQ05</option>
+                            <option>FQ06</option>
+                            <option>FR07</option>
+                            <option>FR08</option>
+                            <option>FR09</option>
                         </select>
                     </div>
 
@@ -663,8 +691,8 @@
                     <div class="input-group"> <label>No. Pedidos</label> <input id="modal-no_pedidos" type="number">
                     </div>
 
-                    <div class="input-group"> <label>Valor Total Pedidos</label> <input id="modal-valor_ruta"
-                            type="text" class="money-input"> </div>
+                    <div class="input-group"> <label>Valor Ruta</label> <input id="modal-valor_ruta" type="text"
+                            class="money-input"> </div>
 
                     <div class="input-group">
                         <label>¿Adicionales?</label>

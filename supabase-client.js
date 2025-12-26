@@ -412,10 +412,13 @@ async function obtenerEstadisticas() {
 
         if (!fletes) return { zonas: {}, ingresosPorMes: {} };
 
-        // Agrupar por zona
+        // Agrupar por zona (Conteo y Valor)
         const zonas = {};
+        const valoresZonas = {};
+
         fletes.forEach(f => {
             zonas[f.zona] = (zonas[f.zona] || 0) + 1;
+            valoresZonas[f.zona] = (valoresZonas[f.zona] || 0) + parseFloat(f.precio || 0);
         });
 
         // Agrupar ingresos por mes
@@ -425,10 +428,10 @@ async function obtenerEstadisticas() {
             ingresosPorMes[mes] = (ingresosPorMes[mes] || 0) + parseFloat(f.precio || 0);
         });
 
-        return { zonas, ingresosPorMes };
+        return { zonas, ingresosPorMes, valoresZonas };
     } catch (error) {
         console.error('Error al obtener estadísticas:', error);
-        return { zonas: {}, ingresosPorMes: {} };
+        return { zonas: {}, ingresosPorMes: {}, valoresZonas: {} };
     }
 }
 

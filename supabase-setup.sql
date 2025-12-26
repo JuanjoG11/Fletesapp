@@ -42,6 +42,7 @@
         poblacion TEXT,
         valor_ruta NUMERIC(12, 2) DEFAULT 0,
         precio NUMERIC(12, 2) NOT NULL,
+        proveedor TEXT,
         adicionales TEXT,
         no_pedidos INTEGER DEFAULT 0,
         auxiliares TEXT,
@@ -91,7 +92,21 @@
     DROP POLICY IF EXISTS "Acceso total autenticados" ON public.fletes;
     CREATE POLICY "Acceso total autenticados" ON public.fletes FOR ALL USING (auth.role() = 'authenticated');
 
-    -- 7. VISTA PARA LA APP (Vital para listar fletes)
+    -- 7. REPARAR TABLA (Si no tiene proveedor)
+    DO $$ 
+    BEGIN 
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='fletes' AND column_name='proveedor') THEN
+            ALTER TABLE public.fletes ADD COLUMN proveedor TEXT;
+        END IF;
+
+        -- Migración de Datos: Llenar proveedores antiguos basados en la zona
+        UPDATE public.fletes SET proveedor = 'ALPINA' WHERE proveedor IS NULL AND zona LIKE 'M%';
+        UPDATE public.fletes SET proveedor = 'ZENU' WHERE proveedor IS NULL AND zona LIKE '250%';
+        UPDATE public.fletes SET proveedor = 'POLAR' WHERE proveedor IS NULL AND zona LIKE 'PC%';
+        UPDATE public.fletes SET proveedor = 'FLEISCHMANN' WHERE proveedor IS NULL AND (zona LIKE 'FC%' OR zona LIKE 'FQ%' OR zona LIKE 'FR%');
+    END $$;
+
+    -- 8. ACTUALIZAR VISTA (Drop & Re-create para evitar error de columnas)
     DROP VIEW IF EXISTS public.vista_fletes_completos;
     CREATE OR REPLACE VIEW public.vista_fletes_completos AS
     SELECT 
@@ -104,7 +119,21 @@
     LEFT JOIN public.vehiculos v ON f.vehiculo_id = v.id
     LEFT JOIN public.usuarios u ON f.user_id = u.id;
 
-    -- 8. REPARACIÓN MANUAL INMEDIATA (Crea perfiles para usuarios existentes)
+    -- Reparar columna proveedor si ya existe la tabla fletes
+    DO $$ 
+    BEGIN 
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='fletes' AND column_name='proveedor') THEN
+            ALTER TABLE public.fletes ADD COLUMN proveedor TEXT;
+        END IF;
+
+        -- Migración de Datos: Llenar proveedores antiguos basados en la zona
+        UPDATE public.fletes SET proveedor = 'ALPINA' WHERE proveedor IS NULL AND zona LIKE 'M%';
+        UPDATE public.fletes SET proveedor = 'ZENU' WHERE proveedor IS NULL AND zona LIKE '250%';
+        UPDATE public.fletes SET proveedor = 'POLAR' WHERE proveedor IS NULL AND zona LIKE 'PC%';
+        UPDATE public.fletes SET proveedor = 'FLEISCHMANN' WHERE proveedor IS NULL AND (zona LIKE 'FC%' OR zona LIKE 'FQ%' OR zona LIKE 'FR%');
+    END $$;
+
+    -- 9. REPARACIÓN MANUAL INMEDIATA (Crea perfiles para usuarios existentes)
     -- Primero limpiamos perfiles sin dueño en Auth
     DELETE FROM public.usuarios WHERE id NOT IN (SELECT id FROM auth.users);
 

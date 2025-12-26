@@ -20,12 +20,13 @@ function parseMoney(amountStr) {
 }
 
 function formatMoneyInput(input) {
-    const val = parseMoney(input.value);
-    if (val === 0) {
+    let value = input.value.replace(/[^0-9]/g, '');
+    if (value === "") {
         input.value = "";
         return;
     }
-    input.value = moneyFormatter.format(val);
+    const amount = parseInt(value);
+    input.value = moneyFormatter.format(amount);
 }
 
 // ==========================================================
@@ -64,16 +65,20 @@ async function checkAuth() {
     const navCrear = document.getElementById("navCrearFlete");
     const navStats = document.getElementById("navEstadisticas");
 
+    const headerAcciones = document.querySelector(".actions-col");
+
     if (role === 'admin') {
         // PERFIL ADMIN (GESTIONA VEHÍCULOS)
         if (navFletes) navFletes.style.display = 'flex';
         if (navVehiculos) navVehiculos.style.display = 'flex';
         if (navCrear) navCrear.style.display = 'none';
+        if (headerAcciones) headerAcciones.style.display = 'table-cell';
     } else {
         // PERFIL OPERARIO (GESTIONA FLETES)
         if (navFletes) navFletes.style.display = 'flex';
         if (navVehiculos) navVehiculos.style.display = 'none';
         if (navCrear) navCrear.style.display = 'flex';
+        if (headerAcciones) headerAcciones.style.display = 'none';
     }
 }
 
@@ -291,6 +296,60 @@ const PRECIOS_POBLACION = {
 const COSTO_ADICIONAL = 60000;
 const COSTO_POR_AUXILIAR = 30000; // Costo adicional por cada auxiliar
 
+// Master list storage
+let MASTER_ZONAS = [];
+let MASTER_ZONAS_MODAL = [];
+
+function actualizarZonasPorProveedor(prefix = "") {
+    const provEl = document.getElementById(prefix + "proveedor");
+    const zonaEl = document.getElementById(prefix + "zona");
+    if (!provEl || !zonaEl) return;
+
+    const proveedor = provEl.value;
+
+    // Si es la primera vez, guardamos la lista maestra
+    if (prefix === "" && MASTER_ZONAS.length === 0) {
+        MASTER_ZONAS = Array.from(zonaEl.options).map(opt => ({ value: opt.value, text: opt.text }));
+    } else if (prefix === "modal-" && MASTER_ZONAS_MODAL.length === 0) {
+        MASTER_ZONAS_MODAL = Array.from(zonaEl.options).map(opt => ({ value: opt.value, text: opt.text }));
+    }
+
+    const master = prefix === "" ? MASTER_ZONAS : MASTER_ZONAS_MODAL;
+    let filtered = [];
+
+    if (!proveedor) {
+        filtered = master;
+    } else if (proveedor === "ALPINA") {
+        filtered = master.filter(z => z.value.startsWith("M") || z.value === "");
+    } else if (proveedor === "ZENU") {
+        filtered = master.filter(z => z.value.startsWith("250") || z.value === "");
+    } else if (proveedor === "POLAR") {
+        filtered = master.filter(z => z.value.startsWith("PC") || z.value === "");
+    } else if (proveedor === "FLEISCHMANN") {
+        const allowed = ["FC01", "FC02", "FC03", "FQ04", "FQ05", "FQ06", "FR07", "FR08", "FR09"];
+        filtered = master.filter(z => allowed.includes(z.value) || z.value === "");
+    } else {
+        filtered = master;
+    }
+
+    // Repoblar
+    const currentValue = zonaEl.value;
+    zonaEl.innerHTML = "";
+    filtered.forEach(z => {
+        const opt = document.createElement("option");
+        opt.value = z.value;
+        opt.textContent = z.text;
+        zonaEl.appendChild(opt);
+    });
+
+    // Intentar mantener el valor si aún es válido
+    if (filtered.some(z => z.value === currentValue)) {
+        zonaEl.value = currentValue;
+    } else {
+        zonaEl.value = "";
+    }
+}
+
 function calcularTotal(prefix = "") {
     const poblacionId = prefix + "poblacion";
     const adicId = prefix + "is_adicionales";
@@ -325,10 +384,12 @@ function calcularTotal(prefix = "") {
     totalEl.value = moneyFormatter.format(total);
 
     // Lógica del 4% (Valor Ruta / Total Flete)
+    // El usuario pide que NO se cuente el adicional de 60k para el % de participación
     if (rutaEl && porcEl) {
         const valorPedidos = parseMoney(rutaEl.value);
         if (total > 0 && valorPedidos > 0) {
-            const porcentaje = (total / valorPedidos) * 100;
+            const totalParaPorcentaje = tieneAdicional ? (total - COSTO_ADICIONAL) : total;
+            const porcentaje = (totalParaPorcentaje / valorPedidos) * 100;
             porcEl.value = porcentaje.toFixed(1) + "%";
 
             if (porcentaje > 4) {
@@ -365,11 +426,15 @@ function setupCalculators(prefix = "") {
     }
     // Formatear valor ruta cuando el usuario lo ingresa manualmente
     if (inputRuta) {
-        inputRuta.addEventListener("input", () => calcularTotal(prefix));
-        inputRuta.addEventListener("blur", function () {
+        inputRuta.addEventListener("input", function () {
             formatMoneyInput(this);
             calcularTotal(prefix);
         });
+    }
+
+    const selectProveedor = document.getElementById(prefix + "proveedor");
+    if (selectProveedor) {
+        selectProveedor.addEventListener("change", () => actualizarZonasPorProveedor(prefix));
     }
 }
 
@@ -661,12 +726,14 @@ function renderTable(fletes) {
         const tr = document.createElement("tr");
         if (f.id && f.id.toString().startsWith('temp-')) tr.style.opacity = "0.5";
 
-        const canEdit = role === 'admin';
+        const isAdmin = role === 'admin';
 
-        const actions = canEdit ? `
-            <button class="btn-icon edit" onclick="editarFlete('${f.id}')" title="Editar"><i class="ri-edit-line"></i></button>
-            <button class="btn-icon delete" onclick="eliminarFlete('${f.id}')" title="Eliminar"><i class="ri-delete-bin-line"></i></button>
-        ` : `<span style="font-size:0.7rem; opacity:0.5"><i class="ri-lock-line"></i> Protegido</span>`;
+        const actionsTd = isAdmin ? `
+            <td class="actions-cell">
+                <button class="btn-icon edit" onclick="editarFlete('${f.id}')" title="Editar"><i class="ri-edit-line"></i></button>
+                <button class="btn-icon delete" onclick="eliminarFlete('${f.id}')" title="Eliminar"><i class="ri-delete-bin-line"></i></button>
+            </td>
+        ` : "";
 
         tr.innerHTML = `
             <td>${f.fecha}</td>
@@ -679,7 +746,7 @@ function renderTable(fletes) {
             <td>${f.no_auxiliares || 0} (${f.auxiliares || '-'})</td>
             <td class="price-cell">${moneyFormatter.format(f.valor_ruta || 0)}</td>
             <td class="price-cell">${moneyFormatter.format(f.precio)}</td>
-            <td class="actions-cell">${actions}</td>
+            ${actionsTd}
         `;
         tbody.appendChild(tr);
     });
@@ -721,6 +788,9 @@ window.editarFlete = async function (id) {
     set("valor_ruta", moneyFormatter.format(f.valor_ruta));
     set("is_adicionales", f.adicionales);
     set("total_flete", moneyFormatter.format(f.precio));
+
+    actualizarZonasPorProveedor("modal-"); // Filtrar zonas según el proveedor cargado
+    set("zona", f.zona); // Asegurar que la zona se seleccione después de filtrar
 
     calcularTotal("modal-"); // Calcular porcentaje inicial en el modal
 
@@ -971,26 +1041,50 @@ async function generarGraficos() {
         return;
     }
 
-    // --- Chart 1: Zonas ---
-    if (myChart) myChart.destroy();
-    myChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: Object.keys(count),
-            datasets: [{
-                data: Object.values(count),
-                backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'right', labels: { color: '#94a3b8' } } }
-        }
-    });
+    // Obtener estadísticas pre-calculadas (incluye suma de valores por zona)
+    const stats = await SupabaseClient.fletes.getEstadisticas();
+    const { zonas, valoresZonas } = stats;
 
-    // --- Chart 2: Registros por Día (Desde el primer flete registrado) ---
+    if (myChart) myChart.destroy();
+    if (myChart2) myChart2.destroy();
+
+    // --- Chart 1: Fletes por Zona (VALOR TOTAL) ---
+    // El usuario pidió cambiar cantidad por valor total ($)
+    const ctx1 = document.getElementById("chartZonas")?.getContext("2d"); // Use original ctx for chartZonas
+    if (ctx1) {
+        myChart = new Chart(ctx1, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(valoresZonas || {}),
+                datasets: [{
+                    data: Object.values(valoresZonas || {}),
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { color: '#94a3b8' } },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += moneyFormatter.format(context.parsed);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
     if (!ctx2) return;
 
     // Agrupar ingresos por dia y encontrar la fecha mas antigua

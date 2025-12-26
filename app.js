@@ -293,12 +293,145 @@ const PRECIOS_POBLACION = {
     "VITERBO": 323000
 };
 
+// Precios ESPECIFICOS para ALPINA y FLEISCHMANN (Actualizado 2025 + 2T)
+const PRECIOS_ALPINA = {
+    "QUIMBAYA": 260000,
+    "MONTENEGRO": 280000,
+    "MONTENEGRO - P TAPAO": 305000,
+    "ALCALA ULLOA": 260000,
+    "CAICEDONIA": 365000,
+    "TEBAIDA": 310000,
+    "CORDOBA PIJAO BVISTA": 370000,
+    "GENOVA": 399000,
+    "CIRCASIA": 294000,
+    "SALENTO": 285000,
+    "FILANDIA": 285000,
+    "CALARCA": 312000,
+    "CAIMO BARCELONA": 340000,
+    "ARMENIA": 320000,
+    "ARMENIA 2T": 320000, // 2 Toneladas
+    "BALBOA LA CELIA": 284000,
+    "SANTUARIO APIA": 284000,
+    "SANTA CECILIA": 368000,
+    "PUEBLO RICO": 305000,
+    "LA VIRGINIA": 230000,
+    "ARGELIA EL CAIRO": 335000,
+    "EL AGUILA": 305000,
+    "EL AGUILA - VILLANUEVA": 330000,
+    "MARSELLA": 280000,
+    "ARABIA - ALTAGRACIA": 199000,
+    "ANSERMA": 332000,
+    "BELEN": 332000,
+    "MISTRATO": 362000,
+    "GUATICA": 368000,
+    "VITERBO": 273000,
+    "CARTAGO": 250000,
+    "CARTAGO 2T": 280000, // 2 Toneladas
+    "ANSERMA NUEVO": 250000,
+    "ANSERMA NUEVO 2T": 280000, // 2 Toneladas
+    "SANTA ROSA": 230000,
+    "DOSQUEBRADAS": 190000,
+    "PEREIRA": 200000,
+    "CUBA": 200000,
+    "SUPIA": 505000,
+    "RIOSUCIO": 545000,
+    "MARMATO": 499000,
+    "SUPIA-MARMATO": 590000,
+    "QUINCHIA": 439000,
+    "IRRA LA FELISA LA MERCED": 445000,
+    "AGUADAS": 690000,
+    "AGUADAS-PACORA": 740000,
+    "PACORA": 670000,
+    "ARANZAZU FILADELFIA": 425000,
+    "BELAL RDA SJOSE": 320000,
+    "CHINCHINA": 250000,
+    "PALESTINA ARAUCA LA PLATA": 280000,
+    "MANIZALES - VILLAMARIA": 305000,
+    "NEIRA": 340000
+};
+
+// Precios ESPECIFICOS para ZENU
+const PRECIOS_ZENU = {
+    "SANTA ROSA": 212000,
+    "CARTAGO": 250000,
+    "PEREIRA": 208000,
+    "DOSQUEBRADAS": 208000,
+    "APIA- PUEBLO RICO": 320000,
+    "BELEN": 305000,
+    "ARGELIA-EL CAIRO": 338000,
+    "SANTUARIO": 284000,
+    "ARABIA-ALTAGRACIA": 230000,
+    "MARSELLA": 259000,
+    "BALBOA LA CELIA": 350000,
+    "LA VIRGINA -BELALCAZAR": 282000,
+    "BELEN MISTRATO": 425000,
+    "AGUILA-ANSERMA NUEVO": 317000,
+    "VITERBO": 323000
+};
+
+// Precios ESPECIFICOS para POLAR
+const PRECIOS_POLAR = {
+    "ARMENIA": 295000,
+    "MANIZALES-DESDE PEREIRA-CARGA EXTRA": 295000,
+    "MANIZALES": 245000
+};
+
 const COSTO_ADICIONAL = 60000;
 const COSTO_POR_AUXILIAR = 30000; // Costo adicional por cada auxiliar
 
 // Master list storage
 let MASTER_ZONAS = [];
 let MASTER_ZONAS_MODAL = [];
+// Cache para poblaciones
+let MASTER_POBLACIONES = null;
+
+function actualizarPoblaciones(prefix = "") {
+    const provEl = document.getElementById(prefix + "proveedor");
+    const pobEl = document.getElementById(prefix + "poblacion");
+
+    if (!provEl || !pobEl) return;
+
+    // Guardar lista maestra de poblaciones si no existe
+    if (!MASTER_POBLACIONES) {
+        // Usamos las keys de PRECIOS_POBLACION como base general
+        MASTER_POBLACIONES = Object.keys(PRECIOS_POBLACION).sort();
+    }
+
+    const proveedor = provEl.value;
+    const isAlpinaLike = (proveedor === 'ALPINA' || proveedor === 'FLEISCHMANN');
+    const isZenu = (proveedor === 'ZENU');
+    const isPolar = (proveedor === 'POLAR');
+
+    // Determinar qué lista usar
+    let listaUsar = MASTER_POBLACIONES;
+    if (isAlpinaLike) {
+        listaUsar = Object.keys(PRECIOS_ALPINA).sort();
+    } else if (isZenu) {
+        listaUsar = Object.keys(PRECIOS_ZENU).sort();
+    } else if (isPolar) {
+        listaUsar = Object.keys(PRECIOS_POLAR).sort();
+    }
+
+    // Guardar valor actual para intentar mantenerlo
+    const currentVal = pobEl.value;
+
+    // Repoblar
+    pobEl.innerHTML = '<option value="" disabled selected>Seleccione Población</option>';
+    listaUsar.forEach(pob => {
+        const opt = document.createElement("option");
+        opt.value = pob;
+        opt.textContent = pob;
+        pobEl.appendChild(opt);
+    });
+
+    // Restaurar valor si existe en la nueva lista
+    if (listaUsar.includes(currentVal)) {
+        pobEl.value = currentVal;
+    }
+
+    // Recalcular precio porque la población (o su precio base) puede haber cambiado
+    calcularTotal(prefix);
+}
 
 function actualizarZonasPorProveedor(prefix = "") {
     const provEl = document.getElementById(prefix + "proveedor");
@@ -357,6 +490,7 @@ function calcularTotal(prefix = "") {
     const totalId = prefix + "total_flete";
     const rutaId = prefix + "valor_ruta";
     const porcId = prefix + "porcentaje_ruta";
+    const provId = prefix + "proveedor";
 
     const poblacionEl = document.getElementById(poblacionId);
     const adicionalesEl = document.getElementById(adicId);
@@ -364,11 +498,24 @@ function calcularTotal(prefix = "") {
     const totalEl = document.getElementById(totalId);
     const rutaEl = document.getElementById(rutaId);
     const porcEl = document.getElementById(porcId);
+    const provEl = document.getElementById(provId);
 
     if (!poblacionEl || !totalEl) return;
 
     const poblacion = poblacionEl.value;
-    const precioBase = PRECIOS_POBLACION[poblacion] || 0;
+    const proveedor = provEl ? provEl.value : "";
+
+    // Seleccionar lista de precios según proveedor
+    let precioBase = 0;
+    if (proveedor === 'ALPINA' || proveedor === 'FLEISCHMANN') {
+        precioBase = PRECIOS_ALPINA[poblacion] || 0;
+    } else if (proveedor === 'ZENU') {
+        precioBase = PRECIOS_ZENU[poblacion] || 0;
+    } else if (proveedor === 'POLAR') {
+        precioBase = PRECIOS_POLAR[poblacion] || 0;
+    } else {
+        precioBase = PRECIOS_POBLACION[poblacion] || 0;
+    }
 
     // Calcular Valor Flete (total a pagar) basado en población
     let total = precioBase;
@@ -434,7 +581,10 @@ function setupCalculators(prefix = "") {
 
     const selectProveedor = document.getElementById(prefix + "proveedor");
     if (selectProveedor) {
-        selectProveedor.addEventListener("change", () => actualizarZonasPorProveedor(prefix));
+        selectProveedor.addEventListener("change", () => {
+            actualizarZonasPorProveedor(prefix);
+            actualizarPoblaciones(prefix);
+        });
     }
 }
 
@@ -790,7 +940,10 @@ window.editarFlete = async function (id) {
     set("total_flete", moneyFormatter.format(f.precio));
 
     actualizarZonasPorProveedor("modal-"); // Filtrar zonas según el proveedor cargado
+    actualizarPoblaciones("modal-"); // Filtrar poblaciones
+
     set("zona", f.zona); // Asegurar que la zona se seleccione después de filtrar
+    set("poblacion", f.poblacion); // Asegurar población
 
     calcularTotal("modal-"); // Calcular porcentaje inicial en el modal
 

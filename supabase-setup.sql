@@ -154,6 +154,13 @@
     VALUES ('PRUEBA-1', 'Conductor Demo', '2024')
     ON CONFLICT (placa) DO NOTHING;
 
+    -- 10. OPTIMIZACIÓN Y PERFORMANCE (Índices)
+    -- Para soportar alto volumen de registros y búsquedas rápidas
+    CREATE INDEX IF NOT EXISTS idx_fletes_fecha ON public.fletes(fecha);
+    CREATE INDEX IF NOT EXISTS idx_fletes_zona ON public.fletes(zona);
+    CREATE INDEX IF NOT EXISTS idx_fletes_proveedor ON public.fletes(proveedor);
+    CREATE INDEX IF NOT EXISTS idx_vehiculos_placa ON public.vehiculos(placa);
+
     -- ============================================
     -- SCRIPT COMPLETADO ✅
     -- ============================================

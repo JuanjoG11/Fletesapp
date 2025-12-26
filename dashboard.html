@@ -349,6 +349,18 @@
                             </select>
                         </div>
 
+                        <!-- Adicionales por Negociación -->
+                        <div class="input-group">
+                            <label>Adicional Negociado</label>
+                            <input id="valor_adicional" type="text" placeholder="$ 0" class="money-input">
+                        </div>
+
+                        <div class="input-group full-width">
+                            <label>Razón del Adicional</label>
+                            <textarea id="razon_adicional" rows="2"
+                                placeholder="Ecriba el motivo de la negociaciòn"></textarea>
+                        </div>
+
                         <div class="input-group">
                             <label>Total Flete (Automático)</label>
                             <input id="total_flete" type="text" placeholder="$ 0" readonly class="input-total">
@@ -701,6 +713,12 @@
                             <option value="Si">Si</option>
                         </select>
                     </div>
+
+                    <!-- Adicionales por Negociación (Modal) -->
+                    <div class="input-group"> <label>Adicional Negociado</label> <input id="modal-valor_adicional"
+                            type="text" class="money-input" placeholder="$ 0"> </div>
+                    <div class="input-group full-width"> <label>Razón del Adicional</label> <textarea
+                            id="modal-razon_adicional" rows="2" placeholder="Motivo del adicional"></textarea> </div>
 
                     <div class="input-group"> <label>Total</label> <input id="modal-total_flete" type="text" readonly
                             class="input-total"> </div>

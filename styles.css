@@ -244,24 +244,23 @@ button {
 
 /* Ensure buttons are same height and aligned */
 .swal2-actions:not(.swal2-loading) .swal2-styled {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    vertical-align: middle !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Fix button container alignment */
 .swal2-actions {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex-wrap: wrap !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    /* Espaciado saludable */
 }
 
-/* Hide deny button explicitly */
-.swal2-deny {
-    display: none !important;
-}
+/* Hide deny button explicitly if needed, but let JS control it usually */
+/* .swal2-deny { display: none; } */
 
 /* Center text in PDF config form */
 .pdf-config-form {
@@ -270,6 +269,33 @@ button {
 
 .pdf-config-form label {
     text-align: center !important;
+}
+
+/* Textarea styling for adicionales */
+textarea {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-main);
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    resize: vertical;
+    min-height: 60px;
+    transition: 0.2s;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    background: var(--input-focus-bg);
+}
+
+textarea::placeholder {
+    color: var(--text-muted);
+    opacity: 0.6;
 }
 
 .action-btn:hover {

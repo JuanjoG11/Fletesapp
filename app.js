@@ -491,6 +491,7 @@ function calcularTotal(prefix = "") {
     const rutaId = prefix + "valor_ruta";
     const porcId = prefix + "porcentaje_ruta";
     const provId = prefix + "proveedor";
+    const adicNegociadoId = prefix + "valor_adicional"; // NUEVO
 
     const poblacionEl = document.getElementById(poblacionId);
     const adicionalesEl = document.getElementById(adicId);
@@ -499,6 +500,7 @@ function calcularTotal(prefix = "") {
     const rutaEl = document.getElementById(rutaId);
     const porcEl = document.getElementById(porcId);
     const provEl = document.getElementById(provId);
+    const adicNegociadoEl = document.getElementById(adicNegociadoId); // NUEVO
 
     if (!poblacionEl || !totalEl) return;
 
@@ -528,6 +530,10 @@ function calcularTotal(prefix = "") {
     const numAuxiliares = parseInt(noAuxEl?.value || 0);
     total += (numAuxiliares * COSTO_POR_AUXILIAR);
 
+    // NUEVO: Sumar adicional por negociación
+    const adicionalNegociado = adicNegociadoEl ? parseMoney(adicNegociadoEl.value) : 0;
+    total += adicionalNegociado;
+
     totalEl.value = moneyFormatter.format(total);
 
     // Lógica del 4% (Valor Ruta / Total Flete)
@@ -535,7 +541,7 @@ function calcularTotal(prefix = "") {
     if (rutaEl && porcEl) {
         const valorPedidos = parseMoney(rutaEl.value);
         if (total > 0 && valorPedidos > 0) {
-            const totalParaPorcentaje = tieneAdicional ? (total - COSTO_ADICIONAL) : total;
+            const totalParaPorcentaje = tieneAdicional ? (total - COSTO_ADICIONAL - adicionalNegociado) : (total - adicionalNegociado);
             const porcentaje = (totalParaPorcentaje / valorPedidos) * 100;
             porcEl.value = porcentaje.toFixed(1) + "%";
 
@@ -579,6 +585,16 @@ function setupCalculators(prefix = "") {
         });
     }
 
+    // LISTENER FALTANTE: Adicional negociado
+    const adicNegociadoId = prefix + "valor_adicional";
+    const inputAdicNegociado = document.getElementById(adicNegociadoId);
+    if (inputAdicNegociado) {
+        inputAdicNegociado.addEventListener("input", function () {
+            formatMoneyInput(this);
+            calcularTotal(prefix);
+        });
+    }
+
     const selectProveedor = document.getElementById(prefix + "proveedor");
     if (selectProveedor) {
         selectProveedor.addEventListener("change", () => {
@@ -605,6 +621,10 @@ async function obtenerDatosFormulario(prefix = "") {
     const noAux = val("no_auxiliares");
     const noPedidos = val("no_pedidos");
     const adicionales = val("is_adicionales");
+
+    // NUEVO: Adicionales por negociación
+    const valorAdicional = val("valor_adicional");
+    const razonAdicional = val("razon_adicional");
 
     const valorRutaRaw = val("valor_ruta");
     const precioRaw = val("total_flete");
@@ -656,7 +676,10 @@ async function obtenerDatosFormulario(prefix = "") {
             no_pedidos: parseInt(noPedidos || 0),
             auxiliares,
             no_auxiliares: parseInt(noAux || 0),
-            fecha: val("fecha") || new Date().toISOString().split('T')[0]
+            fecha: val("fecha") || new Date().toISOString().split('T')[0],
+            // NUEVO: Adicionales por negociación
+            valor_adicional_negociacion: parseMoney(valorAdicional),
+            razon_adicional_negociacion: razonAdicional || null
         },
         // Campos para validación UI
         ui: {

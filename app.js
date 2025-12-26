@@ -1056,12 +1056,12 @@ async function generarPDF() {
     const { value: formValues } = await Swal.fire({
         title: '📄 Configurar Reporte PDF',
         html: `
-            <div style="text-align: left; padding: 10px;">
-                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Fecha del Reporte (Obligatorio):</label>
-                <input id="pdf-fecha" type="date" class="swal2-input" style="width: 90%;" required>
+            <div class="pdf-config-form" style="text-align: center;">
+                <label for="pdf-fecha">Fecha del Reporte (Obligatorio):</label>
+                <input id="pdf-fecha" type="date" class="swal2-input" required>
                 
-                <label style="display: block; margin-top: 15px; margin-bottom: 5px; font-weight: bold;">Proveedor (Opcional):</label>
-                <select id="pdf-proveedor" class="swal2-input" style="width: 90%;">
+                <label for="pdf-proveedor">Proveedor (Opcional):</label>
+                <select id="pdf-proveedor" class="swal2-input">
                     <option value="">Todos los Proveedores</option>
                     <option value="ALPINA">ALPINA</option>
                     <option value="ZENU">ZENU</option>
@@ -1070,12 +1070,29 @@ async function generarPDF() {
                 </select>
             </div>
         `,
+        icon: null,
         focusConfirm: false,
         showCancelButton: true,
+        showDenyButton: false,
+        showCloseButton: false,
         confirmButtonText: 'Generar PDF',
         cancelButtonText: 'Cancelar',
+        denyButtonText: '',
+        reverseButtons: false,
+        customClass: {
+            popup: 'swal2-popup-custom',
+            htmlContainer: 'pdf-config-form'
+        },
+        buttonsStyling: true,
         background: '#1e293b',
         color: '#fff',
+        didOpen: () => {
+            // Eliminar forzosamente el botón deny del DOM
+            const denyButton = document.querySelector('.swal2-deny');
+            if (denyButton) {
+                denyButton.remove();
+            }
+        },
         preConfirm: () => {
             const fecha = document.getElementById('pdf-fecha').value;
             const proveedor = document.getElementById('pdf-proveedor').value;
@@ -1210,18 +1227,18 @@ async function generarPDF() {
         headStyles: { fillColor: [41, 128, 185], fontSize: 7, halign: 'center' },
         bodyStyles: { fontSize: 6.5, overflow: 'linebreak', cellPadding: 1.5 },
         columnStyles: {
-            0: { cellWidth: 18 },  // RUTA (reducido)
-            1: { cellWidth: 16 },  // PLACA (reducido)
-            2: { cellWidth: 45, overflow: 'linebreak' },  // CONDUCTOR (aumentado para nombres largos)
-            3: { cellWidth: 22 },  // AUXILIAR (reducido)
-            4: { cellWidth: 12, halign: 'center' },  // # PEDIDO (reducido)
-            5: { cellWidth: 22, halign: 'right' },   // VR. PEDIDO (reducido)
-            6: { cellWidth: 28 },  // POBLACIÓN (reducido)
-            7: { cellWidth: 22, halign: 'right' },   // VALOR FLETE (reducido)
-            8: { cellWidth: 16, halign: 'center' },  // PARTICIPACIÓN (reducido)
-            9: { cellWidth: 28 }   // FIRMA CONDUCTOR (reducido)
+            0: { cellWidth: 22 },  // RUTA
+            1: { cellWidth: 20 },  // PLACA
+            2: { cellWidth: 55 },  // CONDUCTOR (nombres largos)
+            3: { cellWidth: 28 },  // AUXILIAR
+            4: { cellWidth: 16, halign: 'center' },  // # PEDIDO
+            5: { cellWidth: 28, halign: 'right' },   // VR. PEDIDO
+            6: { cellWidth: 35 },  // POBLACIÓN
+            7: { cellWidth: 28, halign: 'right' },   // VALOR FLETE
+            8: { cellWidth: 20, halign: 'center' },  // PARTICIPACIÓN
+            9: { cellWidth: 35 }   // FIRMA CONDUCTOR
         },
-        margin: { top: 30 },
+        margin: { left: 10, right: 10, top: 30 },  // Márgenes reducidos para aprovechar el ancho
         didDrawPage: (data) => {
             // Repetir header en páginas adicionales si la tabla se extiende
             if (doc.internal.getNumberOfPages() > 1 && data.pageNumber !== 1) {

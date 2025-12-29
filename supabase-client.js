@@ -212,13 +212,16 @@ async function importarVehiculos(vehiculos) {
         const { data: sessionData } = await _supabase.auth.getSession();
         const userId = sessionData?.session?.user?.id;
 
-        const dataToInsert = vehiculos.map(v => ({
-            placa: v.placa.toString().toUpperCase().replace(/[\s-]/g, ''),
-            conductor: v.conductor,
-            modelo: v.modelo || 'Estándar',
-            activo: true,
-            created_by: userId
-        }));
+        const dataToInsert = vehiculos.map(v => {
+            if (!v.placa) return null; // Saltar registros sin placa
+            return {
+                placa: String(v.placa).toUpperCase().replace(/[\s-]/g, ''),
+                conductor: v.conductor || 'Sin Conductor',
+                modelo: v.modelo || 'Estándar',
+                activo: true,
+                created_by: userId
+            };
+        }).filter(v => v !== null); // Eliminar nulos
 
         const { data, error } = await _supabase
             .from('vehiculos')

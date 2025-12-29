@@ -457,7 +457,7 @@ function actualizarZonasPorProveedor(prefix = "") {
     } else if (proveedor === "ZENU") {
         filtered = master.filter(z => z.value.startsWith("250") || z.value === "");
     } else if (proveedor === "POLAR") {
-        filtered = master.filter(z => z.value.startsWith("PC") || z.value === "");
+        filtered = master.filter(z => z.value.startsWith("PC") || z.value.startsWith("PQ") || z.value === "");
     } else if (proveedor === "FLEISCHMANN") {
         const allowed = ["FC01", "FC02", "FC03", "FQ04", "FQ05", "FQ06", "FR07", "FR08", "FR09"];
         filtered = master.filter(z => allowed.includes(z.value) || z.value === "");
@@ -1496,7 +1496,7 @@ async function generarGraficos() {
                             return `${info.dayName}, ${info.date}`;
                         },
                         label: function (context) {
-                            return ' 📝 Registros: ' + context.raw;
+                            return ' 📝 Total: ' + moneyFormatter.format(context.raw);
                         }
                     }
                 }

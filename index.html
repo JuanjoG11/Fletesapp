@@ -140,17 +140,15 @@
             });
         });
 
-        /*
         (async () => {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has('logout')) return;
 
             try {
                 const { session, user } = await window.supabaseClient.obtenerSesionActual();
-                if (session && user) window.location.href = 'dashboard';
-            } catch (err) {}
+                if (session && user) window.location.href = 'dashboard.html';
+            } catch (err) { }
         })();
-        */
     </script>
 
 </body>

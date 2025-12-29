@@ -913,7 +913,7 @@ function renderTable(fletes) {
             <td>${f.no_auxiliares || 0} (${f.auxiliares || '-'})</td>
             <td><span class="badge" style="background: ${f.adicionales === 'Si' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.05)'}; color: ${f.adicionales === 'Si' ? 'var(--secondary)' : 'inherit'}; border: ${f.adicionales === 'Si' ? '1px solid var(--secondary)' : 'none'};">${f.adicionales || 'No'}</span></td>
             <td class="price-cell" style="color: var(--info);">${moneyFormatter.format(f.valor_adicional_negociacion || 0)}</td>
-            <td style="font-size: 0.85rem; color: var(--text-muted); max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${f.razon_adicional_negociacion || ''}">${f.razon_adicional_negociacion || '-'}</td>
+            <td style="font-size: 0.85rem; color: var(--text-muted); white-space: normal;" title="${f.razon_adicional_negociacion || ''}">${f.razon_adicional_negociacion || '-'}</td>
             <td class="price-cell">${moneyFormatter.format(f.valor_ruta || 0)}</td>
             <td class="price-cell">${moneyFormatter.format(f.precio)}</td>
         `;

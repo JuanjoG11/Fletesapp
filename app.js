@@ -715,6 +715,17 @@ async function crearFlete() {
         return;
     }
 
+    // VALIDACIÓN: Motivo de Negociación Obligatorio
+    if (db.valor_adicional_negociacion > 0 && !db.razon_adicional_negociacion) {
+        Swal.fire({
+            icon: 'warning', title: 'Falta Motivo',
+            text: 'Debe especificar la razón del valor adicional negociado.',
+            background: '#1a1a1a', color: '#fff'
+        });
+        if (btn) btn.disabled = false;
+        return;
+    }
+
     // Alerta de confirmación para Operarios
     const session = CURRENT_SESSION;
     const role = (session?.profile?.rol || session?.user?.user_metadata?.rol || 'operario').toLowerCase();
@@ -780,6 +791,16 @@ async function guardarCambiosFlete() {
     if (!ui.placa || !db.contratista || !db.zona || db.precio <= 0) {
         if (btn) btn.disabled = false;
         return Swal.fire({ icon: 'warning', title: 'Faltan Datos', background: '#1a1a1a', color: '#fff' });
+    }
+
+    // VALIDACIÓN: Motivo de Negociación Obligatorio (Modal)
+    if (db.valor_adicional_negociacion > 0 && !db.razon_adicional_negociacion) {
+        if (btn) btn.disabled = false;
+        return Swal.fire({
+            icon: 'warning', title: 'Falta Motivo',
+            text: 'Debe especificar la razón del valor adicional negociado.',
+            background: '#1a1a1a', color: '#fff'
+        });
     }
 
     // Optimismo: Actualizar localmente inmediatamente

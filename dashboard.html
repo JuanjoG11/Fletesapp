@@ -83,9 +83,10 @@
                     </div>
                 </label>
             </div>
-            <a class="logout-btn" href="index.html" onclick="logout()">
+            <button class="logout-btn" onclick="logout()"
+                style="width: 100%; border: none; cursor: pointer; background: transparent;">
                 <i class="ri-logout-box-r-line"></i> Salir
-            </a>
+            </button>
         </div>
     </aside>
 
@@ -105,7 +106,7 @@
 
         <!-- 🏠 SECCIÓN INICIO -->
         <section id="inicio" class="tab-content visible fade-in">
-            
+
 
             <div class="kpi-grid">
                 <div class="card glass-card kpi-card">
@@ -524,6 +525,7 @@
                                 <th>Motivo</th>
                                 <th>Valor Ruta</th>
                                 <th>Valor Flete</th>
+                                <th class="admin-actions-col" style="display: none;">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="tablaFletes">

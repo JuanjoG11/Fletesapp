@@ -65,20 +65,25 @@ async function checkAuth() {
     const navCrear = document.getElementById("navCrearFlete");
     const navStats = document.getElementById("navEstadisticas");
 
-    const headerAcciones = document.querySelector(".actions-col");
+    const headerAcciones = document.querySelector(".actions-col"); // Para tabla vehiculos
+    const headerAccionesFletes = document.querySelector(".admin-actions-col"); // Para tabla fletes
 
     if (role === 'admin') {
-        // PERFIL ADMIN (GESTIONA VEHÍCULOS)
+        // PERFIL ADMIN (GESTIONA VEHÍCULOS Y FLETES)
         if (navFletes) navFletes.style.display = 'flex';
         if (navVehiculos) navVehiculos.style.display = 'flex';
         if (navCrear) navCrear.style.display = 'none';
-        if (headerAcciones) headerAcciones.style.display = 'table-cell';
+
+        if (headerAcciones) headerAcciones.style.display = 'table-cell'; // Vehiculos
+        if (headerAccionesFletes) headerAccionesFletes.style.display = 'table-cell'; // Fletes
     } else {
-        // PERFIL OPERARIO (GESTIONA FLETES)
+        // PERFIL OPERARIO (GESTIONA FLETES SOLO CREACION)
         if (navFletes) navFletes.style.display = 'flex';
         if (navVehiculos) navVehiculos.style.display = 'none';
         if (navCrear) navCrear.style.display = 'flex';
+
         if (headerAcciones) headerAcciones.style.display = 'none';
+        if (headerAccionesFletes) headerAccionesFletes.style.display = 'none';
     }
 }
 
@@ -937,6 +942,11 @@ function renderTable(fletes) {
             <td style="font-size: 0.85rem; color: var(--text-muted); white-space: normal;" title="${f.razon_adicional_negociacion || ''}">${f.razon_adicional_negociacion || '-'}</td>
             <td class="price-cell">${moneyFormatter.format(f.valor_ruta || 0)}</td>
             <td class="price-cell">${moneyFormatter.format(f.precio)}</td>
+            ${role === 'admin' ? `
+            <td class="actions-cell">
+                <button class="btn-icon edit" onclick="editarFlete('${f.id}')" title="Editar Costos"><i class="ri-pencil-line"></i></button>
+                <button class="btn-icon delete" onclick="eliminarFlete('${f.id}')" title="Eliminar"><i class="ri-delete-bin-line"></i></button>
+            </td>` : ''}
         `;
         tbody.appendChild(tr);
     });
@@ -945,8 +955,12 @@ function renderTable(fletes) {
 function buscarFletes() { listarFletes(true); }
 
 window.editarFlete = async function (id) {
-    const { session } = await SupabaseClient.auth.getSession();
-    if (session?.user?.user_metadata?.rol === 'admin') return;
+    // PERMISO: Verificar contra el perfil cargado que es más seguro
+    const role = (CURRENT_SESSION?.profile?.rol || CURRENT_SESSION?.session?.user?.user_metadata?.rol || 'operario').toLowerCase();
+
+    if (role !== 'admin') {
+        return Swal.fire({ icon: 'error', title: 'Acceso Denegado', text: 'Solo administradores pueden editar.', background: '#1a1a1a', color: '#fff' });
+    }
 
     ID_FLETE_EDITANDO = id;
 
@@ -991,9 +1005,11 @@ window.editarFlete = async function (id) {
 };
 
 window.eliminarFlete = async function (id) {
-    const { session } = await SupabaseClient.auth.getSession();
-    if (session?.user?.user_metadata?.rol === 'admin') {
-        Swal.fire({ icon: 'error', title: 'Acceso Denegado', background: '#1a1a1a', color: '#fff' });
+    // PERMISO: Verificar contra el perfil cargado
+    const role = (CURRENT_SESSION?.profile?.rol || CURRENT_SESSION?.session?.user?.user_metadata?.rol || 'operario').toLowerCase();
+
+    if (role !== 'admin') {
+        Swal.fire({ icon: 'error', title: 'Acceso Denegado', text: 'Solo administradores pueden eliminar.', background: '#1a1a1a', color: '#fff' });
         return;
     }
 

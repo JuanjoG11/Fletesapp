@@ -440,17 +440,41 @@ function actualizarPoblaciones(prefix = "") {
 
 function actualizarZonasPorProveedor(prefix = "") {
     const provEl = document.getElementById(prefix + "proveedor");
-    const zonaEl = document.getElementById(prefix + "zona");
+    // ID unified logic: "zona-container" vs "modal-zona-container"
+    const zonaElId = prefix === "" ? "zona-container" : "modal-zona-container";
+    const zonaEl = document.getElementById(zonaElId);
+    // Fix: en dashboard.html puse ids: "zona-container" y "modal-zona-container"
+    // asi que prefix + "zona-container" es correcto (modal-zona-container)
+
     if (!provEl || !zonaEl) return;
 
     const proveedor = provEl.value;
 
-    // Si es la primera vez, guardamos la lista maestra
-    if (prefix === "" && MASTER_ZONAS.length === 0) {
-        MASTER_ZONAS = Array.from(zonaEl.options).map(opt => ({ value: opt.value, text: opt.text }));
-    } else if (prefix === "modal-" && MASTER_ZONAS_MODAL.length === 0) {
-        MASTER_ZONAS_MODAL = Array.from(zonaEl.options).map(opt => ({ value: opt.value, text: opt.text }));
-    }
+    // Listado Maestro de Zonas (Hardcoded porque ya no existen en el HTML)
+    const DEFAULT_ZONES = [
+        { value: "M9450", text: "M9450" }, { value: "M9451", text: "M9451" }, { value: "M9453", text: "M9453" },
+        { value: "M9454", text: "M9454" }, { value: "M9455", text: "M9455" }, { value: "M9456", text: "M9456" },
+        { value: "M9457", text: "M9457" }, { value: "M9458", text: "M9458" }, { value: "M9459", text: "M9459" },
+        { value: "M9460", text: "M9460" }, { value: "P7004", text: "P7004" }, { value: "P7005", text: "P7005" },
+        { value: "P7006", text: "P7006" }, { value: "P7007", text: "P7007" }, { value: "M9552", text: "M9552" },
+        { value: "M9553", text: "M9553" }, { value: "M9554", text: "M9554" }, { value: "M9555", text: "M9555" },
+        { value: "M9556", text: "M9556" }, { value: "M9557", text: "M9557" }, { value: "M9558", text: "M9558" },
+        { value: "M9559", text: "M9559" }, { value: "M9601", text: "M9601" }, { value: "M9602", text: "M9602" },
+        { value: "M9603", text: "M9603" }, { value: "M9604", text: "M9604" }, { value: "M9605", text: "M9605" },
+        { value: "M9606", text: "M9606" }, { value: "25021", text: "25021" }, { value: "25022", text: "25022" },
+        { value: "25023", text: "25023" }, { value: "25024", text: "25024" }, { value: "25025", text: "25025" },
+        { value: "25026", text: "25026" }, { value: "25027", text: "25027" }, { value: "25028", text: "25028" },
+        { value: "25029", text: "25029" }, { value: "PC01", text: "PC01" }, { value: "PC02", text: "PC02" },
+        { value: "PC03", text: "PC03" }, { value: "PQ01", text: "PQ01" }, { value: "PQ02", text: "PQ02" },
+        { value: "PQ03", text: "PQ03" }, { value: "FC01", text: "FC01" }, { value: "FC02", text: "FC02" },
+        { value: "FC03", text: "FC03" }, { value: "FQ04", text: "FQ04" }, { value: "FQ05", text: "FQ05" },
+        { value: "FQ06", text: "FQ06" }, { value: "FR07", text: "FR07" }, { value: "FR08", text: "FR08" },
+        { value: "FR09", text: "FR09" }
+    ];
+
+    // Usar la lista hardcoded en lugar de intentar leer el DOM vacío
+    if (MASTER_ZONAS.length === 0) MASTER_ZONAS = DEFAULT_ZONES;
+    if (MASTER_ZONAS_MODAL.length === 0) MASTER_ZONAS_MODAL = DEFAULT_ZONES;
 
     const master = prefix === "" ? MASTER_ZONAS : MASTER_ZONAS_MODAL;
     let filtered = [];
@@ -470,22 +494,36 @@ function actualizarZonasPorProveedor(prefix = "") {
         filtered = master;
     }
 
-    // Repoblar
-    const currentValue = zonaEl.value;
+    // Repoblar con Checkboxes
+    const currentValues = []; // No hay valor único
     zonaEl.innerHTML = "";
-    filtered.forEach(z => {
-        const opt = document.createElement("option");
-        opt.value = z.value;
-        opt.textContent = z.text;
-        zonaEl.appendChild(opt);
-    });
 
-    // Intentar mantener el valor si aún es válido
-    if (filtered.some(z => z.value === currentValue)) {
-        zonaEl.value = currentValue;
-    } else {
-        zonaEl.value = "";
+    if (filtered.length === 0) {
+        zonaEl.innerHTML = '<div style="padding:10px; color:#666;">No hay zonas disponibles</div>';
+        return;
     }
+
+    filtered.forEach(z => {
+        if (!z.value) return; // Skip empty option
+
+        const label = document.createElement("label");
+        label.className = "checkbox-item";
+
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.value = z.value;
+        input.name = (prefix === "" ? "zona" : "modal-zona") + "[]";
+
+        // Evento para recalcular precio si fuera necesario
+        // input.onchange = () => calcularTotal(prefix); 
+
+        const span = document.createElement("span");
+        span.textContent = z.text;
+
+        label.appendChild(input);
+        label.appendChild(span);
+        zonaEl.appendChild(label);
+    });
 }
 
 function calcularTotal(prefix = "") {
@@ -619,7 +657,21 @@ async function obtenerDatosFormulario(prefix = "") {
     const placa = val("placa").toUpperCase().replace(/[\s-]/g, '').trim();
     const contratista = val("contratista");
     const proveedor = val("proveedor");
-    const zona = val("zona");
+
+    // ZONA MULTI-SELECT (CHECKBOXES)
+    // Construct relevant ID: "zona-container" or "modal-zona-container"
+    const zonaContainerId = p === "" ? "zona-container" : "modal-zona-container";
+    const zonaContainer = document.getElementById(zonaContainerId);
+
+    let zona = "";
+    if (zonaContainer) {
+        const checked = Array.from(zonaContainer.querySelectorAll('input[type="checkbox"]:checked'));
+        zona = checked.map(input => input.value).join(", ");
+        console.log(`[DEBUG] Saving Zones (${p}): Found ${checked.length} checked. Result: "${zona}"`);
+    } else {
+        console.warn(`[DEBUG] Zone container not found with ID: ${zonaContainerId}`);
+    }
+
     const dia = val("dia");
     const poblacion = val("poblacion");
     const auxiliares = val("auxiliares");
@@ -996,7 +1048,17 @@ window.editarFlete = async function (id) {
     actualizarZonasPorProveedor("modal-"); // Filtrar zonas según el proveedor cargado
     actualizarPoblaciones("modal-"); // Filtrar poblaciones
 
-    set("zona", f.zona); // Asegurar que la zona se seleccione después de filtrar
+    // set("zona", f.zona); // Reemplazado por lógica multi-select
+    // Lógica Multi-Select para cargar zonas (CHECKBOXES)
+    const zonaVals = (f.zona || '').split(',').map(s => s.trim());
+    const zonaContainer = document.getElementById("modal-zona-container"); // Note id change
+    if (zonaContainer) {
+        const checkboxes = zonaContainer.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(chk => {
+            chk.checked = zonaVals.includes(chk.value);
+        });
+    }
+
     set("poblacion", f.poblacion); // Asegurar población
 
     calcularTotal("modal-"); // Calcular porcentaje inicial en el modal

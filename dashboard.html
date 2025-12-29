@@ -169,7 +169,7 @@
 
                         <div class="input-group">
                             <label>Proveedor</label>
-                            <select id="proveedor">
+                            <select id="proveedor" onchange="actualizarZonasPorProveedor()">
                                 <option value="" disabled selected>Seleccione...</option>
                                 <option>ALPINA</option>
                                 <option>ZENU</option>
@@ -179,62 +179,10 @@
                         </div>
 
                         <div class="input-group">
-                            <label>Zona</label>
-                            <select id="zona">
-                                <option value="" disabled selected>Seleccione...</option>
-                                <option>M9450</option>
-                                <option>M9451</option>
-                                <option>M9453</option>
-                                <option>M9454</option>
-                                <option>M9455</option>
-                                <option>M9456</option>
-                                <option>M9457</option>
-                                <option>M9458</option>
-                                <option>M9459</option>
-                                <option>M9460</option>
-                                <option>P7004</option>
-                                <option>P7005</option>
-                                <option>P7006</option>
-                                <option>P7007</option>
-                                <option>M9552</option>
-                                <option>M9553</option>
-                                <option>M9554</option>
-                                <option>M9555</option>
-                                <option>M9556</option>
-                                <option>M9557</option>
-                                <option>M9558</option>
-                                <option>M9559</option>
-                                <option>M9601</option>
-                                <option>M9602</option>
-                                <option>M9603</option>
-                                <option>M9604</option>
-                                <option>M9605</option>
-                                <option>M9606</option>
-                                <option>25021</option>
-                                <option>25022</option>
-                                <option>25023</option>
-                                <option>25024</option>
-                                <option>25025</option>
-                                <option>25026</option>
-                                <option>25027</option>
-                                <option>25028</option>
-                                <option>25029</option>
-                                <option>PC01</option>
-                                <option>PC02</option>
-                                <option>PC03</option>
-                                <option>PQ01</option>
-                                <option>PQ02</option>
-                                <option>PQ03</option>
-                                <option>FC01</option>
-                                <option>FC02</option>
-                                <option>FC03</option>
-                                <option>FQ04</option>
-                                <option>FQ05</option>
-                                <option>FQ06</option>
-                                <option>FR07</option>
-                                <option>FR08</option>
-                                <option>FR09</option>
-                            </select>
+                            <label>Zona (Selección Múltiple)</label>
+                            <div id="zona-container" class="select-checkbox-container">
+                                <div style="padding: 10px; color: #666;">Seleccione Proveedor primero</div>
+                            </div>
                         </div>
 
                         <div class="input-group">
@@ -558,7 +506,7 @@
                             class="input-readonly"> </div>
                     <div class="input-group">
                         <label>Proveedor</label>
-                        <select id="modal-proveedor">
+                        <select id="modal-proveedor" onchange="actualizarZonasPorProveedor('modal-')">
                             <option value="" disabled selected>Seleccione...</option>
                             <option>ALPINA</option>
                             <option>ZENU</option>
@@ -569,60 +517,12 @@
 
                     <div class="input-group">
                         <label>Zona</label>
-                        <select id="modal-zona">
-                            <option>M9450</option>
-                            <option>M9451</option>
-                            <option>M9453</option>
-                            <option>M9454</option>
-                            <option>M9455</option>
-                            <option>M9456</option>
-                            <option>M9457</option>
-                            <option>M9458</option>
-                            <option>M9459</option>
-                            <option>M9460</option>
-                            <option>P7004</option>
-                            <option>P7005</option>
-                            <option>P7006</option>
-                            <option>P7007</option>
-                            <option>M9552</option>
-                            <option>M9553</option>
-                            <option>M9554</option>
-                            <option>M9555</option>
-                            <option>M9556</option>
-                            <option>M9557</option>
-                            <option>M9558</option>
-                            <option>M9559</option>
-                            <option>M9601</option>
-                            <option>M9602</option>
-                            <option>M9603</option>
-                            <option>M9604</option>
-                            <option>M9605</option>
-                            <option>M9606</option>
-                            <option>25021</option>
-                            <option>25022</option>
-                            <option>25023</option>
-                            <option>25024</option>
-                            <option>25025</option>
-                            <option>25026</option>
-                            <option>25027</option>
-                            <option>25028</option>
-                            <option>25029</option>
-                            <option>PC01</option>
-                            <option>PC02</option>
-                            <option>PC03</option>
-                            <option>PQ01</option>
-                            <option>PQ02</option>
-                            <option>PQ03</option>
-                            <option>FC01</option>
-                            <option>FC02</option>
-                            <option>FC03</option>
-                            <option>FQ04</option>
-                            <option>FQ05</option>
-                            <option>FQ06</option>
-                            <option>FR07</option>
-                            <option>FR08</option>
-                            <option>FR09</option>
-                        </select>
+                        <div class="input-group">
+                            <label>Zona (Selección Múltiple)</label>
+                            <div id="modal-zona-container" class="select-checkbox-container">
+                                <!-- JS Generates Checkboxes Here -->
+                            </div>
+                        </div>
                     </div>
 
                     <div class="input-group"> <label>Día</label> <select id="modal-dia">
@@ -706,6 +606,15 @@
 
                     <div class="input-group"> <label>Valor Ruta</label> <input id="modal-valor_ruta" type="text"
                             class="money-input"> </div>
+
+                    <div class="input-group">
+                        <label>Zona (Selección Múltiple)</label>
+                        <div id="modal-zona-container" class="select-checkbox-container">
+                            <!-- JS Generates Checkboxes Here -->
+                        </div>
+                    </div>
+
+
 
                     <div class="input-group">
                         <label>¿Adicionales?</label>

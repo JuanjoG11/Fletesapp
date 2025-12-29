@@ -274,7 +274,7 @@ async function obtenerFletes(filtros = {}) {
                 *,
                 vehiculo:vehiculos(placa, conductor, modelo)
             `)
-            .order('fecha', { ascending: false });
+            .order('created_at', { ascending: false });
 
         if (filtros.zona) query = query.eq('zona', filtros.zona);
         if (filtros.fecha) query = query.eq('fecha', filtros.fecha);

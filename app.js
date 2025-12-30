@@ -1490,7 +1490,7 @@ async function generarPDF() {
     if (CURRENT_RAZON_SOCIAL === 'TAT') {
         pdfConfig = {
             logoUrl: 'logo_tat.jpg',
-            headerText: `TAT DISTRIBUCIONES DEL EJE CAFETERO SA NIT 901568117-1`.toUpperCase(),
+            headerText: `PLANILLA FLETES TAT DISTRIBUCIONES DEL EJE CAFETERO SA NIT 901568117-1`.toUpperCase(),
             logoFormat: 'JPEG',
             logoX: 10, logoY: 2, logoW: 25, logoH: 25 // Logo más a la izquierda para evitar overlap
         };

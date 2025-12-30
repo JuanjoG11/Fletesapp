@@ -135,16 +135,43 @@ async function obtenerSesionActual() {
 // 🚗 FUNCIONES DE VEHÍCULOS
 // ==========================================================
 
+// Helper interno para obtener la empresa del usuario actual
+async function _getRazonSocialUsuario() {
+    try {
+        const { data: { session } } = await _supabase.auth.getSession();
+        if (!session) return null;
+
+        const { data: user } = await _supabase
+            .from('usuarios')
+            .select('razon_social')
+            .eq('id', session.user.id)
+            .single();
+
+        return user?.razon_social;
+    } catch (e) {
+        console.error('Error obteniendo razon_social:', e);
+        return null;
+    }
+}
+
 /**
- * Obtener todos los vehículos activos
+ * Obtener todos los vehículos activos (Filtrado por Empresa)
  * @returns {Promise<Array>}
  */
 async function obtenerVehiculos() {
     try {
-        const { data, error } = await _supabase
+        const razonSocial = await _getRazonSocialUsuario();
+        let query = _supabase
             .from('vehiculos')
             .select('*')
             .order('placa', { ascending: true });
+
+        // Aplicar filtro de empresa si existe
+        if (razonSocial) {
+            query = query.eq('razon_social', razonSocial);
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
         return { success: true, data: data || [] };
@@ -161,6 +188,8 @@ async function obtenerVehiculos() {
  */
 async function buscarVehiculoPorPlaca(placa) {
     try {
+        // No filtramos por razon_social aquí estrictamente para permitir validaciones globales si se requiere,
+        // pero idealmente RLS lo manejará.
         const { data, error } = await _supabase
             .from('vehiculos')
             .select('*')
@@ -184,12 +213,16 @@ async function crearVehiculo(vehiculoData) {
     try {
         const { data: session } = await _supabase.auth.getSession();
 
+        // Obtener razon social para asignarla al vehículo
+        const razonSocial = await _getRazonSocialUsuario() || 'TYM';
+
         const { data, error } = await _supabase
             .from('vehiculos')
             .insert([{
                 ...vehiculoData,
                 placa: vehiculoData.placa.toUpperCase().replace(/[\s-]/g, ''),
-                created_by: session?.session?.user?.id
+                created_by: session?.session?.user?.id,
+                razon_social: razonSocial // Asignar empresa automáticamente
             }])
             .select()
             .single();
@@ -211,6 +244,7 @@ async function importarVehiculos(vehiculos) {
     try {
         const { data: sessionData } = await _supabase.auth.getSession();
         const userId = sessionData?.session?.user?.id;
+        const razonSocial = await _getRazonSocialUsuario() || 'TYM';
 
         const dataToInsert = vehiculos.map(v => {
             if (!v.placa) return null; // Saltar registros sin placa
@@ -219,7 +253,8 @@ async function importarVehiculos(vehiculos) {
                 conductor: v.conductor || 'Sin Conductor',
                 modelo: v.modelo || 'Estándar',
                 activo: true,
-                created_by: userId
+                created_by: userId,
+                razon_social: razonSocial
             };
         }).filter(v => v !== null); // Eliminar nulos
 
@@ -262,12 +297,14 @@ async function actualizarVehiculo(vehiculoId, vehiculoData) {
 // ==========================================================
 
 /**
- * Obtener todos los fletes con información de vehículos
+ * Obtener todos los fletes con información de vehículos (Filtrado por Empresa)
  * @param {object} filtros - Filtros opcionales {zona, fecha, busqueda}
  * @returns {Promise<Array>}
  */
 async function obtenerFletes(filtros = {}) {
     try {
+        const razonSocial = await _getRazonSocialUsuario();
+
         let query = _supabase
             .from('fletes')
             .select(`
@@ -275,6 +312,11 @@ async function obtenerFletes(filtros = {}) {
                 vehiculo:vehiculos(placa, conductor, modelo)
             `)
             .order('created_at', { ascending: false });
+
+        // Filtrar por empresa estrictamente
+        if (razonSocial) {
+            query = query.eq('razon_social', razonSocial);
+        }
 
         if (filtros.zona) query = query.eq('zona', filtros.zona);
         if (filtros.fecha) query = query.eq('fecha', filtros.fecha);
@@ -296,12 +338,14 @@ async function obtenerFletes(filtros = {}) {
 async function crearFlete(fleteData) {
     try {
         const { data: session } = await _supabase.auth.getSession();
+        const razonSocial = await _getRazonSocialUsuario() || 'TYM';
 
         const { data, error } = await _supabase
             .from('fletes')
             .insert([{
                 ...fleteData,
-                user_id: session?.session?.user?.id
+                user_id: session?.session?.user?.id,
+                razon_social: razonSocial // Asignar empresa
             }])
             .select(`
                 *,
@@ -365,31 +409,45 @@ async function eliminarFleteDB(fleteId) {
 // ==========================================================
 
 /**
- * Obtener KPIs del dashboard
+ * Obtener KPIs del dashboard (Filtrado por Empresa)
  * @returns {Promise<object>}
  */
 async function obtenerKPIs() {
     try {
-        const { count: totalFletes, error: e1 } = await _supabase
+        const razonSocial = await _getRazonSocialUsuario();
+
+        let queryTotal = _supabase
             .from('fletes')
             .select('*', { count: 'exact', head: true });
+
+        if (razonSocial) queryTotal = queryTotal.eq('razon_social', razonSocial);
+
+        const { count: totalFletes, error: e1 } = await queryTotal;
         if (e1) throw e1;
 
         const fechaActual = new Date();
         const primerDiaMes = new Date(fechaActual.getFullYear(), fechaActual.getMonth(), 1).toISOString().split('T')[0];
 
-        const { data: fletesDelMes, error: e2 } = await _supabase
+        let queryMes = _supabase
             .from('fletes')
             .select('precio')
             .gte('fecha', primerDiaMes);
+
+        if (razonSocial) queryMes = queryMes.eq('razon_social', razonSocial);
+
+        const { data: fletesDelMes, error: e2 } = await queryMes;
         if (e2) throw e2;
 
         const ingresosMes = fletesDelMes?.reduce((sum, f) => sum + parseFloat(f.precio || 0), 0) || 0;
 
-        const { count: vehiculosActivos, error: e3 } = await _supabase
+        let queryVehiculos = _supabase
             .from('vehiculos')
             .select('*', { count: 'exact', head: true })
             .eq('activo', true);
+
+        if (razonSocial) queryVehiculos = queryVehiculos.eq('razon_social', razonSocial);
+
+        const { count: vehiculosActivos, error: e3 } = await queryVehiculos;
         if (e3) throw e3;
 
         return {
@@ -404,14 +462,20 @@ async function obtenerKPIs() {
 }
 
 /**
- * Obtener estadísticas para gráficos
+ * Obtener estadísticas para gráficos (Filtrado por Empresa)
  * @returns {Promise<object>}
  */
 async function obtenerEstadisticas() {
     try {
-        const { data: fletes } = await _supabase
+        const razonSocial = await _getRazonSocialUsuario();
+
+        let query = _supabase
             .from('fletes')
             .select('zona, precio, fecha');
+
+        if (razonSocial) query = query.eq('razon_social', razonSocial);
+
+        const { data: fletes } = await query;
 
         if (!fletes) return { zonas: {}, ingresosPorMes: {} };
 

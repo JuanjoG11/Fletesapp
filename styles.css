@@ -416,23 +416,20 @@ input:checked+.slider:before {
 }
 
 #pageTitle {
-    font-size: 2rem;
-    /* Larger title */
+    font-size: 1.5rem;
+    /* Adjusted for better fit */
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: -1px;
     background: linear-gradient(to right, var(--primary), var(--title-gradient-end));
     background-clip: text;
-    /* Standard property */
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     text-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     margin: 0;
-    position: absolute;
-    /* Center absolute */
-    left: 50%;
-    transform: translateX(-50%);
-    width: max-content;
+    flex-grow: 1;
+    /* Allow it to take space */
+    text-align: center;
 }
 
 .user-profile {
@@ -453,14 +450,35 @@ input:checked+.slider:before {
     z-index: 10;
 }
 
-.badget {
-    background: rgba(59, 130, 246, 0.15);
-    color: var(--primary);
-    padding: 4px 12px;
-    border-radius: 20px;
+.badge {
+    background: rgba(249, 115, 22, 0.1);
+    /* Orange-ish base */
+    color: #f97316;
+    /* Orange color */
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border: 1px solid rgba(249, 115, 22, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(249, 115, 22, 0.05);
+}
+
+#companyBadge {
+    background: rgba(249, 115, 22, 0.15);
+    color: #fb923c;
+    border-color: rgba(249, 115, 22, 0.3);
+    font-weight: 800;
     font-size: 0.85rem;
-    font-weight: 600;
-    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+#userRoleBadge {
+    background: rgba(148, 163, 184, 0.1);
+    color: var(--text-muted);
+    border-color: var(--glass-border);
 }
 
 .avatar {

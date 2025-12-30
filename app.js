@@ -118,8 +118,10 @@ async function checkAuth() {
     const companyBadge = document.getElementById("companyBadge");
     if (companyBadge) {
         companyBadge.textContent = razonSocial;
-        companyBadge.style.background = razonSocial === 'TAT' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)';
-        companyBadge.style.color = razonSocial === 'TAT' ? '#3b82f6' : '#10b981';
+        // NARANJA PARA AMBOS (TYM Y TAT)
+        companyBadge.style.background = 'rgba(249, 115, 22, 0.15)';
+        companyBadge.style.color = '#fb923c';
+        companyBadge.style.borderColor = 'rgba(249, 115, 22, 0.3)';
     }
 
     // Nav Items

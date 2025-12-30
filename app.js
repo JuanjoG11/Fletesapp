@@ -409,6 +409,59 @@ const PRECIOS_POBLACION = {
     "VITERBO": 323000
 };
 
+// Precios ESPECIFICOS para TAT (UNILEVER y FAMILIA)
+const PRECIOS_TAT_UNILEVER = {
+    'PEREIRA MM CARRO GRANDE': 230000,
+    'PEREIRA Y DOSQUEBRADAS': 195000,
+    'SANTA ROSA DE C': 210000,
+    'LA VIRGINIA': 226000,
+    'BELEN DE UMBRIA': 318000,
+    'MISTRATO-VITERBO': 435000,
+    'VITERBO': 238000,
+    'BELALCAZAR-SAN JOSE': 277000,
+    'BELALCAZAR-SAN JOSE-VITERBO': 369000,
+    'MARSELLA': 226000,
+    'BALBOA-LA CELIA': 277000,
+    'SANTUARIO': 265000,
+    'APIA': 265000,
+    'SANTUARIO-APIA': 435000,
+    'PUEBLO RICO': 316000,
+    'SANTA CECILIA': 395000,
+    'PUEBLO RICO-SANTA CECILIA': 435000,
+    'MANIZALES MM': 300000,
+    'MANIZALES DESDE PEREIRA': 300000,
+    'CHINCHINA': 250000,
+    'CHINCHINA CON CROSDOQUI': 302000,
+    'MANIZALES- LA PLATA- CHINCHINA': 400000,
+    'PALESTINA': 226000,
+    'ARAUCA': 260000,
+    'PALESTINA-ARAUCA': 270000,
+    'ARAUCA DESDE BODEGA': 377000,
+    'MANIZALES- ARAUCA- QUINCHIA': 437000,
+    'SUPIA': 490000,
+    'SUPIA-SAN LORENZO': 550000,
+    'RIOSUCIO': 417000,
+    'ANSERMA': 437000,
+    'QUINCHIA-IRRA-41': 408000,
+    'PACORA-AGUADAS': 728000,
+    'SALAMINA-ARANZASU-NEIRA MM': 487000,
+    'MARMATO - LA MERCED-FILADELFIA': 474000,
+    'NEIRA': 321000,
+    'NEIRA- ARAUCA': 360000,
+    'GUATICA-RISARALDA': 437000,
+    'MANIZALES CROS': 191000,
+    'NEGOCIACIÓN MY1-8 MILLONES': 200000,
+    'NEGOCIACION 8-15 MILLONES': 250000,
+    'NEGOCIACION MY +15 MILLONES': 300000
+};
+
+const PRECIOS_TAT_FAMILIA = {
+    'NEGOCIACIÓN MYMY 1-4 MILLONES': 80000,
+    'NEGOCIACIÓN MY4-8 MILLONES': 120000,
+    'NEGOCIACIÓN MY8-12 MILLONES': 160000,
+    'NEGOCIACIÓN MYMY +12 MILLONES': 200000
+};
+
 // Precios ESPECIFICOS para ALPINA y FLEISCHMANN (Actualizado 2025 + 2T)
 const PRECIOS_ALPINA = {
     "QUIMBAYA": 260000,
@@ -517,6 +570,8 @@ function actualizarPoblaciones(prefix = "") {
     const isAlpinaLike = (proveedor === 'ALPINA' || proveedor === 'FLEISCHMANN');
     const isZenu = (proveedor === 'ZENU');
     const isPolar = (proveedor === 'POLAR');
+    const isUnilever = (proveedor === 'UNILEVER');
+    const isFamilia = (proveedor === 'FAMILIA');
 
     // Determinar qué lista usar
     let listaUsar = MASTER_POBLACIONES;
@@ -526,6 +581,10 @@ function actualizarPoblaciones(prefix = "") {
         listaUsar = Object.keys(PRECIOS_ZENU).sort();
     } else if (isPolar) {
         listaUsar = Object.keys(PRECIOS_POLAR).sort();
+    } else if (isUnilever) {
+        listaUsar = Object.keys(PRECIOS_TAT_UNILEVER).sort();
+    } else if (isFamilia) {
+        listaUsar = Object.keys(PRECIOS_TAT_FAMILIA).sort();
     }
 
     // Guardar valor actual para intentar mantenerlo
@@ -679,6 +738,10 @@ function calcularTotal(prefix = "") {
         precioBase = PRECIOS_ZENU[poblacion] || 0;
     } else if (proveedor === 'POLAR') {
         precioBase = PRECIOS_POLAR[poblacion] || 0;
+    } else if (proveedor === 'UNILEVER') {
+        precioBase = PRECIOS_TAT_UNILEVER[poblacion] || 0;
+    } else if (proveedor === 'FAMILIA') {
+        precioBase = PRECIOS_TAT_FAMILIA[poblacion] || 0;
     } else {
         precioBase = PRECIOS_POBLACION[poblacion] || 0;
     }
@@ -1156,9 +1219,7 @@ window.editarFlete = async function (id) {
     set("placa", f.placa);
     set("contratista", f.contratista);
     set("proveedor", f.proveedor);
-    set("zona", f.zona);
     set("dia", f.dia);
-    set("poblacion", f.poblacion);
     set("auxiliares", f.auxiliares);
     set("no_auxiliares", f.no_auxiliares);
     set("no_pedidos", f.no_pedidos);
@@ -1167,13 +1228,21 @@ window.editarFlete = async function (id) {
     set("is_adicionales", f.adicionales);
     set("total_flete", moneyFormatter.format(f.precio));
 
-    actualizarZonasPorProveedor("modal-"); // Filtrar zonas según el proveedor cargado
-    actualizarPoblaciones("modal-"); // Filtrar poblaciones
+    // NUEVO: Adicionales por negociación
+    if (f.valor_adicional_negociacion) {
+        set("valor_adicional", moneyFormatter.format(f.valor_adicional_negociacion));
+    }
+    if (f.razon_adicional_negociacion) {
+        set("razon_adicional", f.razon_adicional_negociacion);
+    }
 
-    // set("zona", f.zona); // Reemplazado por lógica multi-select
+    // IMPORTANTE: Primero actualizamos las listas desplegables basadas en el proveedor
+    actualizarZonasPorProveedor("modal-"); // Filtrar zonas según el proveedor cargado
+    actualizarPoblaciones("modal-"); // Filtrar poblaciones según el proveedor
+
     // Lógica Multi-Select para cargar zonas (CHECKBOXES)
     const zonaVals = (f.zona || '').split(',').map(s => s.trim());
-    const zonaContainer = document.getElementById("modal-zona-container"); // Note id change
+    const zonaContainer = document.getElementById("modal-zona-container");
     if (zonaContainer) {
         const checkboxes = zonaContainer.querySelectorAll('input[type="checkbox"]');
         checkboxes.forEach(chk => {
@@ -1181,7 +1250,8 @@ window.editarFlete = async function (id) {
         });
     }
 
-    set("poblacion", f.poblacion); // Asegurar población
+    // IMPORTANTE: Establecer población DESPUÉS de actualizar el dropdown
+    set("poblacion", f.poblacion);
 
     calcularTotal("modal-"); // Calcular porcentaje inicial en el modal
 
@@ -1397,30 +1467,74 @@ async function generarPDF() {
         format: 'a4'
     });
 
-    // --- Header ---
+    // --- Header Configuration ---
     const fechaImpresion = new Date().toLocaleString('es-CO');
 
-    // Logo Integration - Maintain aspect ratio
-    const imgEl = document.querySelector(".logo-img");
+    // Configuración por defecto (TYM)
+    let pdfConfig = {
+        logoUrl: 'logo_tym.png',
+        headerText: `PLANILLA FLETES TIENDAS Y MARCAS EJE CAFETERO NIT 900973929 - ${fecha}`,
+        logoFormat: 'PNG',
+        logoX: 10, logoY: 5, logoW: 20, logoH: 20
+    };
+
+    // Configuración específica para TAT
+    if (CURRENT_RAZON_SOCIAL === 'TAT') {
+        pdfConfig = {
+            logoUrl: 'logo_tat.jpg',
+            headerText: `TAT DISTRIBUCIONES DEL EJE CAFETERO SA NIT 901568117-1`.toUpperCase(),
+            logoFormat: 'JPEG',
+            logoX: 10, logoY: 2, logoW: 25, logoH: 25 // Logo más a la izquierda para evitar overlap
+        };
+    }
+
+    // Helper: Cargar imagen a Base64
+    const loadImageBase64 = (url) => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                resolve(canvas.toDataURL(url.endsWith('png') ? 'image/png' : 'image/jpeg'));
+            };
+            img.onerror = reject;
+            img.src = url;
+        });
+    };
+
+    // Cargar Logo
     let imgData = null;
-    if (imgEl) {
-        const canvas = document.createElement("canvas");
-        canvas.width = imgEl.naturalWidth;
-        canvas.height = imgEl.naturalHeight;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(imgEl, 0, 0);
-        try {
+    try {
+        imgData = await loadImageBase64(pdfConfig.logoUrl);
+    } catch (e) {
+        console.warn("Fallo carga directa logo, fallback a DOM", e);
+        // Fallback: intentar leer del DOM (solo sirve si el logo en pantalla es el mismo)
+        const imgEl = document.querySelector(".logo-img");
+        if (imgEl) {
+            const canvas = document.createElement("canvas");
+            canvas.width = imgEl.naturalWidth;
+            canvas.height = imgEl.naturalHeight;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(imgEl, 0, 0);
             imgData = canvas.toDataURL("image/png");
-            // Usar dimensiones cuadradas para mantener proporción (logo es circular)
-            doc.addImage(imgData, 'PNG', 10, 5, 15, 15);
+        }
+    }
+
+    if (imgData) {
+        try {
+            doc.addImage(imgData, pdfConfig.logoFormat, pdfConfig.logoX, pdfConfig.logoY, pdfConfig.logoW, pdfConfig.logoH);
         } catch (e) {
-            console.warn("Logo error", e);
+            console.warn("Error agregando imagen a PDF", e);
         }
     }
 
     doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
-    doc.text(`PLANILLA FLETES TIENDAS Y MARCAS EJE CAFETERO NIT 900973929 - ${fecha}`, 148, 15, { align: 'center' });
+    doc.text(pdfConfig.headerText, 148, 15, { align: 'center' });
     doc.setFont(undefined, 'normal');
     doc.setFontSize(8);
     doc.text(`Generado: ${fechaImpresion}`, 280, 10, { align: 'right' });

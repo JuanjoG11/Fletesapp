@@ -94,7 +94,8 @@
             });
 
             try {
-                const resultado = await window.supabaseClient.iniciarSesion(email, password);
+                // 97:
+                const resultado = await window.SupabaseClient.auth.login(email, password);
 
                 if (resultado.success) {
                     // Guardar rol en localStorage para compatibilidad
@@ -146,7 +147,7 @@
             if (urlParams.has('logout')) return;
 
             try {
-                const { session, user } = await window.supabaseClient.obtenerSesionActual();
+                const { session, user } = await window.SupabaseClient.auth.getSession();
                 if (session && user) window.location.href = 'dashboard.html';
             } catch (err) { }
         })();

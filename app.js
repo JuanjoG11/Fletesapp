@@ -109,7 +109,8 @@ async function checkAuth() {
 
     // Almacenar razón social globalmente
     CURRENT_RAZON_SOCIAL = razonSocial;
-    console.log(`✅ Usuario autenticado: ${userName} | Rol: ${role} | Empresa: ${razonSocial}`);
+    // Almacenar razón social globalmente
+    CURRENT_RAZON_SOCIAL = razonSocial;
 
     // Actualizar badge de rol
     const userRoleBadge = document.getElementById("userRoleBadge");
@@ -171,12 +172,8 @@ async function logout() {
 // ==========================================================
 function aplicarConfiguracionEmpresa(razonSocial) {
     if (razonSocial === 'TAT') {
-        console.log('🔧 Aplicando configuración TAT...');
         // Actualizar proveedores en selectores
         actualizarProveedoresTAT();
-    } else {
-        console.log('🔧 Aplicando configuración TYM (default)...');
-        // TYM usa configuración por defecto (ya está en el HTML)
     }
 }
 
@@ -204,11 +201,6 @@ function actualizarProveedoresTAT() {
     }
 }
 
-async function logout() {
-    await SupabaseClient.auth.logout();
-    CURRENT_SESSION = null;
-    window.location.href = "index.html?logout=true";
-}
 
 // ==========================================================
 // 🚗 AUTO-FILL LOGIC & FLEET MANAGEMENT
@@ -657,9 +649,7 @@ function actualizarZonasPorProveedor(prefix = "") {
         { value: "M9606", text: "M9606" }, { value: "25021", text: "25021" }, { value: "25022", text: "25022" },
         { value: "25023", text: "25023" }, { value: "25024", text: "25024" }, { value: "25025", text: "25025" },
         { value: "25026", text: "25026" }, { value: "25027", text: "25027" }, { value: "25028", text: "25028" },
-        { value: "25029", text: "25029" }, { value: "PC01", text: "PC01" }, { value: "PC02", text: "PC02" },
-        { value: "PC03", text: "PC03" }, { value: "PQ01", text: "PQ01" }, { value: "PQ02", text: "PQ02" },
-        { value: "PQ03", text: "PQ03" }, { value: "FC01", text: "FC01" }, { value: "FC02", text: "FC02" },
+        { value: "25029", text: "25029" }, { value: "FC01", text: "FC01" }, { value: "FC02", text: "FC02" },
         { value: "FC03", text: "FC03" }, { value: "FQ04", text: "FQ04" }, { value: "FQ05", text: "FQ05" },
         { value: "FQ06", text: "FQ06" }, { value: "FR07", text: "FR07" }, { value: "FR08", text: "FR08" },
         { value: "FR09", text: "FR09" }
@@ -688,8 +678,6 @@ function actualizarZonasPorProveedor(prefix = "") {
         filtered = master.filter(z => z.value.startsWith("M") || z.value === "");
     } else if (proveedor === "ZENU") {
         filtered = master.filter(z => z.value.startsWith("250") || z.value === "");
-    } else if (proveedor === "POLAR") {
-        filtered = master.filter(z => z.value.startsWith("PC") || z.value.startsWith("PQ") || z.value === "");
     } else if (proveedor === "FLEISCHMANN") {
         const allowed = ["FC01", "FC02", "FC03", "FQ04", "FQ05", "FQ06", "FR07", "FR08", "FR09"];
         filtered = master.filter(z => allowed.includes(z.value) || z.value === "");
@@ -874,9 +862,6 @@ async function obtenerDatosFormulario(prefix = "") {
     if (zonaContainer) {
         const checked = Array.from(zonaContainer.querySelectorAll('input[type="checkbox"]:checked'));
         zona = checked.map(input => input.value).join(", ");
-        console.log(`[DEBUG] Saving Zones (${p}): Found ${checked.length} checked. Result: "${zona}"`);
-    } else {
-        console.warn(`[DEBUG] Zone container not found with ID: ${zonaContainerId}`);
     }
 
     const dia = val("dia");
@@ -1715,10 +1700,7 @@ async function generarGraficos() {
 
     // Obtener todos los fletes para graficar
     const { data: fletes, error } = await SupabaseClient.supabase.from('fletes').select('zona, precio, fecha');
-    if (error) {
-        console.error("❌ Error al obtener fletes para gráficos:", error);
-        return;
-    }
+    if (error) return;
     if (!fletes) return;
 
     // --- Chart 1: Zonas ---
@@ -2041,17 +2023,16 @@ document.addEventListener("DOMContentLoaded", async () => {
             listarVehiculos(),
             listarFletes(),
             actualizarKPI()
-        ]).then(() => console.log("✅ Datos cargados correctamente"))
-            .catch(err => {
-                console.error("❌ Error cargando datos:", err);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error de Datos',
-                    text: 'No se pudieron cargar algunos datos del dashboard. Revisa tus permisos o si el perfil está bien creado.',
-                    background: '#1e293b',
-                    color: '#fff'
-                });
+        ]).catch(err => {
+            console.error("❌ Error cargando datos:", err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de Datos',
+                text: 'No se pudieron cargar algunos datos del dashboard. Revisa tus permisos o si el perfil está bien creado.',
+                background: '#1e293b',
+                color: '#fff'
             });
+        });
 
         // 1. Navigation
         const tabs = document.querySelectorAll(".nav-item");

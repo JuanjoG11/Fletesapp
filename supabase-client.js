@@ -10,11 +10,10 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 // 1. Verificar si la librería de Supabase está cargada
 if (!window.supabase || !window.supabase.createClient) {
-    console.error('❌ Error: La librería de Supabase no se cargó correctamente.');
     Swal.fire({
         icon: 'error',
-        title: 'Error Crítico',
-        text: 'No se pudo cargar la librería de conexión. Por favor, verifica tu conexión a internet.',
+        title: 'Error de Conexión',
+        text: 'No se pudo cargar la librería de Supabase. Revisa tu conexión.',
         background: '#1e293b',
         color: '#fff'
     });
@@ -598,7 +597,7 @@ const SupabaseClientAPI = {
 window.supabaseClient = SupabaseClientAPI;
 window.SupabaseClient = SupabaseClientAPI;
 
-// Aliases para compatibilidad con index.html y migrate-data.js
+// Aliases para compatibilidad con app.js e index.html
 window.supabaseClient.iniciarSesion = iniciarSesion;
 window.supabaseClient.registrarUsuario = registrarUsuario;
 window.supabaseClient.crearVehiculo = crearVehiculo;
@@ -607,5 +606,3 @@ window.supabaseClient.crearFlete = crearFlete;
 window.supabaseClient.buscarVehiculoPorPlaca = buscarVehiculoPorPlaca;
 window.supabaseClient.obtenerSesionActual = obtenerSesionActual;
 window.supabaseClient.cerrarSesion = cerrarSesion;
-
-console.log('✅ Supabase Client inicializado correctamente (Estructura Unificada)');

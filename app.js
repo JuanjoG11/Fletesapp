@@ -101,7 +101,11 @@ async function checkAuth() {
     const userData = sessionData.profile || sessionData.user?.user_metadata;
     const role = (userData?.rol || 'operario').toLowerCase();
     const userName = userData?.nombre || 'Usuario';
-    const razonSocial = userData?.razon_social || 'TYM'; // Detectar empresa
+    const razonSocialOrig = userData?.razon_social;
+    if (!razonSocialOrig) {
+        console.warn("⚠️ Usuario sin razon_social definida, contacte al admin.");
+    }
+    const razonSocial = (razonSocialOrig || 'TYM').toUpperCase();
 
     // Almacenar razón social globalmente
     CURRENT_RAZON_SOCIAL = razonSocial;
@@ -216,20 +220,31 @@ function buscarConductorPorPlaca(placaId, conductorId) {
     if (!placaInput || !conductorInput) return;
 
     placaInput.addEventListener("input", function () {
-        const val = this.value.toUpperCase();
+        // Sanitizar input: Mayúsculas, sin espacios ni guiones
+        const val = this.value.toUpperCase().replace(/[\s-]/g, '');
         if (val.length < 3) return;
 
-        // Buscar en cache local primero
-        const vehiculo = FLOTA_VEHICULOS.find(v => v.placa === val);
+        // Buscar en cache local
+        const vehiculo = FLOTA_VEHICULOS.find(v =>
+            v.placa.toUpperCase().replace(/[\s-]/g, '') === val
+        );
 
         if (vehiculo) {
             conductorInput.value = vehiculo.conductor;
             conductorInput.style.borderColor = "#10b981";
             conductorInput.style.boxShadow = "0 0 10px rgba(16, 185, 129, 0.2)";
         } else {
-            // Si no está en cache, no borramos para dejar que el usuario escriba
-            conductorInput.style.borderColor = "var(--glass-border)";
-            conductorInput.style.boxShadow = "none";
+            // Si no está en cache, buscar en servidor (para casos cross-tenant como Polar)
+            SupabaseClient.vehiculos.getByPlaca(val).then(res => {
+                if (res.success && res.data) {
+                    conductorInput.value = res.data.conductor;
+                    conductorInput.style.borderColor = "#10b981";
+                    conductorInput.style.boxShadow = "0 0 10px rgba(16, 185, 129, 0.2)";
+                } else {
+                    conductorInput.style.borderColor = "var(--glass-border)";
+                    conductorInput.style.boxShadow = "none";
+                }
+            });
         }
     });
 }
@@ -1486,8 +1501,8 @@ async function generarPDF() {
         logoX: 10, logoY: 5, logoW: 20, logoH: 20
     };
 
-    // Configuración específica para TAT
-    if (CURRENT_RAZON_SOCIAL === 'TAT') {
+    // Configuración específica para TAT (Excepto si es Polar)
+    if (CURRENT_RAZON_SOCIAL === 'TAT' && proveedor !== 'POLAR') {
         pdfConfig = {
             logoUrl: 'logo_tat.jpg',
             headerText: `PLANILLA FLETES TAT DISTRIBUCIONES DEL EJE CAFETERO SA NIT 901568117-1`.toUpperCase(),

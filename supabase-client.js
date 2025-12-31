@@ -166,9 +166,9 @@ async function obtenerVehiculos() {
             .select('*')
             .order('placa', { ascending: true });
 
-        // Aplicar filtro de empresa si existe
+        // Aplicar filtro de empresa si existe (AISLAMIENTO ESTRICTO)
         if (razonSocial) {
-            query = query.eq('razon_social', razonSocial);
+            query = query.eq('razon_social', razonSocial.toUpperCase());
         }
 
         const { data, error } = await query;
@@ -313,9 +313,19 @@ async function obtenerFletes(filtros = {}) {
             `)
             .order('created_at', { ascending: false });
 
-        // Filtrar por empresa estrictamente
+        // Filtrar por empresa (AISLAMIENTO ESTRICTO)
         if (razonSocial) {
-            query = query.eq('razon_social', razonSocial);
+            const rs = razonSocial.toUpperCase();
+            if (rs === 'TAT') {
+                // TAT ve sus fletes Y los de Polar (que están en TYM)
+                query = query.or(`razon_social.eq.TAT,proveedor.eq.POLAR`);
+            } else {
+                // TYM ve sus fletes (incluyendo Polar)
+                query = query.eq('razon_social', 'TYM');
+            }
+        } else {
+            // Seguridad: Si no hay empresa, no devolver nada
+            query = query.eq('razon_social', 'NINGUNA');
         }
 
         if (filtros.zona) query = query.eq('zona', filtros.zona);
@@ -338,14 +348,19 @@ async function obtenerFletes(filtros = {}) {
 async function crearFlete(fleteData) {
     try {
         const { data: session } = await _supabase.auth.getSession();
-        const razonSocial = await _getRazonSocialUsuario() || 'TYM';
+        let razonSocial = await _getRazonSocialUsuario() || 'TYM';
+
+        // LÓGICA ESPECIAL: Polar siempre queda en TYM
+        if (fleteData.proveedor === 'POLAR') {
+            razonSocial = 'TYM';
+        }
 
         const { data, error } = await _supabase
             .from('fletes')
             .insert([{
                 ...fleteData,
                 user_id: session?.session?.user?.id,
-                razon_social: razonSocial // Asignar empresa
+                razon_social: razonSocial // Asignar empresa (TYM para Polar)
             }])
             .select(`
                 *,
@@ -420,7 +435,16 @@ async function obtenerKPIs() {
             .from('fletes')
             .select('*', { count: 'exact', head: true });
 
-        if (razonSocial) queryTotal = queryTotal.eq('razon_social', razonSocial);
+        if (razonSocial) {
+            const rs = razonSocial.toUpperCase();
+            if (rs === 'TAT') {
+                // TAT ve sus fletes Y los de Polar (que están en TYM)
+                queryTotal = queryTotal.or(`razon_social.eq.TAT,proveedor.eq.POLAR`);
+            } else {
+                // TYM ve sus fletes (incluyendo Polar)
+                queryTotal = queryTotal.eq('razon_social', 'TYM');
+            }
+        }
 
         const { count: totalFletes, error: e1 } = await queryTotal;
         if (e1) throw e1;
@@ -433,7 +457,14 @@ async function obtenerKPIs() {
             .select('precio')
             .gte('fecha', primerDiaMes);
 
-        if (razonSocial) queryMes = queryMes.eq('razon_social', razonSocial);
+        if (razonSocial) {
+            const rs = razonSocial.toUpperCase();
+            if (rs === 'TAT') {
+                queryMes = queryMes.or(`razon_social.eq.TAT,proveedor.eq.POLAR`);
+            } else {
+                queryMes = queryMes.eq('razon_social', 'TYM');
+            }
+        }
 
         const { data: fletesDelMes, error: e2 } = await queryMes;
         if (e2) throw e2;
@@ -445,7 +476,7 @@ async function obtenerKPIs() {
             .select('*', { count: 'exact', head: true })
             .eq('activo', true);
 
-        if (razonSocial) queryVehiculos = queryVehiculos.eq('razon_social', razonSocial);
+        if (razonSocial) queryVehiculos = queryVehiculos.eq('razon_social', razonSocial.toUpperCase());
 
         const { count: vehiculosActivos, error: e3 } = await queryVehiculos;
         if (e3) throw e3;
@@ -471,9 +502,19 @@ async function obtenerEstadisticas() {
 
         let query = _supabase
             .from('fletes')
-            .select('zona, precio, fecha');
+            .select('zona, precio, fecha, proveedor');
 
-        if (razonSocial) query = query.eq('razon_social', razonSocial);
+        // Filtrar por empresa (AISLAMIENTO ESTRICTO)
+        if (razonSocial) {
+            const rs = razonSocial.toUpperCase();
+            if (rs === 'TAT') {
+                query = query.or(`razon_social.eq.TAT,proveedor.eq.POLAR`);
+            } else {
+                query = query.eq('razon_social', 'TYM');
+            }
+        } else {
+            query = query.eq('razon_social', 'NINGUNA');
+        }
 
         const { data: fletes } = await query;
 

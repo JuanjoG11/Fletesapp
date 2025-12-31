@@ -764,9 +764,9 @@ function calcularTotal(prefix = "") {
     const tieneAdicional = adicionalesEl?.value === "Si";
     if (tieneAdicional) total += COSTO_ADICIONAL;
 
-    // Sumar costo por auxiliares
-    const numAuxiliares = parseInt(noAuxEl?.value || 0);
-    total += (numAuxiliares * COSTO_POR_AUXILIAR);
+    // Sumar costo por auxiliares (DESACTIVADO por solicitud del usuario)
+    // const numAuxiliares = parseInt(noAuxEl?.value || 0);
+    // total += (numAuxiliares * COSTO_POR_AUXILIAR);
 
     // NUEVO: Sumar adicional por negociación
     const adicionalNegociado = adicNegociadoEl ? parseMoney(adicNegociadoEl.value) : 0;

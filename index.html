@@ -14,7 +14,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | Fletes App</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/styles.css">
     <style>
         body {
             display: flex;
@@ -38,7 +38,7 @@
 <body>
 
     <div class="glass-card login-card">
-        <img src="logo_tym.png" alt="Logo" class="logo-lg">
+        <img src="assets/img/logo_tym.png" alt="Logo" class="logo-lg">
         <h2 style="margin-bottom: 20px;">Bienvenido</h2>
 
         <div class="form-grid" style="grid-template-columns: 1fr;">
@@ -66,7 +66,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- Supabase Client -->
-    <script src="supabase-client.js"></script>
+    <script src="js/supabase-client.js"></script>
 
     <script>
         async function login() {
@@ -112,7 +112,7 @@
                         background: '#1e293b',
                         color: '#fff'
                     }).then(() => {
-                        window.location.href = 'dashboard.html';
+                        window.location.href = 'pages/dashboard.html';
                     });
                 } else {
                     Swal.fire({
@@ -148,7 +148,7 @@
 
             try {
                 const { session, user } = await window.SupabaseClient.auth.getSession();
-                if (session && user) window.location.href = 'dashboard.html';
+                if (session && user) window.location.href = 'pages/dashboard.html';
             } catch (err) { }
         })();
     </script>

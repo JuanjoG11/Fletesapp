@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Gestión de Fletes</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!-- 📊 Librerías Externas -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="../js/supabase-client.js"></script>
+    <script src="../js/app.js" defer></script>
+</head>
+
+<body>
+
+    <!-- 🟢 SIDEBAR (Navegación) -->
+    <aside class="sidebar glass-sidebar">
+        <div class="logo-container">
+            <img src="../assets/img/logo_tym.png" alt="Logo Empresa" class="logo-img">
+            <h2 class="brand-name">FletesApp</h2>
+        </div>
+
+        <nav class="nav-links">
+            <a class="nav-item active" data-tab="inicio">
+                <i class="ri-dashboard-3-line"></i> Dashboard
+            </a>
+            <!-- Tab para Admin (Gestión Completa) y Operario (Solo Lectura) -->
+            <a class="nav-item" data-tab="fletes" id="navFletes">
+                <i class="ri-file-list-3-line"></i> Listado Fletes
+            </a>
+            <!-- Tab Exclusiva Operario -->
+            <a class="nav-item" data-tab="operario-vehiculos" id="navVehiculos" style="display: none;">
+                <i class="ri-roadster-line"></i> Nuevo Vehículo
+            </a>
+            <!-- Tab Exclusiva Admin -->
+            <a class="nav-item" data-tab="admin-crear" id="navCrearFlete">
+                <i class="ri-add-circle-line"></i> Crear Flete
+            </a>
+
+        </nav>
+
+        <div class="sidebar-footer">
+            <!-- Export buttons remain here -->
+            <div class="actions">
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px; text-align: center;">📥
+                    Descargar Reportes</p>
+                <button onclick="exportarExcel()" class="action-btn" title="Exportar Excel">
+                    <i class="ri-file-excel-2-line"></i>
+                </button>
+                <button id="btnExportarPDF" class="action-btn" title="Generar PDF">
+                    <i class="ri-file-pdf-2-line"></i>
+                </button>
+            </div>
+            <!-- Theme switch remains -->
+            <div class="theme-switch-wrapper">
+                <label class="theme-switch" for="themeToggle">
+                    <input type="checkbox" id="themeToggle" />
+                    <div class="slider round">
+                        <i class="ri-sun-line sun-icon"></i>
+                        <i class="ri-moon-line moon-icon"></i>
+                    </div>
+                </label>
+            </div>
+            <button class="logout-btn" onclick="logout()"
+                style="width: 100%; border: none; cursor: pointer; background: transparent;">
+                <i class="ri-logout-box-r-line"></i> Salir
+            </button>
+        </div>
+    </aside>
+
+    <!-- 🔵 MAIN CONTENT -->
+    <main class="main-content">
+        <!-- TOPBAR -->
+        <header class="topbar glass-header">
+            <button id="menuToggleBtn" class="menu-btn"><i class="ri-menu-2-line"></i></button>
+            <h1 id="pageTitle">CONTROL DE FLETES</h1>
+            <div class="user-profile">
+                <span class="badge" id="companyBadge" style="margin-right: 8px;">TYM</span>
+                <span class="badge" id="userRoleBadge">Admin</span>
+                <div class="avatar">
+                    <i class="ri-user-3-line"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- 🏠 SECCIÓN INICIO -->
+        <section id="inicio" class="tab-content visible fade-in">
+
+
+            <div class="kpi-grid">
+                <div class="card glass-card kpi-card">
+                    <div class="kpi-icon icon-blue"><i class="ri-truck-line"></i></div>
+                    <div class="kpi-info">
+                        <h3>Total Fletes</h3>
+                        <p id="cantFletes" class="kpi-value">0</p>
+                    </div>
+                </div>
+                <div class="card glass-card kpi-card">
+                    <div class="kpi-icon icon-green"><i class="ri-money-dollar-circle-line"></i></div>
+                    <div class="kpi-info">
+                        <h3>Registros del Mes</h3>
+                        <p id="kpiRegistros" class="kpi-value">$ 0</p>
+                    </div>
+                </div>
+                <div class="card glass-card kpi-card">
+                    <div class="kpi-icon icon-orange"><i class="ri-steering-2-line"></i></div>
+                    <div class="kpi-info">
+                        <h3>Vehículos Activos</h3>
+                        <p id="kpiVehiculos" class="kpi-value">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 📊 SECCIÓN ESTADÍSTICAS INTEGRADAS -->
+            <div class="grid-2" style="margin-top: 20px;">
+                <div class="card glass-card chart-container">
+                    <h3>Registros por Día</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="chartRegistros"></canvas>
+                    </div>
+                </div>
+                <div class="card glass-card chart-container">
+                    <h3>Fletes por Zona</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="chartZonas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 📝 SECCIÓN CREAR FLETE (ADMIN) -->
+        <section id="admin-crear" class="tab-content fade-in">
+            <div id="card-admin" class="card glass-card">
+                <div class="card-header">
+                    <h2><i class="ri-add-circle-line"></i> Registrar Nuevo Flete</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>Placa Vehículo</label>
+                            <input id="placa" placeholder="EJ: ABC123"
+                                oninput="this.value = this.value.toUpperCase().replace('-', '')">
+                        </div>
+                        <div class="input-group">
+                            <label>Conductor (Auto)</label>
+                            <input id="contratista" placeholder="Nombre Conductor" readonly class="input-readonly">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Proveedor</label>
+                            <select id="proveedor" onchange="actualizarZonasPorProveedor()">
+                                <option value="" disabled selected>Seleccione...</option>
+                                <option>ALPINA</option>
+                                <option>ZENU</option>
+                                <option>FLEISCHMANN</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Zona (Selección Múltiple)</label>
+                            <div id="zona-container" class="select-checkbox-container">
+                                <div style="padding: 10px; color: #666;">Seleccione Proveedor primero</div>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Día</label>
+                            <select id="dia">
+                                <option value="" disabled selected>Seleccione...</option>
+                                <option>Lunes</option>
+                                <option>Martes</option>
+                                <option>Miercoles</option>
+                                <option>Jueves</option>
+                                <option>Viernes</option>
+                                <option>Sabado</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Población</label>
+                            <select id="poblacion">
+                                <option value="" disabled selected>Seleccione...</option>
+                                <option>AGUADAS</option>
+                                <option>AGUADAS-PACORA</option>
+                                <option>AGUILA-ANSERMA NUEVO</option>
+                                <option>ALCALA ULLOA</option>
+                                <option>ANSERMA</option>
+                                <option>ANSERMA NUEVO</option>
+                                <option>APIA- PUEBLO RICO</option>
+                                <option>ARABIA - ALTAGRACIA</option>
+                                <option>ARANZAZU FILADELFIA</option>
+                                <option>ARGELIA EL CAIRO</option>
+                                <option>ARGELIA-EL CAIRO</option>
+                                <option>ARMENIA</option>
+                                <option>BALBOA LA CELIA</option>
+                                <option>BELAL RDA SJOSE</option>
+                                <option>BELEN</option>
+                                <option>BELEN MISTRATO</option>
+                                <option>CAICEDONIA</option>
+                                <option>CAIMO BARCELONA</option>
+                                <option>CALARCA</option>
+                                <option>CARTAGO</option>
+                                <option>CHINCHINA</option>
+                                <option>CIRCASIA</option>
+                                <option>CORDOBA PIJAO BVISTA</option>
+                                <option>CUBA</option>
+                                <option>DOSQUEBRADAS</option>
+                                <option>EL AGUILA</option>
+                                <option>EL AGUILA - VILLANUEVA</option>
+                                <option>FILANDIA</option>
+                                <option>GENOVA</option>
+                                <option>GUATICA</option>
+                                <option>IRRA LA FELISA LA MERCED</option>
+                                <option>LA VIRGINIA</option>
+                                <option>LA VIRGINA -BELALCAZAR</option>
+                                <option>MANIZALES</option>
+                                <option>MANIZALES - VILLAMARIA</option>
+                                <option>MANIZALES-DESDE PEREIRA-CARGA EXTRA</option>
+                                <option>MARMATO</option>
+                                <option>MARSELLA</option>
+                                <option>MISTRATO</option>
+                                <option>MONTENEGRO</option>
+                                <option>MONTENEGRO - P TAPAO</option>
+                                <option>NEIRA</option>
+                                <option>PACORA</option>
+                                <option>PALESTINA ARAUCA LA PLATA</option>
+                                <option>PEREIRA</option>
+                                <option>PUEBLO RICO</option>
+                                <option>QUIMBAYA</option>
+                                <option>QUINCHIA</option>
+                                <option>RIOSUCIO</option>
+                                <option>SANTA CECILIA</option>
+                                <option>SANTA ROSA</option>
+                                <option>SANTUARIO</option>
+                                <option>SANTUARIO APIA</option>
+                                <option>SUPIA</option>
+                                <option>SUPIA-MARMATO</option>
+                                <option>TEBAIDA</option>
+                                <option>VITERBO</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Nombres Auxiliares</label>
+                            <input id="auxiliares" type="text" placeholder="Separados por coma"
+                                oninput="this.value = this.value.toUpperCase()">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Cant. Auxiliares (Máx. 2)</label>
+                            <select id="no_auxiliares">
+                                <option value="0">0</option>
+                                <option>1</option>
+                                <option>2</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label>No. Pedidos</label>
+                            <input id="no_pedidos" type="number" placeholder="0">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Valor Ruta</label>
+                            <input id="valor_ruta" type="text" placeholder="$ 0" class="money-input">
+                        </div>
+
+                        <div class="input-group">
+                            <label>¿Adicionales?</label>
+                            <select id="is_adicionales">
+                                <option value="No">No</option>
+                                <option value="Si">Si (+ $60.000)</option>
+                            </select>
+                        </div>
+
+                        <!-- Adicionales por Negociación -->
+                        <div class="input-group">
+                            <label>Adicional Negociado</label>
+                            <input id="valor_adicional" type="text" placeholder="$ 0" class="money-input">
+                        </div>
+
+                        <div class="input-group full-width">
+                            <label>Razón del Adicional</label>
+                            <textarea id="razon_adicional" rows="2"
+                                placeholder="Ecriba el motivo de la negociaciòn"></textarea>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Total Flete (Automático)</label>
+                            <input id="total_flete" type="text" placeholder="$ 0" readonly class="input-total">
+                        </div>
+                        <div class="input-group">
+                            <label>Participación %</label>
+                            <input id="porcentaje_ruta" type="text" placeholder="0%" readonly
+                                style="font-weight: bold;">
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button id="btnGestionarFlete" class="btn btn-primary btn-glow">
+                            <i class="ri-save-3-line"></i> Guardar Flete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 👷 SECCIÓN OPERARIO: REGISTRAR VEHÍCULO -->
+        <section id="operario-vehiculos" class="tab-content fade-in">
+            <div id="card-operario" class="card glass-card">
+                <div class="card-header">
+                    <h2><i class="ri-truck-line"></i> Registrar Nuevo Vehículo</h2>
+                    <p class="text-muted">Ingrese la placa y el conductor para habilitarlo en el sistema.</p>
+                </div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>Placa Vehículo</label>
+                            <input id="op_placa" placeholder="EJ: XYZ789"
+                                oninput="this.value = this.value.toUpperCase().replace('-', '')">
+                        </div>
+                        <div class="input-group">
+                            <label>Nombre Conductor</label>
+                            <input id="op_conductor" placeholder="Nombre Completo">
+                        </div>
+                        <div class="input-group">
+                            <label>Modelo del Vehículo</label>
+                            <input id="op_modelo" placeholder="Ej: Camión Turbo, Van, etc.">
+                        </div>
+                    </div>
+                    <div class="form-actions" style="gap: 10px; flex-wrap: wrap;">
+                        <button id="btnRegistrarVehiculo" class="btn btn-secondary btn-glow">
+                            <i class="ri-user-add-line"></i> Registrar Conductor
+                        </button>
+                        <button class="btn btn-primary btn-glow"
+                            onclick="document.getElementById('inputImportExcel').click()"
+                            style="background: var(--accent-blue);">
+                            <i class="ri-file-excel-2-line"></i> Importar desde Excel
+                        </button>
+                        <input type="file" id="inputImportExcel" accept=".xlsx, .xls" style="display: none;"
+                            onchange="procesarExcelVehiculos(event)">
+                    </div>
+                </div>
+
+                <!-- Lista de Flota (Visible para Operario) -->
+                <div class="glass-card"
+                    style="margin-top:20px; border-top:1px solid var(--glass-border); padding-top:20px">
+                    <div class="card-header">
+                        <h2><i class="ri-list-check-2"></i> Flota Registrada</h2>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Placa</th>
+                                    <th>Conductor</th>
+                                    <th>Modelo</th>
+                                    <th>Estado</th>
+                                    <th class="actions-col">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaVehiculos">
+                                <!-- JS Renders Fleet Here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 📋 SECCIÓN LISTADO FLETES (TODOS) -->
+        <section id="fletes" class="tab-content fade-in">
+            <div class="card glass-card" id="card-listado-fletes">
+                <div class="card-header flex-header">
+                    <h2><i class="ri-search-eye-line"></i> Base de Datos Fletes</h2>
+                    <div class="filters">
+                        <input id="buscarFlete" placeholder="Buscar placa o conductor..." onkeyup="buscarFletes()">
+                        <select id="filtroZona" onchange="buscarFletes()">
+                            <option value="">Todas las Zonas</option>
+                            <option>M9450</option>
+                            <option>M9451</option>
+                            <option>M9453</option>
+                            <option>M9454</option>
+                            <option>M9455</option>
+                            <option>M9456</option>
+                            <option>M9457</option>
+                            <option>M9458</option>
+                            <option>M9459</option>
+                            <option>M9460</option>
+                            <option>P7004</option>
+                            <option>P7005</option>
+                            <option>P7006</option>
+                            <option>P7007</option>
+                            <option>M9552</option>
+                            <option>M9553</option>
+                            <option>M9554</option>
+                            <option>M9555</option>
+                            <option>M9556</option>
+                            <option>M9557</option>
+                            <option>M9558</option>
+                            <option>M9559</option>
+                            <option>M9601</option>
+                            <option>M9602</option>
+                            <option>M9603</option>
+                            <option>M9604</option>
+                            <option>M9605</option>
+                            <option>M9606</option>
+                            <option>25021</option>
+                            <option>25022</option>
+                            <option>25023</option>
+                            <option>25024</option>
+                            <option>25025</option>
+                            <option>25026</option>
+                            <option>25027</option>
+                            <option>25028</option>
+                            <option>FC01</option>
+                            <option>FC02</option>
+                            <option>FC03</option>
+                            <option>FQ04</option>
+                            <option>FQ05</option>
+                            <option>FQ06</option>
+                            <option>FR07</option>
+                            <option>FR08</option>
+                            <option>FR09</option>
+                        </select>
+                        <input type="date" id="filtroFecha" onchange="buscarFletes()">
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Día</th>
+                                <th>Proveedor</th>
+                                <th>Conductor</th>
+                                <th>Placa</th>
+                                <th>Zona</th>
+                                <th>Población</th>
+                                <th>Auxiliares</th>
+                                <th>¿Adic?</th>
+                                <th>$ Negoc.</th>
+                                <th>Motivo</th>
+                                <th>Valor Ruta</th>
+                                <th>Valor Flete</th>
+                                <th class="admin-actions-col" style="display: none;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaFletes">
+                            <!-- JS Renders Rows Here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+
+
+    </main>
+
+    <!-- MODAL EDICIÓN -->
+    <div id="modalEdicionFlete" class="modal-overlay">
+        <div class="modal-glass">
+            <div class="modal-header">
+                <h2>✏️ Editar Flete</h2>
+                <button class="close-btn" onclick="ocultarModalEdicion()"><i class="ri-close-line"></i></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-grid">
+                    <!-- Mismos campos con prefijo modal- -->
+                    <div class="input-group"> <label>Fecha</label> <input id="modal-fecha" type="date"> </div>
+                    <div class="input-group"> <label>Placa</label> <input id="modal-placa"
+                            oninput="this.value = this.value.toUpperCase().replace('-', '')"> </div>
+                    <div class="input-group"> <label>Conductor</label> <input id="modal-contratista" readonly
+                            class="input-readonly"> </div>
+                    <div class="input-group">
+                        <label>Proveedor</label>
+                        <select id="modal-proveedor" onchange="actualizarZonasPorProveedor('modal-')">
+                            <option value="" disabled selected>Seleccione...</option>
+                            <option>ALPINA</option>
+                            <option>ZENU</option>
+                            <option>FLEISCHMANN</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Zona</label>
+                        <div class="input-group">
+                            <label>Zona (Selección Múltiple)</label>
+                            <div id="modal-zona-container" class="select-checkbox-container">
+                                <!-- JS Generates Checkboxes Here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group"> <label>Día</label> <select id="modal-dia">
+                            <option>Lunes</option>
+                            <option>Martes</option>
+                            <option>Miercoles</option>
+                            <option>Jueves</option>
+                            <option>Viernes</option>
+                            <option>Sabado</option>
+                        </select> </div>
+
+                    <div class="input-group"> <label>Población</label> <select id="modal-poblacion">
+                            <option>AGUADAS</option>
+                            <option>AGUADAS-PACORA</option>
+                            <option>AGUILA-ANSERMA NUEVO</option>
+                            <option>ALCALA ULLOA</option>
+                            <option>ANSERMA</option>
+                            <option>ANSERMA NUEVO</option>
+                            <option>APIA- PUEBLO RICO</option>
+                            <option>ARABIA - ALTAGRACIA</option>
+                            <option>ARANZAZU FILADELFIA</option>
+                            <option>ARGELIA EL CAIRO</option>
+                            <option>ARGELIA-EL CAIRO</option>
+                            <option>ARMENIA</option>
+                            <option>BALBOA LA CELIA</option>
+                            <option>BELAL RDA SJOSE</option>
+                            <option>BELEN</option>
+                            <option>BELEN MISTRATO</option>
+                            <option>CAICEDONIA</option>
+                            <option>CAIMO BARCELONA</option>
+                            <option>CALARCA</option>
+                            <option>CARTAGO</option>
+                            <option>CHINCHINA</option>
+                            <option>CIRCASIA</option>
+                            <option>CORDOBA PIJAO BVISTA</option>
+                            <option>CUBA</option>
+                            <option>DOSQUEBRADAS</option>
+                            <option>EL AGUILA</option>
+                            <option>EL AGUILA - VILLANUEVA</option>
+                            <option>FILANDIA</option>
+                            <option>GENOVA</option>
+                            <option>GUATICA</option>
+                            <option>IRRA LA FELISA LA MERCED</option>
+                            <option>LA VIRGINIA</option>
+                            <option>LA VIRGINA -BELALCAZAR</option>
+                            <option>MANIZALES</option>
+                            <option>MANIZALES - VILLAMARIA</option>
+                            <option>MANIZALES-DESDE PEREIRA-CARGA EXTRA</option>
+                            <option>MARMATO</option>
+                            <option>MARSELLA</option>
+                            <option>MISTRATO</option>
+                            <option>MONTENEGRO</option>
+                            <option>MONTENEGRO - P TAPAO</option>
+                            <option>NEIRA</option>
+                            <option>PACORA</option>
+                            <option>PALESTINA ARAUCA LA PLATA</option>
+                            <option>PEREIRA</option>
+                            <option>PUEBLO RICO</option>
+                            <option>QUIMBAYA</option>
+                            <option>QUINCHIA</option>
+                            <option>RIOSUCIO</option>
+                            <option>SANTA CECILIA</option>
+                            <option>SANTA ROSA</option>
+                            <option>SANTUARIO</option>
+                            <option>SANTUARIO APIA</option>
+                            <option>SUPIA</option>
+                            <option>SUPIA-MARMATO</option>
+                            <option>TEBAIDA</option>
+                            <option>VITERBO</option>
+                        </select> </div>
+
+                    <div class="input-group"> <label>Auxiliares</label> <input id="modal-auxiliares" type="text"
+                            oninput="this.value = this.value.toUpperCase()"> </div>
+                    <div class="input-group"> <label>No. Aux</label> <select id="modal-no_auxiliares">
+                            <option>0</option>
+                            <option>1</option>
+                            <option>2</option>
+                        </select> </div>
+                    <div class="input-group"> <label>No. Pedidos</label> <input id="modal-no_pedidos" type="number">
+                    </div>
+
+                    <div class="input-group"> <label>Valor Ruta</label> <input id="modal-valor_ruta" type="text"
+                            class="money-input"> </div>
+
+                    <div class="input-group">
+                        <label>Zona (Selección Múltiple)</label>
+                        <div id="modal-zona-container" class="select-checkbox-container">
+                            <!-- JS Generates Checkboxes Here -->
+                        </div>
+                    </div>
+
+
+
+                    <div class="input-group">
+                        <label>¿Adicionales?</label>
+                        <select id="modal-is_adicionales">
+                            <option value="No">No</option>
+                            <option value="Si">Si</option>
+                        </select>
+                    </div>
+
+                    <!-- Adicionales por Negociación (Modal) -->
+                    <div class="input-group"> <label>Adicional Negociado</label> <input id="modal-valor_adicional"
+                            type="text" class="money-input" placeholder="$ 0"> </div>
+                    <div class="input-group full-width"> <label>Razón del Adicional</label> <textarea
+                            id="modal-razon_adicional" rows="2" placeholder="Motivo del adicional"></textarea> </div>
+
+                    <div class="input-group"> <label>Total</label> <input id="modal-total_flete" type="text" readonly
+                            class="input-total"> </div>
+                    <div class="input-group"> <label>Participación %</label> <input id="modal-porcentaje_ruta"
+                            type="text" readonly style="font-weight: bold;"> </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="ocultarModalEdicion()">Cancelar</button>
+                <button id="btnGuardarModal" class="btn btn-primary">Guardar
+                    Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP SCRIPTS are loaded in HEAD -->
+</body>
+
+</html>

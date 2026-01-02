@@ -404,6 +404,7 @@ const PRECIOS_POBLACION = {
     "PACORA": 670000,
     "PALESTINA ARAUCA LA PLATA": 280000,
     "PEREIRA": 208000,
+    "PEREIRA-DOSQUEBRADAS": 230000,
     "PUEBLO RICO": 305000,
     "QUIMBAYA": 245000,
     "QUINCHIA": 439000,
@@ -421,6 +422,7 @@ const PRECIOS_POBLACION = {
 // Precios BASE para TAT (Poblaciones comunes a UNILEVER y FAMILIA)
 const PRECIOS_TAT_BASE = {
     'PEREIRA MM CARRO GRANDE': 230000,
+    'PEREIRA-DOSQUEBRADAS': 230000,
     'PEREIRA Y DOSQUEBRADAS': 220000,
     'PEREIRA': 190000,
     'DOSQUEBRADAS': 190000,
@@ -518,6 +520,7 @@ const PRECIOS_ALPINA = {
     "SANTA ROSA": 230000,
     "DOSQUEBRADAS": 190000,
     "PEREIRA": 200000,
+    "PEREIRA-DOSQUEBRADAS": 230000,
     "CUBA": 200000,
     "SUPIA": 505000,
     "RIOSUCIO": 545000,
@@ -541,6 +544,7 @@ const PRECIOS_ZENU = {
     "SANTA ROSA": 212000,
     "CARTAGO": 250000,
     "PEREIRA": 208000,
+    "PEREIRA-DOSQUEBRADAS": 230000,
     "DOSQUEBRADAS": 208000,
     "APIA- PUEBLO RICO": 320000,
     "BELEN": 305000,
@@ -559,7 +563,8 @@ const PRECIOS_ZENU = {
 const PRECIOS_POLAR = {
     "ARMENIA": 295000,
     "MANIZALES-DESDE PEREIRA-CARGA EXTRA": 295000,
-    "MANIZALES": 245000
+    "MANIZALES": 245000,
+    "PEREIRA-DOSQUEBRADAS": 230000
 };
 
 const COSTO_ADICIONAL = 60000;
@@ -571,8 +576,8 @@ const POBLACIONES_RISARALDA = [
     "BELEN DE UMBRIA", "BELEN", "MISTRATO", "GUATICA", "QUINCHIA", "APIA",
     "SANTUARIO", "PUEBLO RICO", "SANTA CECILIA", "BALBOA LA CELIA", "BALBOA-LA CELIA",
     "MARSELLA", "SANTUARIO APIA", "APIA- PUEBLO RICO", "BELEN MISTRATO",
-    "PUEBLO RICO-SANTA CECILIA", "GUATICA-RISARALDA", "PEREIRA MM CARRO GRANDE",
-    "PEREIRA Y DOSQUEBRADAS"
+    "PUEBLO RICO-SANTA CECILIA", "GUATICA-RISARALDA", "PEREIRA-DOSQUEBRADAS",
+    "PEREIRA MM CARRO GRANDE", "PEREIRA Y DOSQUEBRADAS"
 ];
 
 const ZONAS_CALDAS = ["M9552", "M9553", "M9554", "M9555", "M9556", "M9557", "M9560", "M9558", "M9559", "P7002", "M9550", "P7000", "P7001"];
@@ -602,13 +607,17 @@ function actualizarPoblaciones(prefix = "") {
 
     if (!provEl || !pobEl) return;
 
+    const proveedor = provEl.value;
+    const isAlpinaDeptLogic = (proveedor === 'ALPINA' || proveedor === 'ALPINA-FLEISCHMANN');
+    const zonaContainerId = prefix === "" ? "zona-container" : "modal-zona-container";
+    const zonaContainer = document.getElementById(zonaContainerId);
+
     // Guardar lista maestra de poblaciones si no existe
-    if (!MASTER_POBLACIONES) {
+    if (!MASTER_POBLACIONES || !MASTER_POBLACIONES.includes("PEREIRA-DOSQUEBRADAS")) {
         // Usamos las keys de PRECIOS_POBLACION como base general
         MASTER_POBLACIONES = Object.keys(PRECIOS_POBLACION).sort();
     }
 
-    const proveedor = provEl.value;
     const isAlpinaLike = (proveedor === 'ALPINA' || proveedor === 'FLEISCHMANN' || proveedor === 'ALPINA-FLEISCHMANN');
     const isZenu = (proveedor === 'ZENU');
     const isPolar = (proveedor === 'POLAR');
@@ -631,15 +640,10 @@ function actualizarPoblaciones(prefix = "") {
 
     // --- Lógica Especial Risaralda ---
     // Si hay zonas de Risaralda seleccionadas, filtramos por poblaciones de Risaralda
-    const zonaContainerId = prefix === "" ? "zona-container" : "modal-zona-container";
-    const zonaContainer = document.getElementById(zonaContainerId);
     if (zonaContainer) {
         const checked = Array.from(zonaContainer.querySelectorAll('input[type="checkbox"]:checked'));
         const selectedValues = checked.map(input => input.value);
         const hasRisaraldaZone = selectedValues.some(v => ZONAS_RISARALDA.includes(v));
-
-        // --- Lógica Especial Caldas (SOLO ALPINA) ---
-        const isAlpinaDeptLogic = (proveedor === 'ALPINA' || proveedor === 'ALPINA-FLEISCHMANN');
 
         if (hasRisaraldaZone) {
             // Filtrar la lista actual para que solo contenga poblaciones de Risaralda
@@ -1907,8 +1911,14 @@ async function generarGraficos() {
         if (myChart) myChart.destroy();
         if (myChart2) myChart2.destroy();
 
-        // Si no hay datos, pero el usuario quiere que "empiece desde hoy", podemos 
-        // forzar el gráfico de barras a mostrar al menos el día de hoy con valor 0.
+        // Limpiar canvas manualmente por si acaso
+        [ctx, ctx2].forEach(c => {
+            if (!c) return;
+            const context = c.getContext('2d');
+            context.clearRect(0, 0, c.width, c.height);
+        });
+
+        // Si no hay datos, forzar el gráfico de barras a mostrar al menos el día de hoy con valor 0.
         const todayKey = new Date().toISOString().split('T')[0];
         const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
         const todayObj = new Date();

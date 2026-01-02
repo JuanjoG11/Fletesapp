@@ -565,6 +565,31 @@ const PRECIOS_POLAR = {
 const COSTO_ADICIONAL = 60000;
 const COSTO_POR_AUXILIAR = 30000; // Costo adicional por cada auxiliar
 
+const ZONAS_RISARALDA = ["M9453", "M9454", "M9455", "M9456", "M9457", "M9458", "M9459", "M9460", "P7004", "P7005", "P7006", "P7007", "P7005B", "M9450", "M9451"];
+const POBLACIONES_RISARALDA = [
+    "PEREIRA", "DOSQUEBRADAS", "SANTA ROSA", "SANTA ROSA DE C", "LA VIRGINIA",
+    "BELEN DE UMBRIA", "BELEN", "MISTRATO", "GUATICA", "QUINCHIA", "APIA",
+    "SANTUARIO", "PUEBLO RICO", "SANTA CECILIA", "BALBOA LA CELIA", "BALBOA-LA CELIA",
+    "MARSELLA", "SANTUARIO APIA", "APIA- PUEBLO RICO", "BELEN MISTRATO",
+    "PUEBLO RICO-SANTA CECILIA", "GUATICA-RISARALDA", "PEREIRA MM CARRO GRANDE",
+    "PEREIRA Y DOSQUEBRADAS"
+];
+
+const ZONAS_CALDAS = ["M9552", "M9553", "M9554", "M9555", "M9556", "M9557", "M9560", "M9558", "M9559", "P7002", "M9550", "P7000", "P7001"];
+const POBLACIONES_CALDAS = [
+    "MANIZALES", "MANIZALES - VILLAMARIA", "CHINCHINA", "NEIRA", "PALESTINA ARAUCA LA PLATA",
+    "ARANZAZU FILADELFIA", "RIOSUCIO", "SUPIA", "MARMATO", "PACORA", "AGUADAS",
+    "AGUADAS-PACORA", "SUPIA-MARMATO", "IRRA LA FELISA LA MERCED", "ANSERMA",
+    "BELEN", "VITERBO"
+];
+
+const ZONAS_QUINDIO = ["M9601", "M9602", "M9603", "M9604", "M9605", "M9606", "M9600", "P7008", "P7009", "P7010"];
+const POBLACIONES_QUINDIO = [
+    "ARMENIA", "ARMENIA 2T", "QUIMBAYA", "MONTENEGRO", "MONTENEGRO - P TAPAO",
+    "CALARCA", "CIRCASIA", "LA TEBAIDA", "TEBAIDA", "FILANDIA", "SALENTO",
+    "GENOVA", "PIJAO", "BUENAVISTA", "CORDOBA PIJAO BVISTA", "CAIMO BARCELONA"
+];
+
 // Master list storage
 let MASTER_ZONAS = [];
 let MASTER_ZONAS_MODAL = [];
@@ -603,6 +628,62 @@ function actualizarPoblaciones(prefix = "") {
     } else if (isFamilia) {
         listaUsar = Object.keys(PRECIOS_TAT_FAMILIA).sort();
     }
+
+    // --- Lógica Especial Risaralda ---
+    // Si hay zonas de Risaralda seleccionadas, filtramos por poblaciones de Risaralda
+    const zonaContainerId = prefix === "" ? "zona-container" : "modal-zona-container";
+    const zonaContainer = document.getElementById(zonaContainerId);
+    if (zonaContainer) {
+        const checked = Array.from(zonaContainer.querySelectorAll('input[type="checkbox"]:checked'));
+        const selectedValues = checked.map(input => input.value);
+        const hasRisaraldaZone = selectedValues.some(v => ZONAS_RISARALDA.includes(v));
+
+        if (hasRisaraldaZone) {
+            // Filtrar la lista actual para que solo contenga poblaciones de Risaralda
+            listaUsar = listaUsar.filter(pob => POBLACIONES_RISARALDA.includes(pob));
+
+            // Si la lista queda vacía (porque el proveedor no tiene esas poblaciones), 
+            // mostramos todas las de Risaralda como fallback
+            if (listaUsar.length === 0) {
+                listaUsar = POBLACIONES_RISARALDA.sort();
+            }
+        }
+    }
+
+    // --- Lógica Especial Caldas (SOLO ALPINA) ---
+    if (proveedor === 'ALPINA' && zonaContainer) {
+        const checked = Array.from(zonaContainer.querySelectorAll('input[type="checkbox"]:checked'));
+        const selectedValues = checked.map(input => input.value);
+        const hasCaldasZone = selectedValues.some(v => ZONAS_CALDAS.includes(v));
+
+        if (hasCaldasZone) {
+            // Filtrar la lista de Alpina para que solo contenga poblaciones de Caldas
+            listaUsar = listaUsar.filter(pob => POBLACIONES_CALDAS.includes(pob));
+
+            // Fallback si por alguna razón la intersección es vacía
+            if (listaUsar.length === 0) {
+                listaUsar = POBLACIONES_CALDAS.sort();
+            }
+        }
+    }
+    // --- Lógica Especial Quindío (SOLO ALPINA) ---
+    if (proveedor === 'ALPINA' && zonaContainer) {
+        const checked = Array.from(zonaContainer.querySelectorAll('input[type="checkbox"]:checked'));
+        const selectedValues = checked.map(input => input.value);
+        const hasQuindioZone = selectedValues.some(v => ZONAS_QUINDIO.includes(v));
+
+        if (hasQuindioZone) {
+            // Filtrar la lista de Alpina para que solo contenga poblaciones de Quindío
+            listaUsar = listaUsar.filter(pob => POBLACIONES_QUINDIO.includes(pob));
+
+            // Fallback si por alguna razón la intersección es vacía
+            if (listaUsar.length === 0) {
+                listaUsar = POBLACIONES_QUINDIO.sort();
+            }
+        }
+    }
+    // --------------------------------------------
+    // --------------------------------
 
     // Guardar valor actual para intentar mantenerlo
     const currentVal = pobEl.value;
@@ -643,12 +724,18 @@ function actualizarZonasPorProveedor(prefix = "") {
         { value: "M9454", text: "M9454" }, { value: "M9455", text: "M9455" }, { value: "M9456", text: "M9456" },
         { value: "M9457", text: "M9457" }, { value: "M9458", text: "M9458" }, { value: "M9459", text: "M9459" },
         { value: "M9460", text: "M9460" }, { value: "P7004", text: "P7004" }, { value: "P7005", text: "P7005" },
-        { value: "P7006", text: "P7006" }, { value: "P7007", text: "P7007" }, { value: "M9552", text: "M9552" },
+        { value: "P7005B", text: "P7005B" },
+        { value: "P7006", text: "P7006" }, { value: "P7007", text: "P7007" },
+        { value: "P7000", text: "P7000" }, { value: "P7001", text: "P7001" }, { value: "P7002", text: "P7002" },
+        { value: "M9550", text: "M9550" }, { value: "M9552", text: "M9552" },
         { value: "M9553", text: "M9553" }, { value: "M9554", text: "M9554" }, { value: "M9555", text: "M9555" },
         { value: "M9556", text: "M9556" }, { value: "M9557", text: "M9557" }, { value: "M9558", text: "M9558" },
-        { value: "M9559", text: "M9559" }, { value: "M9601", text: "M9601" }, { value: "M9602", text: "M9602" },
+        { value: "M9559", text: "M9559" }, { value: "M9560", text: "M9560" },
+        { value: "M9600", text: "M9600" }, { value: "M9601", text: "M9601" }, { value: "M9602", text: "M9602" },
         { value: "M9603", text: "M9603" }, { value: "M9604", text: "M9604" }, { value: "M9605", text: "M9605" },
-        { value: "M9606", text: "M9606" }, { value: "25021", text: "25021" }, { value: "25022", text: "25022" },
+        { value: "M9606", text: "M9606" },
+        { value: "P7008", text: "P7008" }, { value: "P7009", text: "P7009" }, { value: "P7010", text: "P7010" },
+        { value: "25021", text: "25021" }, { value: "25022", text: "25022" },
         { value: "25023", text: "25023" }, { value: "25024", text: "25024" }, { value: "25025", text: "25025" },
         { value: "25026", text: "25026" }, { value: "25027", text: "25027" }, { value: "25028", text: "25028" },
         { value: "25029", text: "25029" }, { value: "FC01", text: "FC01" }, { value: "FC02", text: "FC02" },
@@ -707,8 +794,11 @@ function actualizarZonasPorProveedor(prefix = "") {
         input.value = z.value;
         input.name = (prefix === "" ? "zona" : "modal-zona") + "[]";
 
-        // Evento para recalcular precio si fuera necesario
-        // input.onchange = () => calcularTotal(prefix); 
+        // Evento para recalcular precio y actualizar poblaciones (Risaralda logic)
+        input.onchange = () => {
+            actualizarPoblaciones(prefix);
+            calcularTotal(prefix);
+        };
 
         const span = document.createElement("span");
         span.textContent = z.text;

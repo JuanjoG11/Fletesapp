@@ -418,6 +418,26 @@ async function eliminarFleteDB(fleteId) {
     }
 }
 
+/**
+ * Eliminar todos los fletes (LIMPIEZA PRODUCCIÓN)
+ */
+async function eliminarTodosLosFletesDB() {
+    try {
+        const razonSocial = await _getRazonSocialUsuario();
+        const { error, count } = await _supabase
+            .from('fletes')
+            .delete()
+            .eq('razon_social', razonSocial.toUpperCase())
+            .select('*', { count: 'exact' });
+
+        if (error) throw error;
+        return { success: true, count: count || 0 };
+    } catch (error) {
+        console.error('Error al limpiar base de datos:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 // ==========================================================
 // 📊 FUNCIONES DE ESTADÍSTICAS
 // ==========================================================
@@ -586,6 +606,7 @@ const SupabaseClientAPI = {
         create: crearFlete,
         update: actualizarFlete,
         delete: eliminarFleteDB,
+        deleteAll: eliminarTodosLosFletesDB,
         getStats: obtenerKPIs,
         getEstadisticas: obtenerEstadisticas
     },

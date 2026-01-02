@@ -609,7 +609,7 @@ function actualizarPoblaciones(prefix = "") {
     }
 
     const proveedor = provEl.value;
-    const isAlpinaLike = (proveedor === 'ALPINA' || proveedor === 'FLEISCHMANN');
+    const isAlpinaLike = (proveedor === 'ALPINA' || proveedor === 'FLEISCHMANN' || proveedor === 'ALPINA-FLEISCHMANN');
     const isZenu = (proveedor === 'ZENU');
     const isPolar = (proveedor === 'POLAR');
     const isUnilever = (proveedor === 'UNILEVER');
@@ -638,6 +638,9 @@ function actualizarPoblaciones(prefix = "") {
         const selectedValues = checked.map(input => input.value);
         const hasRisaraldaZone = selectedValues.some(v => ZONAS_RISARALDA.includes(v));
 
+        // --- Lógica Especial Caldas (SOLO ALPINA) ---
+        const isAlpinaDeptLogic = (proveedor === 'ALPINA' || proveedor === 'ALPINA-FLEISCHMANN');
+
         if (hasRisaraldaZone) {
             // Filtrar la lista actual para que solo contenga poblaciones de Risaralda
             listaUsar = listaUsar.filter(pob => POBLACIONES_RISARALDA.includes(pob));
@@ -651,7 +654,7 @@ function actualizarPoblaciones(prefix = "") {
     }
 
     // --- Lógica Especial Caldas (SOLO ALPINA) ---
-    if (proveedor === 'ALPINA' && zonaContainer) {
+    if (isAlpinaDeptLogic && zonaContainer) {
         const checked = Array.from(zonaContainer.querySelectorAll('input[type="checkbox"]:checked'));
         const selectedValues = checked.map(input => input.value);
         const hasCaldasZone = selectedValues.some(v => ZONAS_CALDAS.includes(v));
@@ -667,7 +670,7 @@ function actualizarPoblaciones(prefix = "") {
         }
     }
     // --- Lógica Especial Quindío (SOLO ALPINA) ---
-    if (proveedor === 'ALPINA' && zonaContainer) {
+    if (isAlpinaDeptLogic && zonaContainer) {
         const checked = Array.from(zonaContainer.querySelectorAll('input[type="checkbox"]:checked'));
         const selectedValues = checked.map(input => input.value);
         const hasQuindioZone = selectedValues.some(v => ZONAS_QUINDIO.includes(v));
@@ -770,6 +773,9 @@ function actualizarZonasPorProveedor(prefix = "") {
     } else if (proveedor === "FLEISCHMANN") {
         const allowed = ["FC01", "FC02", "FC03", "FQ04", "FQ05", "FQ06", "FR07", "FR08", "FR09"];
         filtered = master.filter(z => allowed.includes(z.value) || z.value === "");
+    } else if (proveedor === "ALPINA-FLEISCHMANN") {
+        const fleischmannZones = ["FC01", "FC02", "FC03", "FQ04", "FQ05", "FQ06", "FR07", "FR08", "FR09"];
+        filtered = master.filter(z => z.value.startsWith("M") || fleischmannZones.includes(z.value) || z.value === "");
     } else {
         filtered = master;
     }
@@ -1449,16 +1455,114 @@ function setupTheme() {
 // 📂 EXPORTS
 // ==========================================================
 async function exportarExcel() {
-    const { data: fletes, error } = await SupabaseClient.supabase
+    // Definir opciones según la empresa
+    let opcionesProveedores = '';
+    const esTAT = (CURRENT_RAZON_SOCIAL === 'TAT');
+
+    if (esTAT) {
+        opcionesProveedores = `
+            <option value="UNILEVER">UNILEVER</option>
+            <option value="FAMILIA">FAMILIA</option>
+            <option value="POLAR">POLAR</option>
+        `;
+    } else {
+        opcionesProveedores = `
+            <option value="ALPINA">ALPINA</option>
+            <option value="ZENU">ZENU</option>
+            <option value="FLEISCHMANN">FLEISCHMANN</option>
+            <option value="ALPINA-FLEISCHMANN">ALPINA-FLEISCHMANN</option>
+        `;
+    }
+
+    const { value: formValues } = await Swal.fire({
+        title: '📊 Exportar a Excel',
+        html: `
+            <div class="pdf-config-form" style="text-align: center;">
+                <label for="excel-fecha">Fecha (Obligatorio):</label>
+                <input id="excel-fecha" type="date" class="swal2-input" required>
+                
+                <label for="excel-proveedor">Proveedor (Opcional):</label>
+                <select id="excel-proveedor" class="swal2-input">
+                    <option value="">Todos los Proveedores</option>
+                    ${opcionesProveedores}
+                </select>
+            </div>
+        `,
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'Exportar Excel',
+        cancelButtonText: 'Cancelar',
+        background: '#1e293b',
+        color: '#fff',
+        preConfirm: () => {
+            const fecha = document.getElementById('excel-fecha').value;
+            const proveedor = document.getElementById('excel-proveedor').value;
+            if (!fecha) {
+                Swal.showValidationMessage('Por favor selecciona una fecha');
+                return false;
+            }
+            return { fecha, proveedor };
+        }
+    });
+
+    if (!formValues) return;
+
+    const { fecha, proveedor } = formValues;
+
+    Swal.fire({
+        title: 'Generando Excel...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+        background: '#1e293b',
+        color: '#fff'
+    });
+
+    let query = SupabaseClient.supabase
         .from('vista_fletes_completos')
-        .select('*');
+        .select('*')
+        .eq('fecha', fecha);
 
-    if (error || !fletes || fletes.length === 0) return Swal.fire("Info", "Sin datos para exportar", "info");
+    if (proveedor) {
+        query = query.eq('proveedor', proveedor);
+    }
 
-    const ws = XLSX.utils.json_to_sheet(fletes);
+    const { data: fletes, error } = await query;
+
+    if (error || !fletes || fletes.length === 0) {
+        return Swal.fire("Info", `No hay datos para exportar el día ${fecha}${proveedor ? ' del proveedor ' + proveedor : ''}`, "info");
+    }
+
+    // Mapear datos para agregar columna PLANILLA y formatear
+    const datosMapeados = fletes.map(f => ({
+        "PLANILLA": f.id,
+        "FECHA": f.fecha,
+        "DIA": f.dia,
+        "PROVEEDOR": f.proveedor,
+        "PLACA": f.placa,
+        "CONDUCTOR": f.contratista,
+        "AUXILIARES": f.auxiliares || '',
+        "ZONA": f.zona,
+        "POBLACION": f.poblacion,
+        "VALOR FLETE": f.precio,
+        "PEDIDOS": f.no_pedidos || 0,
+        "VALOR RUTA": f.valor_ruta || 0
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(datosMapeados);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Fletes");
-    XLSX.writeFile(wb, "Reporte_Fletes.xlsx");
+
+    XLSX.writeFile(wb, `Reporte_Fletes_${fecha}.xlsx`);
+
+    Swal.fire({
+        icon: 'success',
+        title: '¡Excel Generado!',
+        text: `Se descargó el reporte de ${fecha}`,
+        timer: 2000,
+        showConfirmButton: false,
+        background: '#1e293b',
+        color: '#fff'
+    });
 }
 
 async function generarPDF() {
@@ -1479,7 +1583,7 @@ async function generarPDF() {
             <option value="ALPINA">ALPINA</option>
             <option value="ZENU">ZENU</option>
             <option value="FLEISCHMANN">FLEISCHMANN</option>
-            <!-- POLAR ya no está aquí -->
+            <option value="ALPINA-FLEISCHMANN">ALPINA-FLEISCHMANN</option>
         `;
     }
 
@@ -1790,10 +1894,10 @@ async function generarGraficos() {
     const ctx2 = document.getElementById("chartRegistros");
     if (!ctx) return;
 
-    // Obtener todos los fletes para graficar
-    const { data: fletes, error } = await SupabaseClient.supabase.from('fletes').select('zona, precio, fecha');
-    if (error) return;
-    if (!fletes) return;
+    // Obtener solo los fletes de la empresa actual para graficar
+    const result = await SupabaseClient.fletes.getAll();
+    if (!result.success) return;
+    const fletes = result.data;
 
     // --- Chart 1: Zonas ---
     const count = {};
@@ -1803,17 +1907,28 @@ async function generarGraficos() {
         if (myChart) myChart.destroy();
         if (myChart2) myChart2.destroy();
 
-        // Mostrar mensaje de "Sin datos"
-        [ctx, ctx2].forEach(c => {
-            if (!c) return;
-            const context = c.getContext('2d');
-            context.clearRect(0, 0, c.width, c.height);
-            context.fillStyle = theme === 'light' ? '#64748b' : '#94a3b8';
-            context.textAlign = 'center';
-            context.textBaseline = 'middle';
-            context.font = '14px Inter';
-            context.fillText('No hay fletes registrados aún', c.width / 2, c.height / 2);
-        });
+        // Si no hay datos, pero el usuario quiere que "empiece desde hoy", podemos 
+        // forzar el gráfico de barras a mostrar al menos el día de hoy con valor 0.
+        const todayKey = new Date().toISOString().split('T')[0];
+        const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+        const todayObj = new Date();
+        const labelToday = `${todayObj.getDate().toString().padStart(2, '0')}/${(todayObj.getMonth() + 1).toString().padStart(2, '0')}`;
+
+        // Para el gráfico de Dona (Zonas), simplemente mostrar mensaje
+        const ctx1 = ctx.getContext('2d');
+        ctx1.clearRect(0, 0, ctx.width, ctx.height);
+        ctx1.fillStyle = '#94a3b8';
+        ctx1.textAlign = 'center';
+        ctx1.fillText('No hay datos por zona', ctx.width / 2, ctx.height / 2);
+
+        // Para el gráfico de Barras (Registros), mostrar hoy en 0
+        if (ctx2) {
+            renderBarChart(ctx2, [labelToday], [0], [{
+                date: `${todayObj.getDate()}/${todayObj.getMonth() + 1}/${todayObj.getFullYear()}`,
+                dayName: dayNames[todayObj.getDay()],
+                key: todayKey
+            }]);
+        }
         return;
     }
 
@@ -1825,8 +1940,7 @@ async function generarGraficos() {
     if (myChart2) myChart2.destroy();
 
     // --- Chart 1: Fletes por Zona (VALOR TOTAL) ---
-    // El usuario pidió cambiar cantidad por valor total ($)
-    const ctx1 = document.getElementById("chartZonas")?.getContext("2d"); // Use original ctx for chartZonas
+    const ctx1 = ctx.getContext("2d");
     if (ctx1) {
         myChart = new Chart(ctx1, {
             type: 'doughnut',
@@ -1861,17 +1975,18 @@ async function generarGraficos() {
             }
         });
     }
+
     if (!ctx2) return;
 
     // Agrupar ingresos por dia y encontrar la fecha mas antigua
     const registrosPorDia = {};
-    let minDate = new Date(); // Por defecto hoy
+    let minDate = new Date();
 
     fletes.forEach(f => {
-        const dayKey = f.fecha; // YYYY-MM-DD
+        const dayKey = f.fecha;
         registrosPorDia[dayKey] = (registrosPorDia[dayKey] || 0) + parseFloat(f.precio);
 
-        const currentFleteDate = new Date(dayKey + 'T00:00:00'); // Asegurar local time
+        const currentFleteDate = new Date(dayKey + 'T00:00:00');
         if (currentFleteDate < minDate) {
             minDate = currentFleteDate;
         }
@@ -1881,10 +1996,10 @@ async function generarGraficos() {
     const fullLabelsAll = [];
     const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
-    // Generar días desde la fecha mínima hasta hoy
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const start = new Date(minDate);
+
+    let start = new Date(minDate);
     start.setHours(0, 0, 0, 0);
 
     let tempDate = new Date(start);
@@ -1904,41 +2019,38 @@ async function generarGraficos() {
         tempDate.setDate(tempDate.getDate() + 1);
     }
 
-    // Si hay demasiados días (ej: mas de 14), limitamos a los últimos 14 para mantener estética, 
-    // o dejamos que el usuario vea todo si prefiere. Por ahora, mostramos todo desde el inicio.
-    // Pero si es mucho, Chart.js lo manejará.
-
     const dataVals = fullLabelsAll.map(l => registrosPorDia[l.key] || 0);
 
-    const theme = document.documentElement.getAttribute("data-theme") || "dark";
+    renderBarChart(ctx2, labelsAll, dataVals, fullLabelsAll);
+}
 
-    // Paletas según el tema
+function renderBarChart(canvas, labels, data, fullInfo) {
+    const theme = document.documentElement.getAttribute("data-theme") || "dark";
     const darkNeonPalette = ['#FF3D71', '#3366FF', '#00D68F', '#FFAA00', '#FF8918', '#8F00FF', '#00E096'];
     const lightHarmonyPalette = ['#3b82f6', '#f59e0b', '#60a5fa', '#fbbf24', '#2563eb', '#f97316', '#34d399'];
-
     const activePalette = theme === 'light' ? lightHarmonyPalette : darkNeonPalette;
     const textColor = theme === 'light' ? '#64748b' : '#94a3b8';
     const gridColor = theme === 'light' ? 'rgba(0, 0, 0, 0.05)' : 'rgba(148, 163, 184, 0.05)';
 
     if (myChart2) myChart2.destroy();
 
-    const ctxTemp = ctx2.getContext('2d');
-    const backgroundColors = fullLabelsAll.map((_, i) => {
+    const ctx = canvas.getContext('2d');
+    const backgroundColors = labels.map((_, i) => {
         const color = activePalette[i % activePalette.length];
-        const g = ctxTemp.createLinearGradient(0, 0, 0, 300);
+        const g = ctx.createLinearGradient(0, 0, 0, 300);
         g.addColorStop(0, color);
         g.addColorStop(1, color + (theme === 'light' ? '99' : '66'));
         return g;
     });
-    const borderColors = fullLabelsAll.map((_, i) => activePalette[i % activePalette.length]);
+    const borderColors = labels.map((_, i) => activePalette[i % activePalette.length]);
 
-    myChart2 = new Chart(ctx2, {
+    myChart2 = new Chart(canvas, {
         type: 'bar',
         data: {
-            labels: labelsAll,
+            labels: labels,
             datasets: [{
                 label: 'Fletes Registrados',
-                data: dataVals,
+                data: data,
                 backgroundColor: backgroundColors,
                 borderColor: borderColors,
                 borderWidth: 1,
@@ -1969,7 +2081,7 @@ async function generarGraficos() {
                     callbacks: {
                         title: function (context) {
                             const idx = context[0].dataIndex;
-                            const info = fullLabelsAll[idx];
+                            const info = fullInfo[idx];
                             return `${info.dayName}, ${info.date}`;
                         },
                         label: function (context) {
@@ -1995,13 +2107,65 @@ async function generarGraficos() {
                     ticks: {
                         color: textColor,
                         font: { family: 'Inter', size: 10, weight: '600' },
-                        maxRotation: labelsAll.length > 7 ? 45 : 0
+                        maxRotation: labels.length > 7 ? 45 : 0
                     },
                     grid: { display: false }
                 }
             }
         }
     });
+}
+
+/**
+ * Función global para limpiar base de datos (USO DEL ADMIN)
+ */
+window.limpiarBaseDeDatosProduction = async function () {
+    const { isConfirmed } = await Swal.fire({
+        title: '¿Limpiar Fletes para Producción?',
+        text: 'Esta acción borrará TODOS los fletes registrados hasta ahora. Asegúrese de haber descargado los respaldos necesarios.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Sí, borrar todo',
+        cancelButtonText: 'Cancelar',
+        background: '#1e293b',
+        color: '#fff'
+    });
+
+    if (isConfirmed) {
+        Swal.fire({
+            title: 'Limpiando...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading(),
+            background: '#1e293b',
+            color: '#fff'
+        });
+
+        const result = await SupabaseClient.fletes.deleteAll();
+
+        if (result.success) {
+            await listarFletes(true);
+            await actualizarKPI();
+            await generarGraficos();
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Base de Datos Limpia',
+                text: `Se eliminaron ${result.count} fletes correctamente. El sistema está listo para producción.`,
+                background: '#1e293b',
+                color: '#fff'
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudo limpiar la base de datos: ' + result.error,
+                background: '#1e293b',
+                color: '#fff'
+            });
+        }
+    }
 }
 
 

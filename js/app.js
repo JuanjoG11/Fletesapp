@@ -188,6 +188,10 @@ async function checkAuth() {
             cajaView.style.justifyContent = "center";
         }
 
+        // Set Caja Header Name
+        const cajaNameEl = document.getElementById("cajaUserName");
+        if (cajaNameEl) cajaNameEl.textContent = userName;
+
         // Hide stats nav if exists
         if (navStats) navStats.style.display = 'none';
 
@@ -2196,7 +2200,7 @@ function renderBarChart(canvas, labels, data, fullInfo) {
     const theme = document.documentElement.getAttribute("data-theme") || "dark";
     const darkNeonPalette = ['#FF3D71', '#3366FF', '#00D68F', '#FFAA00', '#FF8918', '#8F00FF', '#00E096'];
     const lightHarmonyPalette = ['#3b82f6', '#f59e0b', '#60a5fa', '#fbbf24', '#2563eb', '#f97316', '#34d399'];
-    const activePalette = theme === 'light' ? lightHarmonyPalette : darkHarmonyPalette;
+    const activePalette = theme === 'light' ? lightHarmonyPalette : darkNeonPalette;
     const textColor = theme === 'light' ? '#64748b' : '#94a3b8';
     const gridColor = theme === 'light' ? 'rgba(0, 0, 0, 0.05)' : 'rgba(148, 163, 184, 0.05)';
 

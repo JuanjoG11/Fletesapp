@@ -973,6 +973,10 @@ async function obtenerDatosFormulario(prefix = "") {
     const noPedidos = val("no_pedidos");
     const adicionales = val("is_adicionales");
 
+    // NUEVOS CAMPOS: Planilla y Facturas
+    const noPlanilla = val("no_planilla");
+    const facturasAdicionales = val("facturas_adicionales");
+
     // NUEVO: Adicionales por negociación
     const valorAdicional = val("valor_adicional");
     const razonAdicional = val("razon_adicional");
@@ -1029,6 +1033,9 @@ async function obtenerDatosFormulario(prefix = "") {
             auxiliares,
             no_auxiliares: parseInt(noAux || 0),
             fecha: val("fecha") || new Date().toISOString().split('T')[0],
+            // NUEVOS CAMPOS
+            no_planilla: noPlanilla,
+            facturas_adicionales: facturasAdicionales,
             // NUEVO: Adicionales por negociación
             valor_adicional_negociacion: parseMoney(valorAdicional),
             razon_adicional_negociacion: razonAdicional || null
@@ -1058,9 +1065,9 @@ async function crearFlete() {
     }
     const { db, ui } = formData;
 
-    if (!ui.placa || !db.contratista || !db.zona || db.precio <= 0) {
+    if (!ui.placa || !db.contratista || !db.zona || db.precio <= 0 || !db.no_planilla) {
         Swal.fire({
-            icon: 'warning', title: 'Faltan Datos', text: 'Verifique Placa, Conductor, Zona y Valor.',
+            icon: 'warning', title: 'Faltan Datos', text: 'Verifique Placa, Conductor, Zona, Valor y No. Planilla.',
             background: '#1a1a1a', color: '#fff'
         });
         if (btn) btn.disabled = false;
@@ -1140,9 +1147,9 @@ async function guardarCambiosFlete() {
     const { db, ui } = formData;
     delete db.id; // IMPORTANTE: Supabase falla si intentas actualizar la PK 'id'
 
-    if (!ui.placa || !db.contratista || !db.zona || db.precio <= 0) {
+    if (!ui.placa || !db.contratista || !db.zona || db.precio <= 0 || !db.no_planilla) {
         if (btn) btn.disabled = false;
-        return Swal.fire({ icon: 'warning', title: 'Faltan Datos', background: '#1a1a1a', color: '#fff' });
+        return Swal.fire({ icon: 'warning', title: 'Faltan Datos', text: 'Verifique que la Planilla no esté vacía.', background: '#1a1a1a', color: '#fff' });
     }
 
     // VALIDACIÓN: Motivo de Negociación Obligatorio (Modal)
@@ -1188,7 +1195,7 @@ function limpiarFormulario(prefix) {
         "placa", "contratista", "proveedor", "zona", "dia", "poblacion",
         "auxiliares", "no_auxiliares", "no_pedidos",
         "valor_ruta", "is_adicionales", "total_flete",
-        "porcentaje_ruta", "fecha"
+        "porcentaje_ruta", "fecha", "no_planilla", "facturas_adicionales"
     ];
 
     fields.forEach(f => {
@@ -1337,6 +1344,8 @@ window.editarFlete = async function (id) {
     set("valor_ruta", moneyFormatter.format(f.valor_ruta));
     set("is_adicionales", f.adicionales);
     set("total_flete", moneyFormatter.format(f.precio));
+    set("no_planilla", f.no_planilla || "");
+    set("facturas_adicionales", f.facturas_adicionales || "");
 
     // NUEVO: Adicionales por negociación
     if (f.valor_adicional_negociacion) {
@@ -1575,10 +1584,9 @@ async function generarPDF() {
     const esTAT = (CURRENT_RAZON_SOCIAL === 'TAT');
 
     if (esTAT) {
-        // Solo los 3 de TAT
+        // Solo los de TAT (Unificados)
         opcionesProveedores = `
-            <option value="UNILEVER">UNILEVER</option>
-            <option value="FAMILIA">FAMILIA</option>
+            <option value="UNILEVER-FAMILIA">UNILEVER-FAMILIA</option>
             <option value="POLAR">POLAR</option>
         `;
     } else {
@@ -1603,6 +1611,12 @@ async function generarPDF() {
                 <select id="pdf-proveedor" class="swal2-input">
                     <option value="">Todos los Proveedores</option>
                     ${opcionesProveedores}
+                </select>
+
+                <label for="pdf-tipo">Tipo de Reporte:</label>
+                <select id="pdf-tipo" class="swal2-input">
+                    <option value="fletes">Reporte de Fletes (Estándar)</option>
+                    <option value="relacion">Relación de Planilla y Facturas</option>
                 </select>
             </div>
         `,
@@ -1632,19 +1646,20 @@ async function generarPDF() {
         preConfirm: () => {
             const fecha = document.getElementById('pdf-fecha').value;
             const proveedor = document.getElementById('pdf-proveedor').value;
+            const tipo = document.getElementById('pdf-tipo').value;
 
             if (!fecha) {
                 Swal.showValidationMessage('Por favor selecciona una fecha');
                 return false;
             }
 
-            return { fecha, proveedor };
+            return { fecha, proveedor, tipo };
         }
     });
 
     if (!formValues) return; // Usuario canceló
 
-    const { fecha, proveedor } = formValues;
+    const { fecha, proveedor, tipo } = formValues;
 
     // Filtrar datos desde la base de datos directamente
     let query = SupabaseClient.supabase
@@ -1653,7 +1668,11 @@ async function generarPDF() {
         .eq('fecha', fecha);
 
     if (proveedor) {
-        query = query.eq('proveedor', proveedor);
+        if (proveedor === 'UNILEVER-FAMILIA') {
+            query = query.in('proveedor', ['UNILEVER', 'FAMILIA']);
+        } else {
+            query = query.eq('proveedor', proveedor);
+        }
     }
 
     const { data: fletes, error } = await query;
@@ -1675,27 +1694,6 @@ async function generarPDF() {
         format: 'a4'
     });
 
-    // --- Header Configuration ---
-    const fechaImpresion = new Date().toLocaleString('es-CO');
-
-    // Configuración por defecto (TYM)
-    let pdfConfig = {
-        logoUrl: '../assets/img/logo_tym.png',
-        headerText: `PLANILLA FLETES TIENDAS Y MARCAS EJE CAFETERO NIT 900973929 - ${fecha}`,
-        logoFormat: 'PNG',
-        logoX: 10, logoY: 5, logoW: 20, logoH: 20
-    };
-
-    // Configuración específica para TAT (Excepto si es Polar)
-    if (CURRENT_RAZON_SOCIAL === 'TAT' && proveedor !== 'POLAR') {
-        pdfConfig = {
-            logoUrl: '../assets/img/logo_tat.jpg',
-            headerText: `PLANILLA FLETES TAT DISTRIBUCIONES DEL EJE CAFETERO SA NIT 901568117-1`.toUpperCase(),
-            logoFormat: 'JPEG',
-            logoX: 10, logoY: 2, logoW: 25, logoH: 25 // Logo más a la izquierda para evitar overlap
-        };
-    }
-
     // Helper: Cargar imagen a Base64
     const loadImageBase64 = (url) => {
         return new Promise((resolve, reject) => {
@@ -1714,168 +1712,158 @@ async function generarPDF() {
         });
     };
 
-    // Cargar Logo
-    let imgData = null;
-    try {
-        imgData = await loadImageBase64(pdfConfig.logoUrl);
-    } catch (e) {
-        console.warn("Fallo carga directa logo, fallback a DOM", e);
-        // Fallback: intentar leer del DOM (solo sirve si el logo en pantalla es el mismo)
-        const imgEl = document.querySelector(".logo-img");
-        if (imgEl) {
-            const canvas = document.createElement("canvas");
-            canvas.width = imgEl.naturalWidth;
-            canvas.height = imgEl.naturalHeight;
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(imgEl, 0, 0);
-            imgData = canvas.toDataURL("image/png");
-        }
-    }
+    // --- Pre-cargar Logos ---
+    const logos = {
+        TYM: await loadImageBase64('../assets/img/logo_tym.png').catch(() => null),
+        TAT: await loadImageBase64('../assets/img/logo_tat.jpg').catch(() => null)
+    };
 
-    if (imgData) {
-        try {
-            doc.addImage(imgData, pdfConfig.logoFormat, pdfConfig.logoX, pdfConfig.logoY, pdfConfig.logoW, pdfConfig.logoH);
-        } catch (e) {
-            console.warn("Error agregando imagen a PDF", e);
-        }
-    }
-
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
-    doc.text(pdfConfig.headerText, 148, 15, { align: 'center' });
-    doc.setFont(undefined, 'normal');
-    doc.setFontSize(8);
-    doc.text(`Generado: ${fechaImpresion}`, 280, 10, { align: 'right' });
-
-    // Si se seleccionó un proveedor específico, mostrarlo en el header.
-    // Si no, se mostrará en cada tabla.
-    if (proveedor) {
-        doc.setFontSize(10);
-        doc.text(`Proveedor: ${proveedor}`, 40, 22);
-    }
+    const fechaImpresion = new Date().toLocaleString('es-CO');
 
     // --- Lógica Multi-Tabla por Proveedor ---
+    // Mapeo especial para agrupar UNILEVER y FAMILIA
+    const fletesMapeados = fletes.map(f => {
+        const prov = f.proveedor || 'SIN PROVEEDOR';
+        if (['UNILEVER', 'FAMILIA'].includes(prov)) {
+            return { ...f, _provAgrupado: 'UNILEVER-FAMILIA' };
+        }
+        return { ...f, _provAgrupado: prov };
+    });
 
-    // Obtener lista de proveedores (puede ser 1 o varios)
-    const proveedoresTodos = [...new Set(fletes.map(f => f.proveedor || 'SIN PROVEEDOR'))].sort();
+    const proveedoresTodos = [...new Set(fletesMapeados.map(f => f._provAgrupado))].sort();
+    let finalY = 20;
 
-    let finalY = proveedor ? 28 : 25; // Posición inicial Y
-
-    // Loop por cada proveedor
     for (let i = 0; i < proveedoresTodos.length; i++) {
         const provActual = proveedoresTodos[i];
-
-        // Filtrar fletes para este proveedor
-        const fletesProv = fletes.filter(f => (f.proveedor || 'SIN PROVEEDOR') === provActual);
-
-        // Si no hay fletes (no debería pasar), continuar
+        const fletesProv = fletesMapeados.filter(f => f._provAgrupado === provActual);
         if (fletesProv.length === 0) continue;
 
-        // Calcular totales para este grupo
-        let totalRutaProv = 0;
-        let totalFleteProv = 0;
-        let totalPedidosProv = 0;
+        // Configuración de Header y Logo por Proveedor
+        const esTAT = provActual === 'UNILEVER-FAMILIA'; // TAT posee estos
+        const logoData = esTAT ? logos.TAT : logos.TYM;
+        const logoFormat = esTAT ? 'JPEG' : 'PNG';
+        const headerText = esTAT
+            ? `PLANILLA FLETES TAT DISTRIBUCIONES DEL EJE CAFETERO SA NIT 901568117-1`.toUpperCase()
+            : `PLANILLA FLETES TIENDAS Y MARCAS EJE CAFETERO NIT 900973929`.toUpperCase();
+        const subtituloText = esTAT
+            ? `TAT - DISTRIBUCIONES DEL EJE CAFETERO SA NIT 901568117-1`
+            : `TIENDAS Y MARCAS EJE CAFETERO NIT 900973929`;
 
-        const bodyData = fletesProv.map(f => {
-            const vRuta = f.valor_ruta || 0;
-            const vFlete = f.precio || 0;
-            const numPed = f.no_pedidos || 0;
+        // Nueva página por proveedor si no es el primero
+        if (i > 0) doc.addPage();
+        finalY = 20;
 
-            totalRutaProv += vRuta;
-            totalFleteProv += vFlete;
-            totalPedidosProv += numPed;
-
-            const participacion = vRuta > 0 ? ((vFlete / vRuta) * 100).toFixed(1) + '%' : '0%';
-
-            return [
-                f.zona || '',            // RUTA
-                f.placa,                 // PLACA
-                f.contratista,           // CONDUCTOR
-                f.auxiliares || '',      // AUXILIAR
-                numPed,                  // # PEDIDO
-                moneyFormatter.format(vRuta),  // VR. PEDIDO
-                f.poblacion || '',       // POBLACIÓN
-                moneyFormatter.format(vFlete), // VALOR FLETE
-                participacion,           // PARTICIPACIÓN
-                ''                       // FIRMA CONDUCTOR
-            ];
-        });
-
-        const participacionTotal = totalRutaProv > 0 ? (totalFleteProv / totalRutaProv * 100).toFixed(1) + '%' : '0%';
-
-        bodyData.push([
-            { content: 'TOTALES - ' + provActual, colSpan: 4, styles: { fontStyle: 'bold', fillColor: [240, 240, 240], halign: 'right' } },
-            { content: totalPedidosProv, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-            { content: moneyFormatter.format(totalRutaProv), styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-            { content: '', styles: { fillColor: [240, 240, 240] } },
-            { content: moneyFormatter.format(totalFleteProv), styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-            { content: participacionTotal, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-            { content: '', styles: { fillColor: [240, 240, 240] } }
-        ]);
-
-        // Añadir título de proveedor antes de la tabla (si no se filtró uno solo)
-        if (!proveedor) {
-            // Verificar si cabe en la página actual
-            if (finalY > 180) { // Si está muy abajo, nueva página
-                doc.addPage();
-                finalY = 20;
-            } else {
-                finalY += 10; // Espacio entre tablas
-            }
-
-            doc.setFontSize(10);
-            doc.setFont(undefined, 'bold');
-            doc.text(`Proveedor: ${provActual}`, 14, finalY);
-            finalY += 2; // Pequeño ajuste después del texto
+        // Dibujar Logo
+        if (logoData) {
+            try {
+                doc.addImage(logoData, logoFormat, 10, esTAT ? 2 : 5, esTAT ? 25 : 20, esTAT ? 25 : 20);
+            } catch (e) { }
         }
 
-        // Generar tabla
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'bold');
+        doc.text(tipo === 'relacion' ? "RELACION DE PLANILLA Y FACTURAS" : headerText, 148, 12, { align: 'center' });
+
+        if (tipo === 'relacion') {
+            doc.setFontSize(9);
+            doc.text(subtituloText, 148, 18, { align: 'center' });
+        }
+
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(8);
+        doc.text(`Generado: ${fechaImpresion} - Fecha Reporte: ${fecha}`, 280, 10, { align: 'right' });
+        doc.text(`Proveedor: ${provActual}`, 14, 28);
+
+        let bodyData = [];
+        let head = [];
+        let columnStyles = {};
+
+        if (tipo === 'relacion') {
+            // ZONA | N. DE PLANILLA | FACTURAS ADICIONALES | CONDUCTOR | AUXILIAR | N. FACTURAS | VALOR RUTA
+            head = [['ZONA', 'N. DE PLANILLA', 'FACTURAS ADICIONALES', 'CONDUCTOR', 'AUXILIAR', 'N. FACTURAS', 'VALOR RUTA']];
+            bodyData = fletesProv.map(f => [
+                f.zona || '',
+                f.no_planilla || '',
+                f.facturas_adicionales || '',
+                f.contratista || '',
+                f.auxiliares || '',
+                f.no_pedidos || 0,
+                moneyFormatter.format(f.valor_ruta || 0)
+            ]);
+            columnStyles = {
+                0: { cellWidth: 25 }, // ZONA
+                1: { cellWidth: 40 }, // PLANILLA
+                2: { cellWidth: 50 }, // FACTURAS ADIC
+                3: { cellWidth: 50 }, // CONDUCTOR
+                4: { cellWidth: 40 }, // AUXILIAR
+                5: { cellWidth: 25, halign: 'center' }, // N. FACT
+                6: { cellWidth: 35, halign: 'right' }   // VALOR RUTA
+            };
+        } else {
+            // Reporte Estándar de Fletes
+            head = [['RUTA', 'PLACA', 'CONDUCTOR', 'AUXILIAR', '# PEDIDO', 'VR. PEDIDO', 'POBLACIÓN', 'VALOR FLETE', 'PARTICIPACIÓN', 'FIRMA CONDUCTOR']];
+            let totalRutaProv = 0, totalFleteProv = 0, totalPedidosProv = 0;
+
+            bodyData = fletesProv.map(f => {
+                const vRuta = f.valor_ruta || 0;
+                const vFlete = f.precio || 0;
+                const numPed = f.no_pedidos || 0;
+                totalRutaProv += vRuta; totalFleteProv += vFlete; totalPedidosProv += numPed;
+                const participacion = vRuta > 0 ? ((vFlete / vRuta) * 100).toFixed(1) + '%' : '0%';
+
+                return [
+                    f.zona || '', f.placa, f.contratista, f.auxiliares || '', numPed,
+                    moneyFormatter.format(vRuta), f.poblacion || '', moneyFormatter.format(vFlete),
+                    participacion, ''
+                ];
+            });
+
+            const pTotal = totalRutaProv > 0 ? (totalFleteProv / totalRutaProv * 100).toFixed(1) + '%' : '0%';
+            bodyData.push([
+                { content: 'TOTALES - ' + provActual, colSpan: 4, styles: { fontStyle: 'bold', fillColor: [240, 240, 240], halign: 'right' } },
+                { content: totalPedidosProv, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+                { content: moneyFormatter.format(totalRutaProv), styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+                { content: '', styles: { fillColor: [240, 240, 240] } },
+                { content: moneyFormatter.format(totalFleteProv), styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+                { content: pTotal, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+                { content: '', styles: { fillColor: [240, 240, 240] } }
+            ]);
+
+            columnStyles = {
+                0: { cellWidth: 22 }, 1: { cellWidth: 20 }, 2: { cellWidth: 55 }, 3: { cellWidth: 28 },
+                4: { cellWidth: 16, halign: 'center' }, 5: { cellWidth: 28, halign: 'right' },
+                6: { cellWidth: 35 }, 7: { cellWidth: 28, halign: 'right' }, 8: { cellWidth: 20, halign: 'center' },
+                9: { cellWidth: 35 }
+            };
+        }
+
         doc.autoTable({
-            startY: finalY + 3,
-            head: [['RUTA', 'PLACA', 'CONDUCTOR', 'AUXILIAR', '# PEDIDO', 'VR. PEDIDO', 'POBLACIÓN', 'VALOR FLETE', 'PARTICIPACIÓN', 'FIRMA CONDUCTOR']],
+            startY: 33,
+            head: head,
             body: bodyData,
             theme: 'grid',
-            headStyles: { fillColor: [41, 128, 185], fontSize: 7, halign: 'center' },
+            headStyles: { fillColor: esTAT ? [249, 115, 22] : [41, 128, 185], fontSize: 7, halign: 'center' },
             bodyStyles: { fontSize: 6.5, overflow: 'linebreak', cellPadding: 1.5 },
-            columnStyles: {
-                0: { cellWidth: 22 },  // RUTA
-                1: { cellWidth: 20 },  // PLACA
-                2: { cellWidth: 55 },  // CONDUCTOR
-                3: { cellWidth: 28 },  // AUXILIAR
-                4: { cellWidth: 16, halign: 'center' },  // # PEDIDO
-                5: { cellWidth: 28, halign: 'right' },   // VR. PEDIDO
-                6: { cellWidth: 35 },  // POBLACIÓN
-                7: { cellWidth: 28, halign: 'right' },   // VALOR FLETE
-                8: { cellWidth: 20, halign: 'center' },  // PARTICIPACIÓN
-                9: { cellWidth: 35 }   // FIRMA CONDUCTOR
-            },
-            margin: { left: 10, right: 10, top: 30 },
+            columnStyles: columnStyles,
+            margin: { left: 10, right: 10 },
             didDrawPage: (data) => {
-                // Header repetido (Logo y Título) en nuevas páginas
-                if (data.pageNumber > 1 && data.settings.startY !== 33) { // 33 es aprox el inicio estándar
-                    if (imgData) {
-                        try {
-                            doc.addImage(imgData, 'PNG', 10, 5, 15, 15);
-                        } catch (e) { }
+                if (data.pageNumber > 1) {
+                    if (logoData) {
+                        try { doc.addImage(logoData, logoFormat, 10, 5, 15, 15); } catch (e) { }
                     }
-                    doc.setFontSize(12);
-                    doc.setFont(undefined, 'bold');
-                    doc.text(`PLANILLA FLETES TIENDAS Y MARCAS EJE CAFETERO NIT 900973929 - ${fecha}`, 148, 15, { align: 'center' });
-                    doc.setFont(undefined, 'normal');
-                    doc.setFontSize(8);
-                    doc.text(`Generado: ${fechaImpresion}`, 280, 10, { align: 'right' });
+                    doc.setFontSize(10);
+                    doc.text(headerText, 148, 12, { align: 'center' });
                 }
             }
         });
 
-        // Actualizar posición final para la siguiente tabla
         finalY = doc.lastAutoTable.finalY;
     }
 
-    // --- SECCIÓN: NOTAS DE NEGOCIACIÓN (Solicitud Usuario) ---
+    // --- SECCIÓN: NOTAS DE NEGOCIACIÓN ---
     const negociaciones = fletes.filter(f => (f.valor_adicional_negociacion || 0) > 0);
 
-    if (negociaciones.length > 0) {
+    if (tipo === 'fletes' && negociaciones.length > 0) {
         // Verificar espacio o nueva página
         if (finalY > 230) {
             doc.addPage();

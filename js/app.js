@@ -359,7 +359,7 @@ async function registrarVehiculoOperario() {
 // Precios por población
 const PRECIOS_POBLACION = {
     "AGUADAS": 690000,
-    "AGUADAS-PACORA": 740000,
+    "AGUADAS-PACORA": 728000,
     "AGUILA-ANSERMA NUEVO": 317000,
     "ALCALA ULLOA": 235000,
     "ANSERMA": 332000,

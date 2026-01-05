@@ -1872,6 +1872,47 @@ async function generarPDF() {
         finalY = doc.lastAutoTable.finalY;
     }
 
+    // --- SECCIÓN: NOTAS DE NEGOCIACIÓN (Solicitud Usuario) ---
+    const negociaciones = fletes.filter(f => (f.valor_adicional_negociacion || 0) > 0);
+
+    if (negociaciones.length > 0) {
+        // Verificar espacio o nueva página
+        if (finalY > 230) {
+            doc.addPage();
+            finalY = 20;
+        } else {
+            finalY += 15;
+        }
+
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'bold');
+        doc.text("NOTAS DE NEGOCIACIÓN:", 14, finalY);
+        finalY += 6;
+
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(8.5);
+
+        negociaciones.forEach(neg => {
+            const placa = neg.placa || 'N/A';
+            const motivo = neg.razon_adicional_negociacion || 'Sin motivo especificado';
+            const valor = moneyFormatter.format(neg.valor_adicional_negociacion);
+
+            const texto = `• PLACA: ${placa} - MOTIVO: ${motivo} - VALOR: ${valor}`;
+
+            // Dividir texto si es muy largo para el ancho de la página
+            const splitText = doc.splitTextToSize(texto, 270);
+
+            // Verificar si cabe en la página
+            if (finalY + (splitText.length * 4) > 280) {
+                doc.addPage();
+                finalY = 20;
+            }
+
+            doc.text(splitText, 14, finalY);
+            finalY += (splitText.length * 4) + 1;
+        });
+    }
+
     doc.save(`Reporte_Fletes_${fecha}.pdf`);
 
     Swal.fire({

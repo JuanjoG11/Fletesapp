@@ -141,6 +141,32 @@
             </div>
         </section>
 
+        <!-- 📦 SECCIÓN EXCLUSIVA CAJA -->
+        <section id="caja-view" class="tab-content fade-in"
+            style="display: none; align-items: center; justify-content: center; height: 80vh; text-align: center;">
+            <div class="card glass-card" style="max-width: 600px; padding: 40px; margin: auto;">
+                <div style="font-size: 3rem; color: #f97316; margin-bottom: 20px;">
+                    <i class="ri-printer-cloud-line"></i>
+                </div>
+                <h1 style="font-size: 2rem; margin-bottom: 10px;">Centro de Impresión</h1>
+                <p style="color: var(--text-muted); margin-bottom: 30px;">
+                    Bienvenido. Desde aquí puedes generar y descargar los informes unificados de planillas y facturas.
+                </p>
+
+                <div style="display: grid; gap: 20px;">
+                    <button onclick="generarPDF()" class="btn-primary"
+                        style="padding: 20px; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; gap: 15px;">
+                        <i class="ri-file-pdf-2-line" style="font-size: 1.5rem;"></i>
+                        Descargar Informe de Planilla
+                    </button>
+
+                    <!-- Excel Export Removed for Caja -->
+                </div>
+
+                <!-- Stats Removed -->
+            </div>
+        </section>
+
         <!-- 📝 SECCIÓN CREAR FLETE (ADMIN) -->
         <section id="admin-crear" class="tab-content fade-in">
             <div id="card-admin" class="card glass-card">

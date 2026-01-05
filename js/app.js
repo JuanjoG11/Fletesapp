@@ -150,11 +150,47 @@ async function checkAuth() {
         if (headerAcciones) headerAcciones.style.display = 'table-cell'; // Vehiculos
         if (headerAccionesFletes) headerAccionesFletes.style.display = 'table-cell'; // Fletes
     } else if (role === 'caja') {
-        // PERFIL CAJA (SOLO DOWNLOADS, SIN NAVS)
+        // PERFIL CAJA (SOLO DOWNLOADS, SIN NAVS, DASHBOARD ESPECIAL)
+        // Hide Entire Sidebar and Header
+        const sidebar = document.querySelector('.sidebar');
+        const topbar = document.querySelector('.topbar');
+        const mainContent = document.querySelector('.main-content'); // Fix layout
+
+        if (sidebar) sidebar.style.display = 'none';
+        if (topbar) topbar.style.display = 'none';
+
+        // Remove sidebar margin from main content and center everything
+        if (mainContent) {
+            mainContent.style.marginLeft = '0';
+            mainContent.style.width = '100%';
+            mainContent.style.padding = '0';
+            mainContent.style.display = 'flex';
+            mainContent.style.alignItems = 'center';
+            mainContent.style.justifyContent = 'center';
+            mainContent.style.minHeight = '100vh';
+        }
+
+        // Hide specific navs (redundant if sidebar is hidden, but good for safety)
         if (navFletes) navFletes.style.display = 'none';
         if (navVehiculos) navVehiculos.style.display = 'none';
         if (navCrear) navCrear.style.display = 'none';
-        // Ocultar sección inicio si se desea, pero dejar dashboard básico está bien
+
+        // Hide standard dashboard grid, show special Caja View
+        const inicioSection = document.getElementById("inicio");
+        const cajaView = document.getElementById("caja-view");
+
+        if (inicioSection) inicioSection.classList.remove("visible");
+        if (cajaView) {
+            cajaView.classList.add("visible");
+            cajaView.style.display = "flex";
+            // Ensure cajaView takes full space available in the centered main
+            cajaView.style.width = "100%";
+            cajaView.style.justifyContent = "center";
+        }
+
+        // Hide stats nav if exists
+        if (navStats) navStats.style.display = 'none';
+
     } else {
         // PERFIL OPERARIO (GESTIONA FLETES SOLO CREACION)
         if (navFletes) navFletes.style.display = 'flex';
@@ -1142,7 +1178,7 @@ async function crearFlete() {
 
         Swal.fire({
             icon: 'success', title: 'Guardado', text: `Flete de ${ui.placa} registrado.`,
-            timer: 1000, showConfirmButton: false, background: '#1a1a1a', color: '#fff'
+            timer: 1500, showConfirmButton: false, background: '#1a1a1a', color: '#fff'
         });
     } else {
         // Revertir cambio local si falla
@@ -1662,11 +1698,13 @@ async function generarPDF() {
                     ${opcionesProveedores}
                 </select>
 
+                ${role === 'caja' ? '' : `
                 <label for="pdf-tipo">Tipo de Reporte:</label>
                 <select id="pdf-tipo" class="swal2-input">
                     <option value="fletes">Reporte de Fletes (Estándar)</option>
                     <option value="relacion">Relación de Planilla y Facturas</option>
                 </select>
+                ` }
             </div>
         `,
         icon: null,
@@ -1695,7 +1733,9 @@ async function generarPDF() {
         preConfirm: () => {
             const fecha = document.getElementById('pdf-fecha').value;
             const proveedor = document.getElementById('pdf-proveedor').value;
-            const tipo = document.getElementById('pdf-tipo').value;
+            // Para Caja, forzamos 'relacion', para otros tomamos el valor del select
+            const tipoSelect = document.getElementById('pdf-tipo');
+            const tipo = tipoSelect ? tipoSelect.value : 'relacion';
 
             if (!fecha) {
                 Swal.showValidationMessage('Por favor selecciona una fecha');
@@ -2151,11 +2191,12 @@ async function generarGraficos() {
     renderBarChart(ctx2, labelsAll, dataVals, fullLabelsAll);
 }
 
+// Stat update removed
 function renderBarChart(canvas, labels, data, fullInfo) {
     const theme = document.documentElement.getAttribute("data-theme") || "dark";
     const darkNeonPalette = ['#FF3D71', '#3366FF', '#00D68F', '#FFAA00', '#FF8918', '#8F00FF', '#00E096'];
     const lightHarmonyPalette = ['#3b82f6', '#f59e0b', '#60a5fa', '#fbbf24', '#2563eb', '#f97316', '#34d399'];
-    const activePalette = theme === 'light' ? lightHarmonyPalette : darkNeonPalette;
+    const activePalette = theme === 'light' ? lightHarmonyPalette : darkHarmonyPalette;
     const textColor = theme === 'light' ? '#64748b' : '#94a3b8';
     const gridColor = theme === 'light' ? 'rgba(0, 0, 0, 0.05)' : 'rgba(148, 163, 184, 0.05)';
 

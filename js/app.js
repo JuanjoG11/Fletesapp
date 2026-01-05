@@ -1756,8 +1756,11 @@ async function generarPDF() {
         const logoData = esTAT ? logos.TAT : logos.TYM;
         const logoFormat = esTAT ? 'JPEG' : 'PNG';
         const headerText = esTAT
-            ? `PLANILLA FLETES TAT DISTRIBUCIONES DEL EJE CAFETERO SA NIT 901568117-1`.toUpperCase()
-            : `PLANILLA FLETES TIENDAS Y MARCAS EJE CAFETERO NIT 900973929`.toUpperCase();
+            ? `PLANILLA FLETES TAT DISTRIBUCIONES DEL EJE CAFETERO SA`.toUpperCase()
+            : `PLANILLA FLETES TIENDAS Y MARCAS EJE CAFETERO`.toUpperCase();
+        const nitText = esTAT
+            ? `NIT 901568117-1`
+            : `NIT 900973929`;
         const subtituloText = esTAT
             ? `TAT - DISTRIBUCIONES DEL EJE CAFETERO SA NIT 901568117-1`
             : `TIENDAS Y MARCAS EJE CAFETERO NIT 900973929`;
@@ -1775,16 +1778,20 @@ async function generarPDF() {
 
         doc.setFontSize(11);
         doc.setFont(undefined, 'bold');
-        doc.text(tipo === 'relacion' ? "RELACION DE PLANILLA Y FACTURAS" : headerText, 148, 12, { align: 'center' });
 
         if (tipo === 'relacion') {
+            doc.text("RELACION DE PLANILLA Y FACTURAS", 148, 12, { align: 'center' });
             doc.setFontSize(9);
             doc.text(subtituloText, 148, 18, { align: 'center' });
+        } else {
+            doc.text(headerText, 148, 12, { align: 'center' });
+            doc.setFontSize(10);
+            doc.text(nitText, 148, 17, { align: 'center' });
         }
 
         doc.setFont(undefined, 'normal');
         doc.setFontSize(8);
-        doc.text(`Generado: ${fechaImpresion} - Fecha Reporte: ${fecha}`, 280, 10, { align: 'right' });
+        doc.text(`Generado: ${fechaImpresion} - Fecha Reporte: ${fecha}`, 280, 22, { align: 'right' });
         doc.text(`Proveedor: ${provActual}`, 14, 28);
 
         let bodyData = [];
@@ -2009,15 +2016,28 @@ async function generarGraficos() {
     if (myChart2) myChart2.destroy();
 
     // --- Chart 1: Fletes por Zona (VALOR TOTAL) ---
+
     const ctx1 = ctx.getContext("2d");
     if (ctx1) {
+        // Revertir a mostrar TODAS las zonas, pero sin leyenda lateral
+        const allZones = valoresZonas || {};
+        // Ordenar por valor para que se vea ordenado en la rueda
+        const sortedZones = Object.entries(allZones).sort(([, a], [, b]) => b - a);
+
+        const chartLabels = sortedZones.map(item => item[0]);
+        const chartData = sortedZones.map(item => item[1]);
+
         myChart = new Chart(ctx1, {
             type: 'doughnut',
             data: {
-                labels: Object.keys(valoresZonas || {}),
+                labels: chartLabels,
                 datasets: [{
-                    data: Object.values(valoresZonas || {}),
-                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'],
+                    data: chartData,
+                    backgroundColor: [
+                        '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4',
+                        '#ec4899', '#6366f1', '#14b8a6', '#f97316', '#a855f7', '#d946ef',
+                        '#0ea5e9', '#22c55e', '#eab308', '#f43f5e', '#84cc16', '#64748b'
+                    ],
                     borderWidth: 0
                 }]
             },
@@ -2025,7 +2045,7 @@ async function generarGraficos() {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'right', labels: { color: '#94a3b8' } },
+                    legend: { display: false }, // Ocultar leyenda lateral
                     tooltip: {
                         callbacks: {
                             label: function (context) {

@@ -205,6 +205,12 @@ async function checkAuth() {
         if (headerAccionesFletes) headerAccionesFletes.style.display = 'none';
     }
 
+    // Explicitly show Dashboard for standard users (since we hid it by default in HTML)
+    const inicioSection = document.getElementById("inicio");
+    if (inicioSection && role !== 'caja') {
+        inicioSection.classList.add("visible");
+    }
+
     // Aplicar configuración según empresa
     aplicarConfiguracionEmpresa(razonSocial);
 }
@@ -2005,7 +2011,7 @@ async function generarPDF() {
         doc.setFontSize(8.5);
 
         negociaciones.forEach(neg => {
-            const placa = neg.placa || 'N/A';
+            const placa = neg.vehiculo?.placa || neg.placa || 'N/A';
             const motivo = neg.razon_adicional_negociacion || 'Sin motivo especificado';
             const valor = moneyFormatter.format(neg.valor_adicional_negociacion);
 

@@ -1241,8 +1241,13 @@ async function listarFletes(silencioso = false) {
         tbody.innerHTML = `<tr><td colspan="10" style="text-align:center"><i class="ri-loader-4-line rotate"></i> Cargando...</td></tr>`;
     }
 
+    // OPTIMIZACIÓN: Cargar solo fletes del mes actual por defecto
+    const now = new Date();
+    const fechaInicio = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const fechaFin = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+
     // USAR getAll() DIRECTAMENTE en lugar de la vista para asegurar datos frescos
-    const res = await SupabaseClient.fletes.getAll();
+    const res = await SupabaseClient.fletes.getAll({ fechaInicio, fechaFin });
 
     if (res.success && res.data) {
         // Aplanar datos del vehículo para compatibilidad con el render

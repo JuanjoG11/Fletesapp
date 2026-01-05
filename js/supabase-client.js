@@ -329,6 +329,8 @@ async function obtenerFletes(filtros = {}) {
 
         if (filtros.zona) query = query.eq('zona', filtros.zona);
         if (filtros.fecha) query = query.eq('fecha', filtros.fecha);
+        if (filtros.fechaInicio) query = query.gte('fecha', filtros.fechaInicio);
+        if (filtros.fechaFin) query = query.lte('fecha', filtros.fechaFin);
 
         const { data, error } = await query;
         if (error) throw error;

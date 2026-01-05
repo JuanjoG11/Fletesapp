@@ -137,6 +137,10 @@ async function checkAuth() {
     const headerAcciones = document.querySelector(".actions-col"); // Para tabla vehiculos
     const headerAccionesFletes = document.querySelector(".admin-actions-col"); // Para tabla fletes
 
+    // Role is already declared above
+
+    // role ya está declarado arriba
+
     if (role === 'admin') {
         // PERFIL ADMIN (GESTIONA VEHÍCULOS Y FLETES)
         if (navFletes) navFletes.style.display = 'flex';
@@ -145,6 +149,12 @@ async function checkAuth() {
 
         if (headerAcciones) headerAcciones.style.display = 'table-cell'; // Vehiculos
         if (headerAccionesFletes) headerAccionesFletes.style.display = 'table-cell'; // Fletes
+    } else if (role === 'caja') {
+        // PERFIL CAJA (SOLO DOWNLOADS, SIN NAVS)
+        if (navFletes) navFletes.style.display = 'none';
+        if (navVehiculos) navVehiculos.style.display = 'none';
+        if (navCrear) navCrear.style.display = 'none';
+        // Ocultar sección inicio si se desea, pero dejar dashboard básico está bien
     } else {
         // PERFIL OPERARIO (GESTIONA FLETES SOLO CREACION)
         if (navFletes) navFletes.style.display = 'flex';
@@ -1484,8 +1494,20 @@ async function exportarExcel() {
     // Definir opciones según la empresa
     let opcionesProveedores = '';
     const esTAT = (CURRENT_RAZON_SOCIAL === 'TAT');
+    const session = CURRENT_SESSION;
+    const role = (session?.profile?.rol || session?.user?.user_metadata?.rol || 'operario').toLowerCase();
 
-    if (esTAT) {
+    // CAJA ve TODOS los proveedores
+    if (role === 'caja') {
+        opcionesProveedores = `
+            <option value="UNILEVER-FAMILIA">TAT: UNILEVER-FAMILIA</option>
+            <option value="POLAR">TAT: POLAR</option>
+            <option value="ALPINA">TYM: ALPINA</option>
+            <option value="ZENU">TYM: ZENU</option>
+            <option value="FLEISCHMANN">TYM: FLEISCHMANN</option>
+            <option value="ALPINA-FLEISCHMANN">TYM: ALPINA-FLEISCHMANN</option>
+        `;
+    } else if (esTAT) {
         opcionesProveedores = `
             <option value="UNILEVER-FAMILIA">UNILEVER-FAMILIA</option>
             <option value="POLAR">POLAR</option>
@@ -1598,8 +1620,19 @@ async function generarPDF() {
     // Definir opciones según la empresa
     let opcionesProveedores = '';
     const esTAT = (CURRENT_RAZON_SOCIAL === 'TAT');
+    const session = CURRENT_SESSION;
+    const role = (session?.profile?.rol || session?.user?.user_metadata?.rol || 'operario').toLowerCase();
 
-    if (esTAT) {
+    if (role === 'caja') {
+        opcionesProveedores = `
+            <option value="UNILEVER-FAMILIA">TAT: UNILEVER-FAMILIA</option>
+            <option value="POLAR">TAT: POLAR</option>
+            <option value="ALPINA">TYM: ALPINA</option>
+            <option value="ZENU">TYM: ZENU</option>
+            <option value="FLEISCHMANN">TYM: FLEISCHMANN</option>
+            <option value="ALPINA-FLEISCHMANN">TYM: ALPINA-FLEISCHMANN</option>
+        `;
+    } else if (esTAT) {
         // Solo los de TAT (Unificados)
         opcionesProveedores = `
             <option value="UNILEVER-FAMILIA">UNILEVER-FAMILIA</option>

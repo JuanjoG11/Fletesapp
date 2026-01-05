@@ -34,7 +34,7 @@ const _supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, S
  * @param {string} rol - 'admin' o 'operario'
  * @returns {Promise<{success: boolean, user?: object, error?: string}>}
  */
-async function registrarUsuario(email, password, nombre, rol = 'operario') {
+async function registrarUsuario(email, password, nombre, rol = 'operario', razon_social = 'TYM') {
     try {
         const { data: authData, error: authError } = await _supabase.auth.signUp({
             email,
@@ -42,7 +42,8 @@ async function registrarUsuario(email, password, nombre, rol = 'operario') {
             options: {
                 data: {
                     nombre: nombre,
-                    rol: rol
+                    rol: rol,
+                    razon_social: razon_social
                 }
             }
         });
@@ -166,7 +167,9 @@ async function obtenerVehiculos() {
             .order('placa', { ascending: true });
 
         // Aplicar filtro de empresa si existe (AISLAMIENTO ESTRICTO)
-        if (razonSocial) {
+        // EXCEPCION: El rol 'caja' no filtra por empresa aquí si quisieras que vean vehículos,
+        // pero como Caja NO VE vehículos (nav oculto), no importa.
+        if (razonSocial && razonSocial !== 'GLOBAL') {
             query = query.eq('razon_social', razonSocial.toUpperCase());
         }
 
@@ -322,6 +325,8 @@ async function obtenerFletes(filtros = {}) {
                 // TYM ve sus fletes (incluyendo Polar)
                 query = query.eq('razon_social', 'TYM');
             }
+        } else if (razonSocial === 'GLOBAL') {
+            // CAJA ve todo, no filtramos por razon_social
         } else {
             // Seguridad: Si no hay empresa, no devolver nada
             query = query.eq('razon_social', 'NINGUNA');

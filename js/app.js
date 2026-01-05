@@ -48,7 +48,6 @@ const CONFIG_TAT = {
             { value: 'PQ03', text: 'PQ03' }
         ]
     },
-    // Precios por población para TAT (pendiente definir)
     preciosPoblacion: {}
 };
 
@@ -423,9 +422,9 @@ const PRECIOS_POBLACION = {
 const PRECIOS_TAT_BASE = {
     'PEREIRA MM CARRO GRANDE': 230000,
     'PEREIRA-DOSQUEBRADAS': 230000,
-    'PEREIRA Y DOSQUEBRADAS': 220000,
-    'PEREIRA': 190000,
-    'DOSQUEBRADAS': 190000,
+    'PEREIRA': 195000,
+    'DOSQUEBRADAS': 195000,
+    'MANIZALES': 191000,
     'SANTA ROSA DE C': 210000,
     'LA VIRGINIA': 226000,
     'BELEN DE UMBRIA': 318000,
@@ -479,6 +478,12 @@ const PRECIOS_TAT_FAMILIA = {
     'NEGOCIACIÓN MY4-8 MILLONES': 120000,
     'NEGOCIACIÓN MY8-12 MILLONES': 160000,
     'NEGOCIACIÓN MYMY +12 MILLONES': 200000
+};
+
+// Mantenemos este para los reportes unificados
+const PRECIOS_TAT_UNIFICADO = {
+    ...PRECIOS_TAT_UNILEVER,
+    ...PRECIOS_TAT_FAMILIA
 };
 
 // Precios ESPECIFICOS para ALPINA y FLEISCHMANN (Actualizado 2025 + 2T)
@@ -562,8 +567,8 @@ const PRECIOS_ZENU = {
 // Precios ESPECIFICOS para POLAR
 const PRECIOS_POLAR = {
     "ARMENIA": 295000,
-    "MANIZALES-DESDE PEREIRA-CARGA EXTRA": 295000,
-    "MANIZALES": 245000,
+    "MANIZALES-DESDE PEREIRA-CARGA EXTRA": 300000,
+    "MANIZALES": 205000,
     "PEREIRA-DOSQUEBRADAS": 230000
 };
 
@@ -577,7 +582,7 @@ const POBLACIONES_RISARALDA = [
     "SANTUARIO", "PUEBLO RICO", "SANTA CECILIA", "BALBOA LA CELIA", "BALBOA-LA CELIA",
     "MARSELLA", "SANTUARIO APIA", "APIA- PUEBLO RICO", "BELEN MISTRATO",
     "PUEBLO RICO-SANTA CECILIA", "GUATICA-RISARALDA", "PEREIRA-DOSQUEBRADAS",
-    "PEREIRA MM CARRO GRANDE", "PEREIRA Y DOSQUEBRADAS"
+    "PEREIRA MM CARRO GRANDE", "MANIZALES"
 ];
 
 const ZONAS_CALDAS = ["M9552", "M9553", "M9554", "M9555", "M9556", "M9557", "M9560", "M9558", "M9559", "P7002", "M9550", "P7000", "P7001"];
@@ -632,9 +637,9 @@ function actualizarPoblaciones(prefix = "") {
         listaUsar = Object.keys(PRECIOS_ZENU).sort();
     } else if (isPolar) {
         listaUsar = Object.keys(PRECIOS_POLAR).sort();
-    } else if (isUnilever) {
+    } else if (proveedor === 'UNILEVER') {
         listaUsar = Object.keys(PRECIOS_TAT_UNILEVER).sort();
-    } else if (isFamilia) {
+    } else if (proveedor === 'FAMILIA') {
         listaUsar = Object.keys(PRECIOS_TAT_FAMILIA).sort();
     }
 
@@ -763,9 +768,9 @@ function actualizarZonasPorProveedor(prefix = "") {
     }
     // ====== PROVEEDORES TAT ======
     else if (proveedor === "UNILEVER") {
-        filtered = CONFIG_TAT.zonas['UNILEVER'];
+        filtered = CONFIG_TAT.zonas['UNILEVER'] || [];
     } else if (proveedor === "FAMILIA") {
-        filtered = CONFIG_TAT.zonas['FAMILIA'];
+        filtered = CONFIG_TAT.zonas['FAMILIA'] || [];
     } else if (proveedor === "POLAR" && CONFIG_TAT.zonas['POLAR']) { // Nueva condición para POLAR en TAT
         filtered = CONFIG_TAT.zonas['POLAR'];
     }
@@ -1474,8 +1479,7 @@ async function exportarExcel() {
 
     if (esTAT) {
         opcionesProveedores = `
-            <option value="UNILEVER">UNILEVER</option>
-            <option value="FAMILIA">FAMILIA</option>
+            <option value="UNILEVER-FAMILIA">UNILEVER-FAMILIA</option>
             <option value="POLAR">POLAR</option>
         `;
     } else {
@@ -1536,7 +1540,11 @@ async function exportarExcel() {
         .eq('fecha', fecha);
 
     if (proveedor) {
-        query = query.eq('proveedor', proveedor);
+        if (proveedor === 'UNILEVER-FAMILIA') {
+            query = query.in('proveedor', ['UNILEVER', 'FAMILIA', 'UNILEVER-FAMILIA']);
+        } else {
+            query = query.eq('proveedor', proveedor);
+        }
     }
 
     const { data: fletes, error } = await query;
@@ -1550,7 +1558,7 @@ async function exportarExcel() {
         "PLANILLA": f.id,
         "FECHA": f.fecha,
         "DIA": f.dia,
-        "PROVEEDOR": f.proveedor,
+        "PROVEEDOR": (['UNILEVER', 'FAMILIA'].includes(f.proveedor)) ? 'UNILEVER-FAMILIA' : f.proveedor,
         "PLACA": f.placa,
         "CONDUCTOR": f.contratista,
         "AUXILIARES": f.auxiliares || '',
@@ -1669,7 +1677,7 @@ async function generarPDF() {
 
     if (proveedor) {
         if (proveedor === 'UNILEVER-FAMILIA') {
-            query = query.in('proveedor', ['UNILEVER', 'FAMILIA']);
+            query = query.in('proveedor', ['UNILEVER', 'FAMILIA', 'UNILEVER-FAMILIA']);
         } else {
             query = query.eq('proveedor', proveedor);
         }
@@ -1724,7 +1732,7 @@ async function generarPDF() {
     // Mapeo especial para agrupar UNILEVER y FAMILIA
     const fletesMapeados = fletes.map(f => {
         const prov = f.proveedor || 'SIN PROVEEDOR';
-        if (['UNILEVER', 'FAMILIA'].includes(prov)) {
+        if (['UNILEVER', 'FAMILIA', 'UNILEVER-FAMILIA'].includes(prov)) {
             return { ...f, _provAgrupado: 'UNILEVER-FAMILIA' };
         }
         return { ...f, _provAgrupado: prov };
@@ -1781,21 +1789,38 @@ async function generarPDF() {
         if (tipo === 'relacion') {
             // ZONA | N. DE PLANILLA | FACTURAS ADICIONALES | CONDUCTOR | AUXILIAR | N. FACTURAS | VALOR RUTA
             head = [['ZONA', 'N. DE PLANILLA', 'FACTURAS ADICIONALES', 'CONDUCTOR', 'AUXILIAR', 'N. FACTURAS', 'VALOR RUTA']];
-            bodyData = fletesProv.map(f => [
-                f.zona || '',
-                f.no_planilla || '',
-                f.facturas_adicionales || '',
-                f.contratista || '',
-                f.auxiliares || '',
-                f.no_pedidos || 0,
-                moneyFormatter.format(f.valor_ruta || 0)
+            let totalFacturas = 0, totalValorRuta = 0;
+
+            bodyData = fletesProv.map(f => {
+                const nFact = f.no_pedidos || 0;
+                const vRuta = f.valor_ruta || 0;
+                totalFacturas += nFact;
+                totalValorRuta += vRuta;
+
+                return [
+                    f.zona || '',
+                    f.no_planilla || '',
+                    f.facturas_adicionales || '',
+                    f.contratista || '',
+                    f.auxiliares || '',
+                    nFact,
+                    moneyFormatter.format(vRuta)
+                ];
+            });
+
+            // Fila de Totales
+            bodyData.push([
+                { content: 'TOTALES', colSpan: 5, styles: { fontStyle: 'bold', fillColor: [240, 240, 240], halign: 'right' } },
+                { content: totalFacturas, styles: { fontStyle: 'bold', fillColor: [240, 240, 240], halign: 'center' } },
+                { content: moneyFormatter.format(totalValorRuta), styles: { fontStyle: 'bold', fillColor: [240, 240, 240], halign: 'right' } }
             ]);
+
             columnStyles = {
-                0: { cellWidth: 25 }, // ZONA
+                0: { cellWidth: 22 }, // ZONA
                 1: { cellWidth: 40 }, // PLANILLA
-                2: { cellWidth: 50 }, // FACTURAS ADIC
-                3: { cellWidth: 50 }, // CONDUCTOR
-                4: { cellWidth: 40 }, // AUXILIAR
+                2: { cellWidth: 55 }, // FACTURAS ADIC
+                3: { cellWidth: 55 }, // CONDUCTOR
+                4: { cellWidth: 45 }, // AUXILIAR
                 5: { cellWidth: 25, halign: 'center' }, // N. FACT
                 6: { cellWidth: 35, halign: 'right' }   // VALOR RUTA
             };
@@ -1820,7 +1845,7 @@ async function generarPDF() {
 
             const pTotal = totalRutaProv > 0 ? (totalFleteProv / totalRutaProv * 100).toFixed(1) + '%' : '0%';
             bodyData.push([
-                { content: 'TOTALES - ' + provActual, colSpan: 4, styles: { fontStyle: 'bold', fillColor: [240, 240, 240], halign: 'right' } },
+                { content: 'TOTALES', colSpan: 4, styles: { fontStyle: 'bold', fillColor: [240, 240, 240], halign: 'right' } },
                 { content: totalPedidosProv, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
                 { content: moneyFormatter.format(totalRutaProv), styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
                 { content: '', styles: { fillColor: [240, 240, 240] } },

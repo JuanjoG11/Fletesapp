@@ -914,6 +914,9 @@ function setupCalculators(prefix = "") {
     const inputRuta = document.getElementById(rutaId);
 
     if (selectPoblacion) {
+        // Force update list on interaction to avoid "invalid option selected" issues from auto-fill
+        selectPoblacion.addEventListener("focus", () => actualizarPoblaciones(prefix));
+        selectPoblacion.addEventListener("mousedown", () => actualizarPoblaciones(prefix));
         selectPoblacion.addEventListener("change", () => calcularTotal(prefix));
     }
     if (selectAdicional) {
@@ -1676,8 +1679,8 @@ async function generarPDF() {
 
     // Filtrar datos desde la base de datos directamente
     let query = SupabaseClient.supabase
-        .from('vista_fletes_completos')
-        .select('*')
+        .from('fletes')
+        .select('*, vehiculo:vehiculos(placa, conductor)')
         .eq('fecha', fecha);
 
     if (proveedor) {
@@ -1736,11 +1739,18 @@ async function generarPDF() {
     // --- Lógica Multi-Tabla por Proveedor ---
     // Mapeo especial para agrupar UNILEVER y FAMILIA
     const fletesMapeados = fletes.map(f => {
-        const prov = f.proveedor || 'SIN PROVEEDOR';
+        // Flatten vehicle data
+        const flatFlete = {
+            ...f,
+            placa: f.vehiculo?.placa || f.placa || 'N/A', // Try joined vehicle first, then fallback
+            contratista: f.vehiculo?.conductor || f.contratista || 'N/A'
+        };
+
+        const prov = flatFlete.proveedor || 'SIN PROVEEDOR';
         if (['UNILEVER', 'FAMILIA', 'UNILEVER-FAMILIA'].includes(prov)) {
-            return { ...f, _provAgrupado: 'UNILEVER-FAMILIA' };
+            return { ...flatFlete, _provAgrupado: 'UNILEVER-FAMILIA' };
         }
-        return { ...f, _provAgrupado: prov };
+        return { ...flatFlete, _provAgrupado: prov };
     });
 
     const proveedoresTodos = [...new Set(fletesMapeados.map(f => f._provAgrupado))].sort();

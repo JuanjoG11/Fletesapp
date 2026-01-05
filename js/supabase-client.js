@@ -544,23 +544,28 @@ async function obtenerEstadisticas() {
         // Agrupar por zona (Conteo y Valor)
         const zonas = {};
         const valoresZonas = {};
+        // Agrupar ingresos por mes y por día
+        const ingresosPorMes = {};
+        const ingresosPorDia = {};
 
         fletes.forEach(f => {
+            // Stats por Zona
             zonas[f.zona] = (zonas[f.zona] || 0) + 1;
             valoresZonas[f.zona] = (valoresZonas[f.zona] || 0) + parseFloat(f.precio || 0);
-        });
 
-        // Agrupar ingresos por mes
-        const ingresosPorMes = {};
-        fletes.forEach(f => {
-            const mes = f.fecha.substring(0, 7); // YYYY-MM
+            // Stats del Mes (YYYY-MM)
+            const mes = f.fecha.substring(0, 7);
             ingresosPorMes[mes] = (ingresosPorMes[mes] || 0) + parseFloat(f.precio || 0);
+
+            // Stats por Día (YYYY-MM-DD) para Gráfico de Barras
+            const dia = f.fecha; // Ya viene como YYYY-MM-DD
+            ingresosPorDia[dia] = (ingresosPorDia[dia] || 0) + parseFloat(f.precio || 0);
         });
 
-        return { zonas, ingresosPorMes, valoresZonas };
+        return { zonas, ingresosPorMes, valoresZonas, ingresosPorDia };
     } catch (error) {
         console.error('Error al obtener estadísticas:', error);
-        return { zonas: {}, ingresosPorMes: {}, valoresZonas: {} };
+        return { zonas: {}, ingresosPorMes: {}, valoresZonas: {}, ingresosPorDia: {} };
     }
 }
 

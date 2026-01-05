@@ -1965,15 +1965,11 @@ async function generarGraficos() {
     if (!ctx) return;
 
     // Obtener solo los fletes de la empresa actual para graficar
-    const result = await SupabaseClient.fletes.getAll();
-    if (!result.success) return;
-    const fletes = result.data;
+    // Obtener estadísticas pre-calculadas (incluye suma de valores por zona y por día)
+    const stats = await SupabaseClient.fletes.getEstadisticas();
+    const { zonas, valoresZonas, ingresosPorDia } = stats;
 
-    // --- Chart 1: Zonas ---
-    const count = {};
-    fletes.forEach(f => count[f.zona] = (count[f.zona] || 0) + 1);
-
-    if (fletes.length === 0) {
+    if (Object.keys(zonas).length === 0) {
         if (myChart) myChart.destroy();
         if (myChart2) myChart2.destroy();
 
@@ -2007,10 +2003,6 @@ async function generarGraficos() {
         }
         return;
     }
-
-    // Obtener estadísticas pre-calculadas (incluye suma de valores por zona)
-    const stats = await SupabaseClient.fletes.getEstadisticas();
-    const { zonas, valoresZonas } = stats;
 
     if (myChart) myChart.destroy();
     if (myChart2) myChart2.destroy();
@@ -2067,19 +2059,19 @@ async function generarGraficos() {
 
     if (!ctx2) return;
 
-    // Agrupar ingresos por dia y encontrar la fecha mas antigua
-    const registrosPorDia = {};
+    // --- Chart 2: Registros por Día (Optimized) ---
+    // Usamos ingresosPorDia que ya viene pre-calculado del backend
+
+    // Encontrar la fecha más antigua en los datos para empezar el gráfico
+    const fechasConDatos = Object.keys(ingresosPorDia).sort();
     let minDate = new Date();
 
-    fletes.forEach(f => {
-        const dayKey = f.fecha;
-        registrosPorDia[dayKey] = (registrosPorDia[dayKey] || 0) + parseFloat(f.precio);
-
-        const currentFleteDate = new Date(dayKey + 'T00:00:00');
-        if (currentFleteDate < minDate) {
-            minDate = currentFleteDate;
+    if (fechasConDatos.length > 0) {
+        const primeraFecha = new Date(fechasConDatos[0] + 'T00:00:00');
+        if (primeraFecha < minDate) {
+            minDate = primeraFecha;
         }
-    });
+    }
 
     const labelsAll = [];
     const fullLabelsAll = [];
@@ -2090,6 +2082,8 @@ async function generarGraficos() {
 
     let start = new Date(minDate);
     start.setHours(0, 0, 0, 0);
+
+
 
     let tempDate = new Date(start);
     while (tempDate <= today) {
@@ -2108,7 +2102,8 @@ async function generarGraficos() {
         tempDate.setDate(tempDate.getDate() + 1);
     }
 
-    const dataVals = fullLabelsAll.map(l => registrosPorDia[l.key] || 0);
+    // Usar el diccionario optimizado ingresosPorDia en lugar de registrosPorDia manual
+    const dataVals = fullLabelsAll.map(l => ingresosPorDia[l.key] || 0);
 
     renderBarChart(ctx2, labelsAll, dataVals, fullLabelsAll);
 }

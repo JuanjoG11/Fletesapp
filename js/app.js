@@ -1774,7 +1774,7 @@ async function exportarExcel() {
 
                 <div style="margin-bottom: 10px;">
                     <label for="excel-proveedor" style="display: block; text-align: center; margin-bottom: 10px; font-weight: 600; font-size: 13px;">
-                        Proveedor (Opcional):
+                        Proveedor:
                     </label>
                     <select id="excel-proveedor" class="swal2-input" style="width: 100%; margin: 0;">
                         <option value="">Todos los Proveedores</option>

@@ -1783,7 +1783,6 @@ async function exportarExcel() {
                 </div>
             </div>
         `,
-        icon: 'info',
         showCancelButton: true,
         confirmButtonText: 'Exportar Excel',
         cancelButtonText: 'Cancelar',
@@ -1923,48 +1922,43 @@ async function generarPDF() {
     const { value: formValues } = await Swal.fire({
         title: '📄 Configurar Reporte PDF',
         html: `
-            <div class="pdf-config-form" style="text-align: center;">
-                <label for="pdf-fecha">Fecha del Reporte (Obligatorio):</label>
-                <input id="pdf-fecha" type="date" class="swal2-input" required>
+            <div style="max-width: 350px; margin: 0 auto; padding: 20px 0;">
+                <div style="margin-bottom: 22px;">
+                    <label for="pdf-fecha" style="display: block; text-align: center; margin-bottom: 10px; font-weight: 600; font-size: 13px;">
+                        Fecha del Reporte (Obligatorio):
+                    </label>
+                    <input id="pdf-fecha" type="date" class="swal2-input" value="${new Date().toISOString().split('T')[0]}" required style="width: 100%; margin: 0;">
+                </div>
                 
-                <label for="pdf-proveedor">Proveedor (Opcional):</label>
-                <select id="pdf-proveedor" class="swal2-input">
-                    <option value="">Todos los Proveedores</option>
-                    ${opcionesProveedores}
-                </select>
+                <div style="margin-bottom: 22px;">
+                    <label for="pdf-proveedor" style="display: block; text-align: center; margin-bottom: 10px; font-weight: 600; font-size: 13px;">
+                        Proveedor:
+                    </label>
+                    <select id="pdf-proveedor" class="swal2-input" style="width: 100%; margin: 0;">
+                        <option value="">Todos los Proveedores</option>
+                        ${opcionesProveedores}
+                    </select>
+                </div>
 
                 ${role === 'caja' ? '' : `
-                <label for="pdf-tipo">Tipo de Reporte:</label>
-                <select id="pdf-tipo" class="swal2-input">
-                    <option value="fletes">Reporte de Fletes (Estándar)</option>
-                    <option value="relacion">Relación de Planilla y Facturas</option>
-                </select>
+                <div style="margin-bottom: 10px;">
+                    <label for="pdf-tipo" style="display: block; text-align: center; margin-bottom: 10px; font-weight: 600; font-size: 13px;">
+                        Tipo de Reporte:
+                    </label>
+                    <select id="pdf-tipo" class="swal2-input" style="width: 100%; margin: 0;">
+                        <option value="fletes">Reporte de Fletes (Estándar)</option>
+                        <option value="relacion">Relación de Planilla y Facturas</option>
+                    </select>
+                </div>
                 ` }
             </div>
         `,
-        icon: null,
-        focusConfirm: false,
         showCancelButton: true,
-        showDenyButton: false,
-        showCloseButton: false,
         confirmButtonText: 'Generar PDF',
         cancelButtonText: 'Cancelar',
-        denyButtonText: '',
-        reverseButtons: false,
-        customClass: {
-            popup: 'swal2-popup-custom',
-            htmlContainer: 'pdf-config-form'
-        },
-        buttonsStyling: true,
         background: '#1e293b',
         color: '#fff',
-        didOpen: () => {
-            // Eliminar forzosamente el botón deny del DOM
-            const denyButton = document.querySelector('.swal2-deny');
-            if (denyButton) {
-                denyButton.remove();
-            }
-        },
+        width: '500px',
         preConfirm: () => {
             const fecha = document.getElementById('pdf-fecha').value;
             const proveedor = document.getElementById('pdf-proveedor').value;

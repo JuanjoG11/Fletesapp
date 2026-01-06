@@ -1335,7 +1335,8 @@ function renderTable(fletes) {
     const filtered = fletes.filter(f => {
         const contratista = f.contratista || '';
         const placa = f.placa || '';
-        const matchQ = (placa.toLowerCase().includes(q) || contratista.toLowerCase().includes(q) || (f.proveedor || '').toLowerCase().includes(q));
+        const no_planilla = f.no_planilla || '';
+        const matchQ = (placa.toLowerCase().includes(q) || contratista.toLowerCase().includes(q) || (f.proveedor || '').toLowerCase().includes(q) || no_planilla.toLowerCase().includes(q));
         const matchZ = fZona ? f.zona === fZona : true;
         const matchF = fFecha ? f.fecha === fFecha : true;
         return matchQ && matchZ && matchF;
@@ -1357,6 +1358,7 @@ function renderTable(fletes) {
             <td><span class="badge" style="background: var(--accent-blue); font-size: 0.7rem; padding: 2px 6px;">${f.proveedor || '-'}</span></td>
             <td><strong>${f.conductor}</strong></td>
             <td><span class="badge-plate">${f.placa}</span></td>
+            <td style="font-weight: 600; color: var(--accent-orange);">${f.no_planilla || '-'}</td>
             <td>${f.zona || '-'}</td>
             <td>${f.poblacion || 'N/A'}</td>
             <td>${f.no_auxiliares || 0} (${f.auxiliares || '-'})</td>

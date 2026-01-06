@@ -1259,7 +1259,9 @@ function limpiarFormulario(prefix) {
         "placa", "contratista", "proveedor", "zona", "dia", "poblacion",
         "auxiliares", "no_auxiliares", "no_pedidos",
         "valor_ruta", "is_adicionales", "total_flete",
-        "porcentaje_ruta", "fecha", "no_planilla", "facturas_adicionales"
+        "porcentaje_ruta", "fecha", "no_planilla", "facturas_adicionales",
+        // Campos de adicionales que faltaban
+        "valor_adicional", "razon_adicional"
     ];
 
     fields.forEach(f => {
@@ -1274,6 +1276,14 @@ function limpiarFormulario(prefix) {
             el.value = "";
         }
     });
+
+    // Limpiar Checkboxes de Zonas (Importante)
+    const zonaContainerId = prefix === "" ? "zona-container" : "modal-zona-container";
+    const zonaContainer = document.getElementById(zonaContainerId);
+    if (zonaContainer) {
+        const checkboxes = zonaContainer.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = false);
+    }
 
     // Limpiar estilos específicos
     const cond = document.getElementById(prefix + "contratista");

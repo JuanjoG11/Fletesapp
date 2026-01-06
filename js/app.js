@@ -2454,21 +2454,30 @@ document.addEventListener("DOMContentLoaded", async () => {
         setupTheme(); // Init Theme
         await checkAuth();  // Init Auth & Role UI (Async)
 
-        // Carga inicial de datos en paralelo
-        Promise.all([
-            listarVehiculos(),
-            listarFletes(),
-            actualizarKPI()
-        ]).catch(err => {
-            console.error("❌ Error cargando datos:", err);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error de Datos',
-                text: 'No se pudieron cargar algunos datos del dashboard. Revisa tus permisos o si el perfil está bien creado.',
-                background: '#1e293b',
-                color: '#fff'
+        // Obtener el rol del usuario actual
+        const session = CURRENT_SESSION;
+        const role = (session?.profile?.rol || session?.user?.user_metadata?.rol || 'operario').toLowerCase();
+
+        // OPTIMIZACIÓN: No cargar datos para el rol "caja"
+        if (role !== 'caja') {
+            // Carga inicial de datos en paralelo solo para admin y operario
+            Promise.all([
+                listarVehiculos(),
+                listarFletes(),
+                actualizarKPI()
+            ]).catch(err => {
+                console.error("❌ Error cargando datos:", err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de Datos',
+                    text: 'No se pudieron cargar algunos datos del dashboard. Revisa tus permisos o si el perfil está bien creado.',
+                    background: '#1e293b',
+                    color: '#fff'
+                });
             });
-        });
+        } else {
+            console.log("✅ Usuario 'caja' - Interfaz limpia cargada sin datos innecesarios");
+        }
 
         // 1. Navigation
         const tabs = document.querySelectorAll(".nav-item");

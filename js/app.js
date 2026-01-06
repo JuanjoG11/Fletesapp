@@ -74,7 +74,22 @@ const MAPA_CONTRATISTAS = {
     "TLY560": "DANIELA MEILLY",
     "SXP414": "YENNY HENAO",
     "SQD171": "JUAN CARLOS HENAO",
-    "TLY775": "MARIO GIGANTE"
+    "TLY775": "MARIO GIGANTE",
+    // Vehículos TAT adicionales
+    "DQA454": "MARTHA E SALDARRIAGA",
+    "ZMN804": "ALEJANDRO VARGAS LONDOÑO",
+    "SLJ329": "JOHN FREDY GIRALDO CUERVO",
+    "PEQ714": "EDILBERTO MARIN NIETO",
+    "EST590": "FREDDY HUMBERTO GALLEGO JIMENEZ",
+    "WPP948": "LILIANA GARCIA GUTIERRREZ",
+    "TRS860": "GONZALO ALBERTO CONTRERAS AMAYA",
+    "VIK442": "DANY ARCILA SALGADO",
+    "GTU624": "LUIS FELIPE VALLEJO",
+    "ZNN771": "AUGUSTO ARIAS OSORIO",
+    "VDX363": "JOSE OSNIDIO MARIN GALVIS",
+    "WEF511": "IVAN RICARDO VERGARA LOAIZA",
+    "ESK522": "CESAR AUGUSTO TABARES CARDONA",
+    "TJQ665": "ALBEIRO RODRIGUEZ"
 };
 
 // Configuración específica para TAT
@@ -403,13 +418,19 @@ async function listarVehiculos() {
             ? '<span class="status-badge-active" style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;"><i class="ri-checkbox-circle-line"></i> Activo</span>'
             : '<span class="status-badge-inactive" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;"><i class="ri-error-warning-line"></i> Inactivo</span>';
 
+        // Usamos el contratista de la DB y si no está, el mapa
+        const contratista = v.contratista || MAPA_CONTRATISTAS[v.placa] || 'N/A';
+
         tr.innerHTML = `
             <td><span class="badge-plate">${v.placa}</span></td>
-            <td><span class="badge" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); font-size: 0.75rem;">${MAPA_CONTRATISTAS[v.placa] || 'N/A'}</span></td>
+            <td><span class="badge" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); font-size: 0.75rem;">${contratista}</span></td>
             <td>${v.conductor}</td>
             <td style="color: var(--text-muted)">${v.modelo || 'N/A'}</td>
             <td>${statusBadge}</td>
             <td class="actions-cell">
+                <button class="btn-icon edit" onclick="abrirModalEditarVehiculo('${v.id}')" title="Editar Vehículo">
+                    <i class="ri-edit-line"></i>
+                </button>
                 <button class="btn-icon ${v.activo ? 'delete' : 'edit'}" onclick="toggleEstadoVehiculo('${v.id}', ${v.activo}, '${v.placa}')" title="${v.activo ? 'Inactivar' : 'Activar'} Vehículo">
                     <i class="${v.activo ? 'ri-close-circle-line' : 'ri-checkbox-circle-line'}"></i>
                 </button>
@@ -417,6 +438,51 @@ async function listarVehiculos() {
         `;
         tbody.appendChild(tr);
     });
+}
+
+async function abrirModalEditarVehiculo(id) {
+    const v = FLOTA_VEHICULOS.find(veh => veh.id === id);
+    if (!v) return;
+
+    document.getElementById("edit-vehiculo-id").value = v.id;
+    document.getElementById("edit-vehiculo-placa").value = v.placa;
+    document.getElementById("edit-vehiculo-conductor").value = v.conductor;
+    document.getElementById("edit-vehiculo-modelo").value = v.modelo || "";
+    document.getElementById("edit-vehiculo-contratista").value = v.contratista || MAPA_CONTRATISTAS[v.placa] || "";
+
+    document.getElementById("modalEdicionVehiculo").classList.add("visible");
+}
+
+function ocultarModalVehiculo() {
+    document.getElementById("modalEdicionVehiculo").classList.remove("visible");
+}
+
+async function guardarCambiosVehiculo() {
+    const id = document.getElementById("edit-vehiculo-id").value;
+    const conductor = document.getElementById("edit-vehiculo-conductor").value.trim();
+    const modelo = document.getElementById("edit-vehiculo-modelo").value.trim();
+    const contratista = document.getElementById("edit-vehiculo-contratista").value.trim();
+
+    if (!conductor) {
+        return Swal.fire({ icon: 'warning', title: 'Atención', text: 'El nombre del conductor es obligatorio', background: '#1e293b', color: '#fff' });
+    }
+
+    Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
+
+    const result = await SupabaseClient.vehiculos.update(id, {
+        conductor,
+        modelo,
+        contratista
+    });
+
+    if (result.success) {
+        FLOTA_VEHICULOS = []; // Reset cache
+        await listarVehiculos();
+        ocultarModalVehiculo();
+        Swal.fire({ icon: 'success', title: 'Actualizado', text: 'Vehículo actualizado correctamente', timer: 1500, showConfirmButton: false, background: '#1e293b', color: '#fff' });
+    } else {
+        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar el vehículo', background: '#1e293b', color: '#fff' });
+    }
 }
 
 async function toggleEstadoVehiculo(id, estadoActual, placa) {
@@ -439,6 +505,7 @@ async function toggleEstadoVehiculo(id, estadoActual, placa) {
     if (isConfirmed) {
         const result = await SupabaseClient.vehiculos.update(id, { activo: nuevoEstado });
         if (result.success) {
+            FLOTA_VEHICULOS = []; // Reset cache
             await listarVehiculos();
             await actualizarKPI();
             Swal.fire({
@@ -459,11 +526,12 @@ async function registrarVehiculoOperario() {
     const placaInput = document.getElementById("op_placa");
     const condInput = document.getElementById("op_conductor");
     const modInput = document.getElementById("op_modelo");
+    const contInput = document.getElementById("op_contratista");
 
-    // Sanitizar placa: Mayúsculas, sin espacios, sin guiones
     const placa = placaInput.value.toUpperCase().replace(/[\s-]/g, '').trim();
     const conductor = condInput.value.trim();
     const modelo = modInput.value.trim() || "Estándar";
+    const contratista = contInput.value.trim() || MAPA_CONTRATISTAS[placa] || "N/A";
 
     if (!placa || !conductor) {
         return Swal.fire({ icon: 'warning', title: 'Faltan Datos', text: 'Ingrese Placa y Conductor', background: '#1a1a1a', color: '#fff' });
@@ -475,15 +543,17 @@ async function registrarVehiculoOperario() {
         placa,
         conductor,
         modelo,
+        contratista,
         created_by: user.id
     });
 
     if (result.success) {
         await listarVehiculos();
-        await actualizarKPI(); // Actualizar contador de vehículos activos
+        await actualizarKPI();
         placaInput.value = "";
         condInput.value = "";
         if (modInput) modInput.value = "";
+        if (contInput) contInput.value = "";
 
         Swal.fire({
             icon: 'success', title: 'Vehículo Registrado',
@@ -491,7 +561,7 @@ async function registrarVehiculoOperario() {
             timer: 1500, showConfirmButton: false, background: '#1a1a1a', color: '#fff'
         });
     } else {
-        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo registrar el vehículo: ' + (result.error || 'Placa duplicada'), background: '#1a1a1a', color: '#fff' });
+        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo registrar el vehículo. Asegúrate de haber ejecutado el SQL en Supabase.', background: '#1a1a1a', color: '#fff' });
     }
 }
 
@@ -1641,6 +1711,15 @@ async function exportarExcel() {
     const session = CURRENT_SESSION;
     const role = (session?.profile?.rol || session?.user?.user_metadata?.rol || 'operario').toLowerCase();
 
+    // Helper para el modal
+    window.toggleRangoFechasExcel = function () {
+        const tipo = document.getElementById('excel-tipo')?.value;
+        const finContainer = document.getElementById('excel-fin-container');
+        if (finContainer) {
+            finContainer.style.display = (tipo === 'rango') ? 'block' : 'none';
+        }
+    };
+
     // CAJA ve TODOS los proveedores
     if (role === 'caja') {
         opcionesProveedores = `
@@ -1668,10 +1747,21 @@ async function exportarExcel() {
     const { value: formValues } = await Swal.fire({
         title: '📊 Exportar a Excel',
         html: `
-            <div class="pdf-config-form" style="text-align: center;">
-                <label for="excel-fecha">Fecha (Obligatorio):</label>
-                <input id="excel-fecha" type="date" class="swal2-input" required>
+            <div class="pdf-config-form" style="text-align: left; max-width: 300px; margin: auto;">
+                <label>Tipo de Periodo:</label>
+                <select id="excel-tipo" class="swal2-input" onchange="toggleRangoFechasExcel()">
+                    <option value="dia">Un Día</option>
+                    <option value="rango" selected>Rango de Fechas</option>
+                </select>
+
+                <label id="label-inicio">Fecha Inicio:</label>
+                <input id="excel-inicio" type="date" class="swal2-input" value="${new Date().toISOString().split('T')[0]}">
                 
+                <div id="excel-fin-container">
+                    <label>Fecha Fin:</label>
+                    <input id="excel-fin" type="date" class="swal2-input" value="${new Date().toISOString().split('T')[0]}">
+                </div>
+
                 <label for="excel-proveedor">Proveedor (Opcional):</label>
                 <select id="excel-proveedor" class="swal2-input">
                     <option value="">Todos los Proveedores</option>
@@ -1685,23 +1775,31 @@ async function exportarExcel() {
         cancelButtonText: 'Cancelar',
         background: '#1e293b',
         color: '#fff',
+        didOpen: () => {
+            window.toggleRangoFechasExcel();
+        },
         preConfirm: () => {
-            const fecha = document.getElementById('excel-fecha').value;
+            const tipo = document.getElementById('excel-tipo').value;
+            const inicio = document.getElementById('excel-inicio').value;
+            const fin = document.getElementById('excel-fin').value;
             const proveedor = document.getElementById('excel-proveedor').value;
-            if (!fecha) {
-                Swal.showValidationMessage('Por favor selecciona una fecha');
+
+            if (!inicio || (tipo === 'rango' && !fin)) {
+                Swal.showValidationMessage('Por favor selecciona las fechas');
                 return false;
             }
-            return { fecha, proveedor };
+            return { tipo, inicio, fin, proveedor };
         }
     });
 
     if (!formValues) return;
 
-    const { fecha, proveedor } = formValues;
+    const { tipo, inicio, fin, proveedor } = formValues;
+    const esRango = (tipo === 'rango');
 
     Swal.fire({
         title: 'Generando Excel...',
+        text: esRango ? `${inicio} hasta ${fin}` : inicio,
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading(),
         background: '#1e293b',
@@ -1710,34 +1808,47 @@ async function exportarExcel() {
 
     let query = SupabaseClient.supabase
         .from('vista_fletes_completos')
-        .select('*')
-        .eq('fecha', fecha);
+        .select('*');
+
+    if (esRango) {
+        query = query.gte('fecha', inicio).lte('fecha', fin);
+    } else {
+        query = query.eq('fecha', inicio);
+    }
 
     if (proveedor) {
         if (proveedor === 'UNILEVER-FAMILIA') {
             query = query.in('proveedor', ['UNILEVER', 'FAMILIA', 'UNILEVER-FAMILIA']);
+        } else if (proveedor === 'ALPINA-FLEISCHMANN') {
+            query = query.in('proveedor', ['ALPINA', 'FLEISCHMANN', 'ALPINA-FLEISCHMANN']);
         } else {
             query = query.eq('proveedor', proveedor);
         }
     }
 
-    const { data: fletes, error } = await query;
+    const { data: fletes, error } = await query.order('fecha', { ascending: true });
 
     if (error || !fletes || fletes.length === 0) {
-        return Swal.fire("Info", `No hay datos para exportar el día ${fecha}${proveedor ? ' del proveedor ' + proveedor : ''}`, "info");
+        return Swal.fire("Info", `No hay datos para exportar en el periodo ${inicio} ${esRango ? 'al ' + fin : ''}`, "info");
     }
 
-    // Mapear datos para agregar columna PLANILLA y formatear
+    // Mapear datos incluyendo NOMBRE CONTRATISTA
     const datosMapeados = fletes.map(f => ({
-        "PLANILLA": f.id,
+        "ID": f.id,
         "FECHA": f.fecha,
         "DIA": f.dia,
         "PROVEEDOR": (['UNILEVER', 'FAMILIA'].includes(f.proveedor)) ? 'UNILEVER-FAMILIA' : f.proveedor,
         "PLACA": f.placa,
-        "CONDUCTOR": f.contratista,
+        "NOMBRE CONTRATISTA": MAPA_CONTRATISTAS[f.placa] || 'N/A',
+        "CONDUCTOR": f.contratista, // RECORDATORIO: f.contratista en la vista es el NOMBRE DEL CONDUCTOR
         "AUXILIARES": f.auxiliares || '',
         "ZONA": f.zona,
         "POBLACION": f.poblacion,
+        "PLANILLA": f.no_planilla || '',
+        "FACTURAS EXTRA": f.facturas_adicionales || '',
+        "ADICIONAL": f.is_adicionales,
+        "V. NEGOCIADO": f.valor_adicional || 0,
+        "RAZÓN": f.razon_adicional || '',
         "VALOR FLETE": f.precio,
         "PEDIDOS": f.no_pedidos || 0,
         "VALOR RUTA": f.valor_ruta || 0
@@ -1747,12 +1858,13 @@ async function exportarExcel() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Fletes");
 
-    XLSX.writeFile(wb, `Reporte_Fletes_${fecha}.xlsx`);
+    const nombreArchivo = esRango ? `Reporte_Fletes_${inicio}_a_${fin}.xlsx` : `Reporte_Fletes_${inicio}.xlsx`;
+    XLSX.writeFile(wb, nombreArchivo);
 
     Swal.fire({
         icon: 'success',
         title: '¡Excel Generado!',
-        text: `Se descargó el reporte de ${fecha}`,
+        text: `Se descargó el reporte correctamente`,
         timer: 2000,
         showConfirmButton: false,
         background: '#1e293b',
@@ -2531,6 +2643,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         setupCalculators("");
         setupCalculators("modal-");
+
+        // Autocompletado de contratista al registrar vehículo
+        document.getElementById("op_placa")?.addEventListener("input", (e) => {
+            const placa = e.target.value.toUpperCase().replace(/[\s-]/g, '');
+            const contratistaInput = document.getElementById("op_contratista");
+            if (contratistaInput && MAPA_CONTRATISTAS[placa]) {
+                contratistaInput.value = MAPA_CONTRATISTAS[placa];
+            }
+        });
 
         // 7. Menu Mobile
         const menuBtn = document.getElementById("menuToggleBtn");

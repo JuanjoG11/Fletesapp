@@ -43,7 +43,7 @@
             </a>
             <!-- Tab Exclusiva Operario -->
             <a class="nav-item" data-tab="operario-vehiculos" id="navVehiculos" style="display: none;">
-                <i class="ri-roadster-line"></i> Nuevo Vehículo
+                <i class="ri-roadster-line"></i>Vehículos
             </a>
             <!-- Tab Exclusiva Admin -->
             <a class="nav-item" data-tab="admin-crear" id="navCrearFlete">
@@ -381,7 +381,7 @@
             <div id="card-operario" class="card glass-card">
                 <div class="card-header">
                     <h2><i class="ri-truck-line"></i> Registrar Nuevo Vehículo</h2>
-                    <p class="text-muted">Ingrese la placa y el conductor para habilitarlo en el sistema.</p>
+                    <p class="text-muted">Ingrese la información del vehículo para habilitarlo en el sistema.</p>
                 </div>
                 <div class="card-body">
                     <div class="form-grid">
@@ -397,6 +397,10 @@
                         <div class="input-group">
                             <label>Modelo del Vehículo</label>
                             <input id="op_modelo" placeholder="Ej: Camión Turbo, Van, etc.">
+                        </div>
+                        <div class="input-group">
+                            <label>Nombre Contratista</label>
+                            <input id="op_contratista" placeholder="Propietario del Vehículo">
                         </div>
                     </div>
                     <div class="form-actions" style="gap: 10px; flex-wrap: wrap;">
@@ -703,6 +707,43 @@
                 <button class="btn btn-secondary" onclick="ocultarModalEdicion()">Cancelar</button>
                 <button id="btnGuardarModal" class="btn btn-primary">Guardar
                     Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDICIÓN VEHÍCULO -->
+    <div id="modalEdicionVehiculo" class="modal-overlay">
+        <div class="modal-glass" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>✏️ Editar Vehículo</h2>
+                <button class="close-btn" onclick="ocultarModalVehiculo()"><i class="ri-close-line"></i></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-grid">
+                    <input type="hidden" id="edit-vehiculo-id">
+                    <div class="input-group">
+                        <label>Placa</label>
+                        <input id="edit-vehiculo-placa" readonly class="input-readonly">
+                    </div>
+                    <div class="input-group">
+                        <label>Conductor</label>
+                        <input id="edit-vehiculo-conductor" placeholder="Nombre completo">
+                    </div>
+                    <div class="input-group">
+                        <label>Modelo</label>
+                        <input id="edit-vehiculo-modelo" placeholder="Modelo del vehículo">
+                    </div>
+                    <div class="input-group">
+                        <label>Nombre Contratista</label>
+                        <input id="edit-vehiculo-contratista" placeholder="Nombre del propietario">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="ocultarModalVehiculo()">Cancelar</button>
+                <button onclick="guardarCambiosVehiculo()" class="btn btn-primary">Guardar Cambios</button>
             </div>
         </div>
     </div>

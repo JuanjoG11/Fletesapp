@@ -1762,7 +1762,7 @@ async function exportarExcel() {
                     <label id="label-inicio" style="display: block; text-align: center; margin-bottom: 10px; font-weight: 600; font-size: 13px;">
                         Fecha Inicio:
                     </label>
-                    <input id="excel-inicio" type="date" class="swal2-input" value="${new Date().toISOString().split('T')[0]}" style="width: 100%; margin: 0;">
+                    <input id="excel-inicio" type="date" class="swal2-input" value="${new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]}" style="width: 100%; margin: 0;">
                 </div>
                 
                 <div id="excel-fin-container" style="margin-bottom: 22px;">

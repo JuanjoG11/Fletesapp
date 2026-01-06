@@ -1747,26 +1747,40 @@ async function exportarExcel() {
     const { value: formValues } = await Swal.fire({
         title: '📊 Exportar a Excel',
         html: `
-            <div class="pdf-config-form" style="text-align: left; max-width: 300px; margin: auto;">
-                <label>Tipo de Periodo:</label>
-                <select id="excel-tipo" class="swal2-input" onchange="toggleRangoFechasExcel()">
-                    <option value="dia">Un Día</option>
-                    <option value="rango" selected>Rango de Fechas</option>
-                </select>
-
-                <label id="label-inicio">Fecha Inicio:</label>
-                <input id="excel-inicio" type="date" class="swal2-input" value="${new Date().toISOString().split('T')[0]}">
-                
-                <div id="excel-fin-container">
-                    <label>Fecha Fin:</label>
-                    <input id="excel-fin" type="date" class="swal2-input" value="${new Date().toISOString().split('T')[0]}">
+            <div style="max-width: 350px; margin: 0 auto; padding: 20px 0;">
+                <div style="margin-bottom: 22px;">
+                    <label style="display: block; text-align: center; margin-bottom: 10px; font-weight: 600; font-size: 13px;">
+                        Tipo de Periodo:
+                    </label>
+                    <select id="excel-tipo" class="swal2-input" onchange="toggleRangoFechasExcel()" style="width: 100%; margin: 0;">
+                        <option value="dia">Un Día</option>
+                        <option value="rango" selected>Rango de Fechas</option>
+                    </select>
                 </div>
 
-                <label for="excel-proveedor">Proveedor (Opcional):</label>
-                <select id="excel-proveedor" class="swal2-input">
-                    <option value="">Todos los Proveedores</option>
-                    ${opcionesProveedores}
-                </select>
+                <div style="margin-bottom: 22px;">
+                    <label id="label-inicio" style="display: block; text-align: center; margin-bottom: 10px; font-weight: 600; font-size: 13px;">
+                        Fecha Inicio:
+                    </label>
+                    <input id="excel-inicio" type="date" class="swal2-input" value="${new Date().toISOString().split('T')[0]}" style="width: 100%; margin: 0;">
+                </div>
+                
+                <div id="excel-fin-container" style="margin-bottom: 22px;">
+                    <label style="display: block; text-align: center; margin-bottom: 10px; font-weight: 600; font-size: 13px;">
+                        Fecha Fin:
+                    </label>
+                    <input id="excel-fin" type="date" class="swal2-input" value="${new Date().toISOString().split('T')[0]}" style="width: 100%; margin: 0;">
+                </div>
+
+                <div style="margin-bottom: 10px;">
+                    <label for="excel-proveedor" style="display: block; text-align: center; margin-bottom: 10px; font-weight: 600; font-size: 13px;">
+                        Proveedor (Opcional):
+                    </label>
+                    <select id="excel-proveedor" class="swal2-input" style="width: 100%; margin: 0;">
+                        <option value="">Todos los Proveedores</option>
+                        ${opcionesProveedores}
+                    </select>
+                </div>
             </div>
         `,
         icon: 'info',
@@ -1775,6 +1789,7 @@ async function exportarExcel() {
         cancelButtonText: 'Cancelar',
         background: '#1e293b',
         color: '#fff',
+        width: '500px',
         didOpen: () => {
             window.toggleRangoFechasExcel();
         },

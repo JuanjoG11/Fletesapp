@@ -4,6 +4,79 @@ let CURRENT_SESSION = null; // Cache para la sesión
 let CACHED_FLETES = [];     // Cache para listados rápidos
 let CURRENT_RAZON_SOCIAL = null; // 'TYM' o 'TAT'
 
+const MAPA_CONTRATISTAS = {
+    "PEK019": "JOSE MIGUEL TABARES URIBE",
+    "PEG541": "JORGE HERNAN RAMIREZ BUSTAMANTE",
+    "EST067": "CARLOS ARTURO CAMPÍÑO",
+    "TNH494": "ADALBERTO MEJIA AMARILES",
+    "SPQ814": "CARLOS ALBERTO VELASCO MARIN",
+    "ERK303": "ROSMIRA MEJIA AMARILES",
+    "WHM896": "ALEXANDER CUELLAR ESCALANTE",
+    "WHM317": "ANGIE GONZALEZ VASQUEZ",
+    "SMH182": "ANDRES FELIPE QUINTERO PLAZA",
+    "TTL256": "ANDRES FELIPE QUINTERO PLAZA",
+    "TIJ795": "ANDRES FELIPE QUINTERO PLAZA",
+    "SZD552": "ANDRES FELIPE QUINTERO PLAZA",
+    "ZNN421": "ANDRES FELIPE QUINTERO PLAZA",
+    "TMZ674": "RICARDO LOPEZ TORO",
+    "WFV015": "DANIELA DIAZ LOPEZ",
+    "SKP033": "DANIELA DIAZ LOPEZ",
+    "TUL630": "DANIELA DIAZ LOPEZ",
+    "ESU446": "ALEJANDRO PULGARIN RESTREPO",
+    "XVI496": "CRISTIAN ANDRES GIRALDO GONZALEZ",
+    "LUM993": "CRISTIAN ANDRES GIRALDO GONZALEZ",
+    "EQY944": "GOVER CRISTANCHO VILLADA",
+    "WTN748": "DIEGO ALEJANDRO RATIVA",
+    "VZD334": "JULIAN CUELLAR",
+    "WGZ876": "VALENTINA GUZMAN VALENCIA",
+    "SRJ686": "VALENTINA GUZMAN VALENCIA",
+    "SYU652": "VALENTINA GUZMAN VALENCIA",
+    "SXF257": "ELIO FABIO RUIZ HINCAPIE",
+    "WHN436": "JOHN MAURICIO DIAZ HIDALGO",
+    "EYX091": "CARLOS ANDRES GOMEZ",
+    "KOL802": "ADOLFO ENRIQUE OSPINO TREJOS",
+    "WHU866": "GERMAN AUGUSTO BERNAL HOLGUIN",
+    "CRZ810": "BLANCA INES HIDALGO DE DIAZ",
+    "EYY183": "RUBEN DARIO ESCOBAR DELGADO",
+    "TRL186": "RUBEN DARIO ESCOBAR DELGADO",
+    "TDY481": "JHON SANDRO ZULUAGA BARRERA",
+    "WLL481": "DAVID RAMIREZ BUENO",
+    "SQB119": "CARLOS ARTURO CASTAÑO CHALARCA",
+    "EST392": "JHON FREDY SUAREZ MONTOYA",
+    "WLC133": "GABRIEL EDUARDO PEREZ REDONDO",
+    "SMO183": "GABRIEL EDUARDO PEREZ REDONDO",
+    "SJT873": "JUAN CARLOS ARANGO QUINTERO",
+    "VBP660": "CARLOS ALBERTO MOLINA HERNANDEZ",
+    "SPO480": "HERNANDO MONTES VELASQUEZ",
+    "WHM622": "CARLOS ARTURO VELEZ HERRERA",
+    "WHM489": "GILBERTO ANDRES CARDONA HERRERA",
+    "SWN905": "LEONARDO ECHEVERRY RAMIREZ",
+    "PED694": "LUIS DENIS RAMIREZ CEVEDO",
+    "WHM895": "JAIRO RIVILLAS AGUDELO",
+    "ZNX985": "ABSALON GALVEZ GIL",
+    "MAT480": "HELGUIN AGUIRRE",
+    "WHM930": "JOSE ORLANDO OSORIO",
+    "BCS450": "CRISTIAN DAVID ZULUAGA BUITRAGO",
+    "SPU120": "ANGEL OSWALDO IBARRA DIAZ",
+    "ZOC960": "WILSON LEMOS",
+    // También incluimos los previos por si acaso no estaban en la lista nueva
+    "SQP463": "MAURICIO GIGANTE",
+    "GAV540": "DANIELA MEILLY",
+    "TAW611": "TRANS GIGANTE",
+    "WDI215": "ALEXANDER GIGANTE",
+    "SKT926": "JOSE MAURICIO PINZON",
+    "ELV604": "DANIELA MEILLY",
+    "TTX148": "JUAN CARLOS HENAO",
+    "TLZ515": "WILIAM GIGANTE",
+    "WDI370": "WILIAM GIGANTE",
+    "WDI116": "WILMER GIGANTE",
+    "WBL566": "MARIO GIGANTE",
+    "TLY560": "DANIELA MEILLY",
+    "SXP414": "YENNY HENAO",
+    "SQD171": "JUAN CARLOS HENAO",
+    "TLY775": "MARIO GIGANTE"
+};
+
 // Configuración específica para TAT
 const CONFIG_TAT = {
     proveedores: ['UNILEVER', 'FAMILIA', 'POLAR'],
@@ -300,18 +373,31 @@ async function listarVehiculos() {
     const tbody = document.getElementById("tablaVehiculos");
     if (!tbody) return;
 
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center"><i class="ri-loader-4-line rotate"></i> Cargando vehículos...</td></tr>`;
+    // Filtro de búsqueda
+    const q = document.getElementById("buscarVehiculo")?.value.toLowerCase() || "";
 
-    const res = await SupabaseClient.vehiculos.getAll();
-    FLOTA_VEHICULOS = res.success ? res.data : [];
+    // Si no hay cache, cargamos de Supabase
+    if (FLOTA_VEHICULOS.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center"><i class="ri-loader-4-line rotate"></i> Cargando vehículos...</td></tr>`;
+        const res = await SupabaseClient.vehiculos.getAll();
+        FLOTA_VEHICULOS = res.success ? res.data : [];
+    }
+
+    // Filtrar localmente
+    const filtered = FLOTA_VEHICULOS.filter(v => {
+        const contratista = (MAPA_CONTRATISTAS[v.placa] || '').toLowerCase();
+        const conductor = (v.conductor || '').toLowerCase();
+        const placa = (v.placa || '').toLowerCase();
+        return placa.includes(q) || conductor.includes(q) || contratista.includes(q);
+    });
 
     tbody.innerHTML = "";
-    if (FLOTA_VEHICULOS.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center">No hay vehículos registrados</td></tr>`;
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center">No se encontraron vehículos</td></tr>`;
         return;
     }
 
-    FLOTA_VEHICULOS.forEach(v => {
+    filtered.forEach(v => {
         const tr = document.createElement("tr");
         const statusBadge = v.activo
             ? '<span class="status-badge-active" style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;"><i class="ri-checkbox-circle-line"></i> Activo</span>'
@@ -319,6 +405,7 @@ async function listarVehiculos() {
 
         tr.innerHTML = `
             <td><span class="badge-plate">${v.placa}</span></td>
+            <td><span class="badge" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); font-size: 0.75rem;">${MAPA_CONTRATISTAS[v.placa] || 'N/A'}</span></td>
             <td>${v.conductor}</td>
             <td style="color: var(--text-muted)">${v.modelo || 'N/A'}</td>
             <td>${statusBadge}</td>
@@ -2358,100 +2445,6 @@ window.limpiarBaseDeDatosProduction = async function () {
 }
 
 
-// ==========================================================
-// 📂 IMPORTACIÓN MASIVA DESDE EXCEL
-// ==========================================================
-async function procesarExcelVehiculos(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    Swal.fire({
-        title: 'Procesando Excel...',
-        text: 'Estamos validando y cargando tus vehículos',
-        allowOutsideClick: false,
-        didOpen: () => {
-            Swal.showLoading();
-        },
-        background: '#1e293b',
-        color: '#fff'
-    });
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        try {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-
-            if (jsonData.length === 0) {
-                throw new Error("El archivo Excel está vacío.");
-            }
-
-            // Normalizar y mapear datos
-            const mapVehiculos = new Map();
-
-            jsonData.forEach(row => {
-                // Buscamos columnas que se parezcan a Placa, Conductor, Modelo
-                let placaRaw = row.Placa || row.PLACA || row.placa || Object.values(row)[0];
-                let conductor = row.Conductor || row.CONDUCTOR || row.conductor || Object.values(row)[1];
-                let modelo = row.Modelo || row.MODELO || row.modelo || Object.values(row)[2];
-
-                if (placaRaw && conductor) {
-                    // Sanitizar placa: Mayúsculas, sin espacios, sin guiones
-                    const placa = placaRaw.toString().toUpperCase().replace(/[\s-]/g, '');
-
-                    // Guardar en Map (si la placa ya existe, se sobrescribe con la última del Excel)
-                    mapVehiculos.set(placa, {
-                        placa,
-                        conductor: conductor.toString().trim(),
-                        modelo: (modelo || 'Estándar').toString().trim()
-                    });
-                }
-            });
-
-            const vehiculosArr = Array.from(mapVehiculos.values());
-
-            if (vehiculosArr.length === 0) {
-                throw new Error("No se encontraron vehículos válidos. Asegúrate de tener al menos las columnas Placa y Conductor.");
-            }
-
-            const result = await SupabaseClient.vehiculos.importar(vehiculosArr);
-
-            if (result.success) {
-                await listarVehiculos();
-                await actualizarKPI();
-                Swal.fire({
-                    icon: 'success',
-                    title: '¡Importación Exitosa!',
-                    text: `Se han registrado ${result.count} vehículos correctamente.`,
-                    background: '#1e293b',
-                    color: '#fff'
-                });
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error en la Importación',
-                    text: result.error,
-                    background: '#1e293b',
-                    color: '#fff'
-                });
-            }
-        } catch (error) {
-            console.error("Error procesando Excel:", error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error de Lectura',
-                text: error.message || 'Verifica el formato del archivo Excel.',
-                background: '#1e293b',
-                color: '#fff'
-            });
-        } finally {
-            event.target.value = ''; // Limpiar input
-        }
-    };
-    reader.readAsArrayBuffer(file);
-}
 
 // ==========================================================
 // 🚀 INIT - DOM LOADED

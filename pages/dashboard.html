@@ -403,27 +403,25 @@
                         <button id="btnRegistrarVehiculo" class="btn btn-secondary btn-glow">
                             <i class="ri-user-add-line"></i> Registrar Conductor
                         </button>
-                        <button class="btn btn-primary btn-glow"
-                            onclick="document.getElementById('inputImportExcel').click()"
-                            style="background: var(--accent-blue);">
-                            <i class="ri-file-excel-2-line"></i> Importar desde Excel
-                        </button>
-                        <input type="file" id="inputImportExcel" accept=".xlsx, .xls" style="display: none;"
-                            onchange="procesarExcelVehiculos(event)">
                     </div>
                 </div>
 
                 <!-- Lista de Flota (Visible para Operario) -->
                 <div class="glass-card"
                     style="margin-top:20px; border-top:1px solid var(--glass-border); padding-top:20px">
-                    <div class="card-header">
+                    <div class="card-header flex-header">
                         <h2><i class="ri-list-check-2"></i> Flota Registrada</h2>
+                        <div class="filters">
+                            <input id="buscarVehiculo" placeholder="Buscar placa, conductor o contratista..."
+                                onkeyup="listarVehiculos()">
+                        </div>
                     </div>
                     <div class="table-container">
                         <table>
                             <thead>
                                 <tr>
                                     <th>Placa</th>
+                                    <th>Nombre Contratista</th>
                                     <th>Conductor</th>
                                     <th>Modelo</th>
                                     <th>Estado</th>

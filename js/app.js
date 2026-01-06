@@ -229,6 +229,10 @@ async function checkAuth() {
 
     // role ya está declarado arriba
 
+    // Control de botones de exportación según rol
+    const btnExportarExcel = document.getElementById("btnExportarExcel");
+    const btnExportarPDF = document.getElementById("btnExportarPDF");
+
     if (role === 'admin') {
         // PERFIL ADMIN (GESTIONA VEHÍCULOS Y FLETES)
         if (navFletes) navFletes.style.display = 'flex';
@@ -237,6 +241,10 @@ async function checkAuth() {
 
         if (headerAcciones) headerAcciones.style.display = 'table-cell'; // Vehiculos
         if (headerAccionesFletes) headerAccionesFletes.style.display = 'table-cell'; // Fletes
+
+        // Administradores ven ambos botones de exportación
+        if (btnExportarExcel) btnExportarExcel.style.display = 'inline-flex';
+        if (btnExportarPDF) btnExportarPDF.style.display = 'inline-flex';
     } else if (role === 'caja') {
         // PERFIL CAJA (SOLO DOWNLOADS, SIN NAVS, DASHBOARD ESPECIAL)
         // Hide Entire Sidebar and Header
@@ -291,6 +299,10 @@ async function checkAuth() {
 
         if (headerAcciones) headerAcciones.style.display = 'none';
         if (headerAccionesFletes) headerAccionesFletes.style.display = 'none';
+
+        // Operarios solo ven el botón de PDF, NO el de Excel
+        if (btnExportarExcel) btnExportarExcel.style.display = 'none';
+        if (btnExportarPDF) btnExportarPDF.style.display = 'inline-flex';
     }
 
     // Explicitly show Dashboard for standard users (since we hid it by default in HTML)
@@ -2581,9 +2593,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         const session = CURRENT_SESSION;
         const role = (session?.profile?.rol || session?.user?.user_metadata?.rol || 'operario').toLowerCase();
 
-        // OPTIMIZACIÓN: No cargar datos para el rol "caja"
-        if (role !== 'caja') {
-            // Carga inicial de datos en paralelo solo para admin y operario
+        // OPTIMIZACIÓN: Cargar solo datos necesarios según el rol
+        if (role === 'admin') {
+            // Administradores cargan TODO: vehículos, fletes y KPIs
             Promise.all([
                 listarVehiculos(),
                 listarFletes(),
@@ -2593,13 +2605,29 @@ document.addEventListener("DOMContentLoaded", async () => {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error de Datos',
-                    text: 'No se pudieron cargar algunos datos del dashboard. Revisa tus permisos o si el perfil está bien creado.',
+                    text: 'No se pudieron cargar algunos datos del dashboard.',
                     background: '#1e293b',
                     color: '#fff'
                 });
             });
+        } else if (role === 'operario') {
+            // Operarios SOLO cargan fletes y KPIs (NO vehículos - más rápido)
+            Promise.all([
+                listarFletes(),
+                actualizarKPI()
+            ]).catch(err => {
+                console.error("❌ Error cargando datos:", err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de Datos',
+                    text: 'No se pudieron cargar datos del dashboard.',
+                    background: '#1e293b',
+                    color: '#fff'
+                });
+            });
+            console.log("✅ Usuario 'operario' - Carga optimizada (sin vehículos)");
         } else {
-            console.log("✅ Usuario 'caja' - Interfaz limpia cargada sin datos innecesarios");
+            console.log("✅ Usuario 'caja' - Interfaz limpia sin datos innecesarios");
         }
 
         // 1. Navigation

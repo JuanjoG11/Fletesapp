@@ -54,15 +54,17 @@
 
         <div class="sidebar-footer">
             <!-- Export buttons remain here -->
-            <div class="actions">
-                <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px; text-align: center;">📥
-                    Descargar Reportes</p>
-                <button onclick="exportarExcel()" class="action-btn" title="Exportar Excel">
-                    <i class="ri-file-excel-2-line"></i>
-                </button>
-                <button id="btnExportarPDF" class="action-btn" title="Generar PDF">
-                    <i class="ri-file-pdf-2-line"></i>
-                </button>
+            <div class="actions" style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0; text-align: center;">📥 Descargar
+                    Reportes</p>
+                <div style="display: flex; gap: 10px; justify-content: center; width: 100%;">
+                    <button id="btnExportarExcel" onclick="exportarExcel()" class="action-btn" title="Exportar Excel">
+                        <i class="ri-file-excel-2-line"></i>
+                    </button>
+                    <button id="btnExportarPDF" onclick="generarPDF()" class="action-btn" title="Generar PDF">
+                        <i class="ri-file-pdf-2-line"></i>
+                    </button>
+                </div>
             </div>
             <!-- Theme switch remains -->
             <div class="theme-switch-wrapper">

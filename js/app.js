@@ -799,7 +799,7 @@ const PRECIOS_POLAR = {
 const COSTO_ADICIONAL = 60000;
 const COSTO_POR_AUXILIAR = 30000; // Costo adicional por cada auxiliar
 
-const ZONAS_RISARALDA = ["M9453", "M9454", "M9455", "M9456", "M9457", "M9458", "M9459", "M9460", "P7004", "P7005", "P7006", "P7007", "P7005B", "M9450", "M9451"];
+const ZONAS_RISARALDA = ["M9453", "M9454", "M9455", "M9456", "M9457", "M9458", "M9459", "M9460", "P7004", "P7005", "P7006", "P7007", "P7005B", "M9450", "M9451", "E7001-RISARALDA"];
 const POBLACIONES_RISARALDA = [
     "PEREIRA", "DOSQUEBRADAS", "SANTA ROSA", "SANTA ROSA DE C", "LA VIRGINIA",
     "BELEN DE UMBRIA", "BELEN", "MISTRATO", "GUATICA", "QUINCHIA", "APIA",
@@ -809,7 +809,7 @@ const POBLACIONES_RISARALDA = [
     "PEREIRA MM CARRO GRANDE", "MANIZALES"
 ];
 
-const ZONAS_CALDAS = ["M9552", "M9553", "M9554", "M9555", "M9556", "M9557", "M9560", "M9558", "M9559", "P7002", "M9550", "P7000", "P7001"];
+const ZONAS_CALDAS = ["M9552", "M9553", "M9554", "M9555", "M9556", "M9557", "M9560", "M9558", "M9559", "P7002", "M9550", "P7000", "P7001", "E7001-CALDAS"];
 const POBLACIONES_CALDAS = [
     "MANIZALES", "MANIZALES - VILLAMARIA", "CHINCHINA", "NEIRA", "PALESTINA ARAUCA LA PLATA",
     "ARANZAZU FILADELFIA", "RIOSUCIO", "SUPIA", "MARMATO", "PACORA", "AGUADAS",
@@ -963,6 +963,7 @@ function actualizarZonasPorProveedor(prefix = "") {
         { value: "P7005B", text: "P7005B" },
         { value: "P7006", text: "P7006" }, { value: "P7007", text: "P7007" },
         { value: "P7000", text: "P7000" }, { value: "P7001", text: "P7001" }, { value: "P7002", text: "P7002" },
+        { value: "E7001-CALDAS", text: "E7001 CALDAS" }, { value: "E7001-RISARALDA", text: "E7001 RISARALDA" },
         { value: "M9550", text: "M9550" }, { value: "M9552", text: "M9552" },
         { value: "M9553", text: "M9553" }, { value: "M9554", text: "M9554" }, { value: "M9555", text: "M9555" },
         { value: "M9556", text: "M9556" }, { value: "M9557", text: "M9557" }, { value: "M9558", text: "M9558" },
@@ -1000,8 +1001,8 @@ function actualizarZonasPorProveedor(prefix = "") {
     }
     // ====== PROVEEDORES TYM ======
     else if (proveedor === "ALPINA") {
-        // Incluir zonas M (general), P7 (departamentos), y vacías
-        filtered = master.filter(z => z.value.startsWith("M") || z.value.startsWith("P7") || z.value === "");
+        // Incluir zonas M (general), P7 (departamentos), E7001 (departamentos específicos), y vacías
+        filtered = master.filter(z => z.value.startsWith("M") || z.value.startsWith("P7") || z.value.startsWith("E7") || z.value === "");
     } else if (proveedor === "ZENU") {
         filtered = master.filter(z => z.value.startsWith("250") || z.value === "");
     } else if (proveedor === "FLEISCHMANN") {
@@ -1009,7 +1010,8 @@ function actualizarZonasPorProveedor(prefix = "") {
         filtered = master.filter(z => allowed.includes(z.value) || z.value === "");
     } else if (proveedor === "ALPINA-FLEISCHMANN") {
         const fleischmannZones = ["FC01", "FC02", "FC03", "FQ04", "FQ05", "FQ06", "FR07", "FR08", "FR09"];
-        filtered = master.filter(z => z.value.startsWith("M") || fleischmannZones.includes(z.value) || z.value === "");
+        // Incluir zonas de Alpina (M, P7, E7) + zonas de Fleischmann
+        filtered = master.filter(z => z.value.startsWith("M") || z.value.startsWith("P7") || z.value.startsWith("E7") || fleischmannZones.includes(z.value) || z.value === "");
     } else {
         filtered = master;
     }

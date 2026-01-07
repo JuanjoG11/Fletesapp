@@ -1386,9 +1386,9 @@ async function guardarCambiosFlete() {
     const camposFaltantes = [];
     if (!ui.placa) camposFaltantes.push("Placa");
     if (!db.contratista) camposFaltantes.push("Conductor/Contratista");
-    if (!db.zona) camposFaltantes.push("Zona");
+    // if (!db.zona) camposFaltantes.push("Zona"); // Deshabilitado temporalmente para permitir correcciones
     if (db.precio <= 0) camposFaltantes.push("Precio/Población (Total)");
-    if (!db.no_planilla) camposFaltantes.push("Número de Planilla");
+    // if (!db.no_planilla) camposFaltantes.push("Número de Planilla"); // Deshabilitado para permitir guardado de antiguos
 
     if (camposFaltantes.length > 0) {
         if (btn) btn.disabled = false;
@@ -1646,18 +1646,27 @@ window.editarFlete = async function (id) {
 
     ID_FLETE_EDITANDO = id;
 
-    // Obtener flete específico de la base de datos (datos más frescos)
-    const { data: f, error } = await SupabaseClient.supabase
-        .from('vista_fletes_completos')
-        .select('*')
+    // Obtener flete específico de la base de datos (datos más frescos desde TABLA)
+    // CAMBIO: Usamos 'fletes' y join manual para asegurar que traiga columnas nuevas como no_planilla
+    // que podrían faltar si la vista 'vista_fletes_completos' no se actualizó.
+    const { data: fRaw, error } = await SupabaseClient.supabase
+        .from('fletes')
+        .select('*, vehiculo:vehiculos(placa, conductor)')
         .eq('id', id)
         .single();
 
     Swal.close();
 
-    if (error || !f) {
+    if (error || !fRaw) {
         return Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo cargar la información del flete.', background: '#1a1a1a', color: '#fff' });
     }
+
+    // Aplanar objeto para compatibilidad con código existente
+    const f = {
+        ...fRaw,
+        placa: fRaw.vehiculo?.placa || fRaw.placa || '',
+        contratista: fRaw.vehiculo?.conductor || fRaw.contratista || ''
+    };
 
     // Actualizar indicador de planilla en el título
     const infoTit = document.getElementById("modal-title-info");
@@ -1726,10 +1735,10 @@ window.editarFlete = async function (id) {
 
         // Recalcular total
         calcularTotal("modal-");
-    }, 150); // Delay aumentado a 150ms para mayor seguridad
 
-    // Mostrar modal
-    document.getElementById("modalEdicionFlete").classList.add("visible");
+        // Mostrar modal DESPUÉS de poblar
+        document.getElementById("modalEdicionFlete").classList.add("visible");
+    }, 200);
 };
 
 window.eliminarFlete = async function (id) {

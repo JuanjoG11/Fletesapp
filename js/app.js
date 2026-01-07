@@ -1965,6 +1965,14 @@ async function exportarExcel() {
         } else {
             query = query.eq('proveedor', proveedor);
         }
+    } else {
+        // Filtro "Todos los Proveedores" respeta el contexto de la empresa
+        if (esTAT) {
+            query = query.in('proveedor', ['UNILEVER', 'FAMILIA', 'POLAR', 'UNILEVER-FAMILIA']);
+        } else if (role !== 'caja') {
+            // Contexto TYM (excluyendo caja que ve todo)
+            query = query.in('proveedor', ['ALPINA', 'FLEISCHMANN', 'ZENU', 'ALPINA-FLEISCHMANN']);
+        }
     }
 
     const { data: fletes, error } = await query.order('fecha', { ascending: true });
@@ -2115,6 +2123,14 @@ async function generarPDF() {
             query = query.in('proveedor', ['ALPINA', 'FLEISCHMANN', 'ALPINA-FLEISCHMANN']);
         } else {
             query = query.eq('proveedor', proveedor);
+        }
+    } else {
+        // Filtro "Todos los Proveedores" respeta el contexto de la empresa
+        if (esTAT) {
+            query = query.in('proveedor', ['UNILEVER', 'FAMILIA', 'POLAR', 'UNILEVER-FAMILIA']);
+        } else if (role !== 'caja') {
+            // Contexto TYM (excluyendo caja que ve todo)
+            query = query.in('proveedor', ['ALPINA', 'FLEISCHMANN', 'ZENU', 'ALPINA-FLEISCHMANN']);
         }
     }
 

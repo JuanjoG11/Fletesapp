@@ -1632,53 +1632,70 @@ window.editarFlete = async function (id) {
 
     if (error || !f) return;
 
+    // Helper para establecer valores
     const set = (k, v) => {
         const el = document.getElementById("modal-" + k);
-        if (el) el.value = v;
+        if (el) el.value = v || "";
     };
 
-    set("fecha", f.fecha);
-    set("placa", f.placa);
-    set("contratista", f.contratista);
+    // PASO 1: Establecer SOLO el proveedor para disparar la actualización de dropdowns
     set("proveedor", f.proveedor);
-    set("dia", f.dia);
-    set("auxiliares", f.auxiliares);
-    set("no_auxiliares", f.no_auxiliares);
-    set("no_pedidos", f.no_pedidos);
 
-    set("valor_ruta", moneyFormatter.format(f.valor_ruta));
-    set("is_adicionales", f.adicionales);
-    set("total_flete", moneyFormatter.format(f.precio));
-    set("no_planilla", f.no_planilla || "");
-    set("facturas_adicionales", f.facturas_adicionales || "");
+    // PASO 2: Actualizar las listas dinámicas basadas en el proveedor
+    actualizarZonasPorProveedor("modal-");
+    actualizarPoblaciones("modal-");
 
-    // NUEVO: Adicionales por negociación
-    if (f.valor_adicional_negociacion) {
-        set("valor_adicional", moneyFormatter.format(f.valor_adicional_negociacion));
-    }
-    if (f.razon_adicional_negociacion) {
-        set("razon_adicional", f.razon_adicional_negociacion);
-    }
+    // PASO 3: Después de un delay, establecer TODOS LOS CAMPOS
+    // Esto asegura que los dropdowns ya estén actualizados y no se sobrescriban los valores
+    setTimeout(() => {
+        // Campos básicos
+        set("fecha", f.fecha);
+        set("placa", f.placa);
+        set("contratista", f.contratista);
+        set("dia", f.dia);
+        set("auxiliares", f.auxiliares);
+        set("no_auxiliares", f.no_auxiliares);
+        set("no_pedidos", f.no_pedidos);
 
-    // IMPORTANTE: Primero actualizamos las listas desplegables basadas en el proveedor
-    actualizarZonasPorProveedor("modal-"); // Filtrar zonas según el proveedor cargado
-    actualizarPoblaciones("modal-"); // Filtrar poblaciones según el proveedor
+        // Campos monetarios
+        set("valor_ruta", moneyFormatter.format(f.valor_ruta || 0));
+        set("is_adicionales", f.adicionales);
 
-    // Lógica Multi-Select para cargar zonas (CHECKBOXES)
-    const zonaVals = (f.zona || '').split(',').map(s => s.trim());
-    const zonaContainer = document.getElementById("modal-zona-container");
-    if (zonaContainer) {
-        const checkboxes = zonaContainer.querySelectorAll('input[type="checkbox"]');
-        checkboxes.forEach(chk => {
-            chk.checked = zonaVals.includes(chk.value);
-        });
-    }
+        // Campos de planilla y facturas
+        set("no_planilla", f.no_planilla || "");
+        set("facturas_adicionales", f.facturas_adicionales || "");
 
-    // IMPORTANTE: Establecer población DESPUÉS de actualizar el dropdown
-    set("poblacion", f.poblacion);
+        // Adicionales por negociación
+        if (f.valor_adicional_negociacion) {
+            set("valor_adicional", moneyFormatter.format(f.valor_adicional_negociacion));
+        } else {
+            set("valor_adicional", "");
+        }
 
-    calcularTotal("modal-"); // Calcular porcentaje inicial en el modal
+        if (f.razon_adicional_negociacion) {
+            set("razon_adicional", f.razon_adicional_negociacion);
+        } else {
+            set("razon_adicional", "");
+        }
 
+        // Establecer ZONAS (checkboxes)
+        const zonaVals = (f.zona || '').split(',').map(s => s.trim()).filter(v => v);
+        const zonaContainer = document.getElementById("modal-zona-container");
+        if (zonaContainer) {
+            const checkboxes = zonaContainer.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(chk => {
+                chk.checked = zonaVals.includes(chk.value);
+            });
+        }
+
+        // Establecer POBLACIÓN (después de que el dropdown se haya actualizado)
+        set("poblacion", f.poblacion);
+
+        // Recalcular total
+        calcularTotal("modal-");
+    }, 150); // Delay aumentado a 150ms para mayor seguridad
+
+    // Mostrar modal
     document.getElementById("modalEdicionFlete").classList.add("visible");
 };
 

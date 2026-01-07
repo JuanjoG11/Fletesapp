@@ -1000,7 +1000,8 @@ function actualizarZonasPorProveedor(prefix = "") {
     }
     // ====== PROVEEDORES TYM ======
     else if (proveedor === "ALPINA") {
-        filtered = master.filter(z => z.value.startsWith("M") || z.value === "");
+        // Incluir zonas M (general), P7 (departamentos), y vacías
+        filtered = master.filter(z => z.value.startsWith("M") || z.value.startsWith("P7") || z.value === "");
     } else if (proveedor === "ZENU") {
         filtered = master.filter(z => z.value.startsWith("250") || z.value === "");
     } else if (proveedor === "FLEISCHMANN") {

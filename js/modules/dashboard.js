@@ -6,173 +6,147 @@ let myChart = null;
 let myChart2 = null;
 
 async function actualizarKPI() {
-    // Obtener estadísticas desde SupabaseClient
-    const stats = await SupabaseClient.fletes.getStats();
+    // 1. Obtener TODOS los datos en una sola llamada optimizada
+    const stats = await SupabaseClient.fletes.getDashboardData();
 
-    // 1. Total Fletes
+    // 2. Actualizar KPIs Numéricos
     const el = document.getElementById("cantFletes");
-    if (el) el.innerText = stats.totalFletes;
+    if (el) el.innerText = stats.totalFletes || 0;
 
-    // 2. Registros Mes Actual
     const kpiRegistros = document.getElementById("kpiRegistros");
-    if (kpiRegistros) kpiRegistros.innerText = moneyFormatter.format(stats.ingresosMes);
+    if (kpiRegistros) kpiRegistros.innerText = moneyFormatter.format(stats.ingresosMes || 0);
 
-    // 3. Vehiculos Activos
     const kpiVehiculos = document.getElementById("kpiVehiculos");
-    if (kpiVehiculos) kpiVehiculos.innerText = stats.vehiculosActivos;
+    if (kpiVehiculos) kpiVehiculos.innerText = stats.vehiculosActivos || 0;
 
-    await generarGraficos();
+    // 3. Generar Gráficos con los mismos datos (sin volver a pedir)
+    await generarGraficos(stats);
 }
 
-async function generarGraficos() {
-    const { session } = await SupabaseClient.auth.getSession();
-    // Permitir a todos ver gráficos si están en la pestaña
-
-    const ctx = document.getElementById("chartZonas");
-    const ctx2 = document.getElementById("chartRegistros");
-    if (!ctx) return;
-
-    // Obtener estadísticas pre-calculadas (incluye suma de valores por zona y por día)
-    const stats = await SupabaseClient.fletes.getEstadisticas();
-    const { zonas, valoresZonas, ingresosPorDia } = stats;
-
-    if (Object.keys(zonas).length === 0) {
-        if (myChart) myChart.destroy();
-        if (myChart2) myChart2.destroy();
-
-        // Limpiar canvas manualmente por si acaso
-        [ctx, ctx2].forEach(c => {
-            if (!c) return;
-            const context = c.getContext('2d');
-            context.clearRect(0, 0, c.width, c.height);
-        });
-
-        // Si no hay datos, forzar el gráfico de barras a mostrar al menos el día de hoy con valor 0.
-        const todayKey = new Date().toISOString().split('T')[0];
-        const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-        const todayObj = new Date();
-        const labelToday = `${todayObj.getDate().toString().padStart(2, '0')}/${(todayObj.getMonth() + 1).toString().padStart(2, '0')}`;
-
-        // Para el gráfico de Dona (Zonas), simplemente mostrar mensaje
-        const ctx1 = ctx.getContext('2d');
-        ctx1.clearRect(0, 0, ctx.width, ctx.height);
-        ctx1.fillStyle = '#94a3b8';
-        ctx1.textAlign = 'center';
-        ctx1.fillText('No hay datos por zona', ctx.width / 2, ctx.height / 2);
-
-        // Para el gráfico de Barras (Registros), mostrar hoy en 0
-        if (ctx2) {
-            renderBarChart(ctx2, [labelToday], [0], [{
-                date: `${todayObj.getDate()}/${todayObj.getMonth() + 1}/${todayObj.getFullYear()}`,
-                dayName: dayNames[todayObj.getDay()],
-                key: todayKey
-            }]);
-        }
-        return;
+async function generarGraficos(statsData) {
+    // Si no se pasaron datos (llamada manual), volver a pedirlos, pero idealmente vienen de actualizarKPI
+    let stats = statsData;
+    if (!stats) {
+        stats = await SupabaseClient.fletes.getDashboardData();
     }
 
+    const { zonas, ingresosPorDia } = stats;
+
+    // Preparar Canvas
+    const ctx = document.getElementById("chartZonas");
+    const ctx2 = document.getElementById("chartRegistros");
+    if (!ctx) return; // Si no estamos en la vista de dashboard
+
+    // --- Limpieza Previa ---
     if (myChart) myChart.destroy();
     if (myChart2) myChart2.destroy();
 
-    // --- Chart 1: Fletes por Zona (VALOR TOTAL) ---
+    // Validar si hay datos
+    const hasZonas = Object.keys(zonas || {}).length > 0;
+    const hasDias = Object.keys(ingresosPorDia || {}).length > 0;
 
-    const ctx1 = ctx.getContext("2d");
-    if (ctx1) {
-        // Revertir a mostrar TODAS las zonas, pero sin leyenda lateral
-        const allZones = valoresZonas || {};
-        // Ordenar por valor para que se vea ordenado en la rueda
-        const sortedZones = Object.entries(allZones).sort(([, a], [, b]) => b - a);
+    if (!hasZonas && !hasDias) {
+        renderEmptyCharts(ctx, ctx2);
+        return;
+    }
 
-        const chartLabels = sortedZones.map(item => item[0]);
-        const chartData = sortedZones.map(item => item[1]);
+    // --- Chart 1: Fletes por Zona (Dona) ---
+    if (ctx && hasZonas) {
+        const sortedZones = Object.entries(zonas).sort(([, a], [, b]) => b - a);
+        const labels = sortedZones.map(([k]) => k);
+        const data = sortedZones.map(([, v]) => v);
+        renderDoughnutChart(ctx, labels, data);
+    } else if (ctx) {
+        renderEmptyPlaceholder(ctx, "Sin datos de zona");
+    }
 
-        myChart = new Chart(ctx1, {
-            type: 'doughnut',
-            data: {
-                labels: chartLabels,
-                datasets: [{
-                    data: chartData,
-                    backgroundColor: [
-                        '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4',
-                        '#ec4899', '#6366f1', '#14b8a6', '#f97316', '#a855f7', '#d946ef',
-                        '#0ea5e9', '#22c55e', '#eab308', '#f43f5e', '#84cc16', '#64748b'
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }, // Ocultar leyenda lateral
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                let label = context.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                if (context.parsed !== null) {
-                                    label += moneyFormatter.format(context.parsed);
-                                }
-                                return label;
-                            }
+    // --- Chart 2: Registros por Día (Barras) ---
+    if (ctx2 && hasDias) {
+        renderDailyChart(ctx2, ingresosPorDia);
+    } else if (ctx2) {
+        renderEmptyPlaceholder(ctx2, "Sin registros este mes");
+    }
+}
+
+// --- Helpers de Renderizado para limpiar código ---
+
+function renderEmptyCharts(ctx, ctx2) {
+    renderEmptyPlaceholder(ctx, "No hay datos aún");
+    renderEmptyPlaceholder(ctx2, "Esperando registros...");
+}
+
+function renderEmptyPlaceholder(canvas, text) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = document.documentElement.getAttribute("data-theme") === 'light' ? '#64748b' : '#94a3b8';
+    ctx.font = "14px Inter";
+    ctx.textAlign = 'center';
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+}
+
+function renderDoughnutChart(canvas, labels, data) {
+    const ctx = canvas.getContext("2d");
+    myChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: [
+                    '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4',
+                    '#ec4899', '#6366f1', '#14b8a6', '#f97316', '#a855f7', '#d946ef'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            let label = context.label || '';
+                            if (label) label += ': ';
+                            if (context.parsed !== null) label += moneyFormatter.format(context.parsed);
+                            return label;
                         }
                     }
                 }
             }
-        });
-    }
-
-    if (!ctx2) return;
-
-    // --- Chart 2: Registros por Día (Optimized) ---
-    // Usamos ingresosPorDia que ya viene pre-calculado del backend
-
-    // Encontrar la fecha más antigua en los datos para empezar el gráfico
-    const fechasConDatos = Object.keys(ingresosPorDia).sort();
-    let minDate = new Date();
-
-    if (fechasConDatos.length > 0) {
-        const primeraFecha = new Date(fechasConDatos[0] + 'T00:00:00');
-        if (primeraFecha < minDate) {
-            minDate = primeraFecha;
         }
-    }
+    });
+}
 
-    const labelsAll = [];
-    const fullLabelsAll = [];
+function renderDailyChart(canvas, ingresosPorDia) {
+    // Preparar datos cronológicos
+    const sortedDates = Object.keys(ingresosPorDia).sort();
+    // Rellenar huecos de días vacíos si es necesario? No, mostremos solo lo que hay para ser más limpio o rellenar?
+    // Mejor rellenamos para ver la tendencia del mes completo hasta hoy
+
+    // Lógica simplificada: Usar lo que devuelve SQL (ya trae días con datos)
+    // Si queremos rellenar huecos, tendríamos que hacerlo aquí. Por rendimiento, mostraremos días con actividad.
+
+    const labels = [];
+    const dataVals = [];
+    const fullInfo = [];
     const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    sortedDates.forEach(dateStr => {
+        const dateObj = new Date(dateStr + 'T00:00:00'); // Asegurar zona horaria local
+        const day = dateObj.getDate().toString().padStart(2, '0');
+        const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
 
-    let start = new Date(minDate);
-    start.setHours(0, 0, 0, 0);
-
-
-
-    let tempDate = new Date(start);
-    while (tempDate <= today) {
-        const day = tempDate.getDate().toString().padStart(2, '0');
-        const month = (tempDate.getMonth() + 1).toString().padStart(2, '0');
-        const year = tempDate.getFullYear();
-        const isoKey = tempDate.toISOString().split('T')[0];
-
-        labelsAll.push(`${day}/${month}`);
-        fullLabelsAll.push({
-            date: `${day}/${month}/${year}`,
-            dayName: dayNames[tempDate.getDay()],
-            key: isoKey
+        labels.push(`${day}/${month}`);
+        dataVals.push(ingresosPorDia[dateStr]);
+        fullInfo.push({
+            date: `${day}/${month}/${dateObj.getFullYear()}`,
+            dayName: dayNames[dateObj.getDay()]
         });
+    });
 
-        tempDate.setDate(tempDate.getDate() + 1);
-    }
-
-    // Usar el diccionario optimizado ingresosPorDia en lugar de registrosPorDia manual
-    const dataVals = fullLabelsAll.map(l => ingresosPorDia[l.key] || 0);
-
-    renderBarChart(ctx2, labelsAll, dataVals, fullLabelsAll);
+    renderBarChart(canvas, labels, dataVals, fullInfo);
 }
 
 function renderBarChart(canvas, labels, data, fullInfo) {

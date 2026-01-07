@@ -300,7 +300,8 @@ async function actualizarVehiculo(vehiculoId, vehiculoData) {
 
 /**
  * Obtener todos los fletes con información de vehículos (Filtrado por Empresa)
- * @param {object} filtros - Filtros opcionales {zona, fecha, busqueda}
+ * soporta paginación simple (page, pageSize).
+ * @param {object} filtros - Filtros opcionales {zona, fecha, busqueda, page, pageSize}
  * @returns {Promise<Array>}
  */
 async function obtenerFletes(filtros = {}) {
@@ -312,7 +313,7 @@ async function obtenerFletes(filtros = {}) {
             .select(`
                 *,
                 vehiculo:vehiculos(placa, conductor, modelo)
-            `)
+            `, { count: 'exact' }) // Solicitamos count para saber si hay más páginas
             .order('created_at', { ascending: false });
 
         // Filtrar por empresa (AISLAMIENTO ESTRICTO)
@@ -337,9 +338,19 @@ async function obtenerFletes(filtros = {}) {
         if (filtros.fechaInicio) query = query.gte('fecha', filtros.fechaInicio);
         if (filtros.fechaFin) query = query.lte('fecha', filtros.fechaFin);
 
-        const { data, error } = await query;
+        // --- PAGINACIÓN ---
+        // page inicia en 0
+        if (typeof filtros.page !== 'undefined' && typeof filtros.pageSize !== 'undefined') {
+            const from = filtros.page * filtros.pageSize;
+            const to = from + filtros.pageSize - 1;
+            query = query.range(from, to);
+        }
+
+        const { data, error, count } = await query;
         if (error) throw error;
-        return { success: true, data: data || [] };
+
+        // Retornamos data y totalCount para controlar el botón "Cargar más"
+        return { success: true, data: data || [], count: count };
     } catch (error) {
         console.error('Error al obtener fletes:', error);
         return { success: false, data: [], error: error.message };
@@ -575,6 +586,44 @@ async function obtenerEstadisticas() {
 }
 
 // ==========================================================
+// ⚡ FUNCIONES OPTIMIZADAS (RPC)
+// ==========================================================
+
+/**
+ * Obtener TODOS los datos del dashboard en una sola petición al servidor
+ * @returns {Promise<object>}
+ */
+async function obtenerDatosDashboard() {
+    try {
+        const razonSocial = await _getRazonSocialUsuario();
+
+        // Llamar a la función SQL que creamos
+        const { data, error } = await _supabase.rpc('obtener_kpis_dashboard', {
+            filtros: { razon_social: razonSocial }
+        });
+
+        if (error) throw error;
+
+        // Si no hay datos (ej. usuario nuevo), devolver estructura vacía segura
+        if (!data) {
+            return {
+                totalFletes: 0,
+                ingresosMes: 0,
+                vehiculosActivos: 0,
+                zonas: {},
+                ingresosPorDia: {}
+            };
+        }
+
+        return data; // Ya tiene la estructura correcta del JSON SQL
+    } catch (error) {
+        console.error('Error al obtener datos del dashboard (RPC):', error);
+        // Fallback: Si falla el RPC (ej. no creado), intentar método antiguo o devolver ceros
+        return { totalFletes: 0, ingresosMes: 0, vehiculosActivos: 0, zonas: {}, ingresosPorDia: {} };
+    }
+}
+
+// ==========================================================
 // 🔄 SUSCRIPCIONES EN TIEMPO REAL
 // ==========================================================
 
@@ -620,7 +669,8 @@ const SupabaseClientAPI = {
         delete: eliminarFleteDB,
         deleteAll: eliminarTodosLosFletesDB,
         getStats: obtenerKPIs,
-        getEstadisticas: obtenerEstadisticas
+        getEstadisticas: obtenerEstadisticas,
+        getDashboardData: obtenerDatosDashboard
     },
     // Utilidades
     suscribirse: suscribirseACambios

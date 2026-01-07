@@ -1470,12 +1470,26 @@ function limpiarFormulario(prefix) {
 // ==========================================================
 // 📋 LISTADOS & ACCIONES
 // ==========================================================
-async function listarFletes(silencioso = false) {
+// --- Variables de Paginación ---
+let CURRENT_PAGE = 0;
+const PAGE_SIZE = 50;
+let TOTAL_RECORDS = 0;
+
+async function listarFletes(reset = true) {
     const tbody = document.getElementById("tablaFletes");
+    const btnCargarMas = document.getElementById("btnCargarMas");
     if (!tbody) return;
 
-    if (!silencioso && CACHED_FLETES.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center"><i class="ri-loader-4-line rotate"></i> Cargando...</td></tr>`;
+    if (reset) {
+        CURRENT_PAGE = 0;
+        CACHED_FLETES = []; // Limpiar cache visual al resetear (búsqueda o refresh)
+        if (btnCargarMas) btnCargarMas.style.display = 'none';
+        tbody.innerHTML = `<tr><td colspan="15" style="text-align:center"><i class="ri-loader-4-line rotate"></i> Cargando...</td></tr>`;
+    } else {
+        // Si no es reset, es "Cargar Más", aumentamos página
+        CURRENT_PAGE++;
+        if (btnCargarMas) btnCargarMas.innerHTML = `<i class="ri-loader-4-line rotate"></i> Cargando...`;
+        if (btnCargarMas) btnCargarMas.disabled = true;
     }
 
     // OPTIMIZACIÓN: Cargar solo fletes del mes actual por defecto
@@ -1483,18 +1497,57 @@ async function listarFletes(silencioso = false) {
     const fechaInicio = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
     const fechaFin = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
+    // Params para Supabase
+    const params = {
+        fechaInicio,
+        fechaFin,
+        page: CURRENT_PAGE,
+        pageSize: PAGE_SIZE
+    };
+
     // USAR getAll() DIRECTAMENTE en lugar de la vista para asegurar datos frescos
-    const res = await SupabaseClient.fletes.getAll({ fechaInicio, fechaFin });
+    const res = await SupabaseClient.fletes.getAll(params);
 
     if (res.success && res.data) {
         // Aplanar datos del vehículo para compatibilidad con el render
-        CACHED_FLETES = res.data.map(f => ({
+        const newFletes = res.data.map(f => ({
             ...f,
             placa: f.vehiculo?.placa || f.placa || 'N/A',
             conductor: f.vehiculo?.conductor || f.contratista || 'N/A'
         }));
+
+        if (reset) {
+            CACHED_FLETES = newFletes;
+        } else {
+            // Append
+            CACHED_FLETES = [...CACHED_FLETES, ...newFletes];
+        }
+
+        TOTAL_RECORDS = res.count || 0; // Guardar total real de DB
+
         renderTable(CACHED_FLETES);
+
+        // Controlar botón "Cargar Más"
+        if (btnCargarMas) {
+            btnCargarMas.disabled = false;
+            btnCargarMas.innerHTML = `<i class="ri-loader-2-line"></i> Cargar más antiguos...`;
+            // Si la cantidad mostrada es menor al total real, mostrar botón
+            if (CACHED_FLETES.length < TOTAL_RECORDS) {
+                btnCargarMas.style.display = 'inline-block';
+            } else {
+                btnCargarMas.style.display = 'none'; // Ya mostramos todo
+            }
+        }
+    } else {
+        if (!reset && btnCargarMas) {
+            btnCargarMas.disabled = false;
+            btnCargarMas.innerHTML = `Error al cargar. Intentar de nuevo.`;
+        }
     }
+}
+
+function cargarMasFletes() {
+    listarFletes(false); // false = no reset (append)
 }
 
 function renderTable(fletes) {

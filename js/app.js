@@ -806,7 +806,7 @@ const POBLACIONES_RISARALDA = [
     "SANTUARIO", "PUEBLO RICO", "SANTA CECILIA", "BALBOA LA CELIA", "BALBOA-LA CELIA",
     "MARSELLA", "SANTUARIO APIA", "APIA- PUEBLO RICO", "BELEN MISTRATO",
     "PUEBLO RICO-SANTA CECILIA", "GUATICA-RISARALDA", "PEREIRA-DOSQUEBRADAS",
-    "PEREIRA MM CARRO GRANDE", "MANIZALES"
+    "PEREIRA MM CARRO GRANDE", "MANIZALES", "CARTAGO"
 ];
 
 const ZONAS_CALDAS = ["M9552", "M9553", "M9554", "M9555", "M9556", "M9557", "M9560", "M9558", "M9559", "P7002", "M9550", "P7000", "P7001", "E7001-CALDAS"];
@@ -1382,12 +1382,20 @@ async function guardarCambiosFlete() {
     const { db, ui } = formData;
     delete db.id; // IMPORTANTE: Supabase falla si intentas actualizar la PK 'id'
 
-    if (!ui.placa || !db.contratista || !db.zona || db.precio <= 0 || !db.no_planilla) {
+    // VALIDACIÓN DETALLADA
+    const camposFaltantes = [];
+    if (!ui.placa) camposFaltantes.push("Placa");
+    if (!db.contratista) camposFaltantes.push("Conductor/Contratista");
+    if (!db.zona) camposFaltantes.push("Zona");
+    if (db.precio <= 0) camposFaltantes.push("Precio/Población (Total)");
+    if (!db.no_planilla) camposFaltantes.push("Número de Planilla");
+
+    if (camposFaltantes.length > 0) {
         if (btn) btn.disabled = false;
         return Swal.fire({
             icon: 'warning',
             title: 'Faltan Datos',
-            text: 'Verifique que la Planilla no esté vacía y que todos los campos requeridos estén completos.',
+            text: `Por favor complete los siguientes campos: ${camposFaltantes.join(", ")}.`,
             background: '#1a1a1a',
             color: '#fff'
         });

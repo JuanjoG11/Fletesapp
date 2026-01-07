@@ -2024,9 +2024,7 @@ async function generarPDF() {
         opcionesProveedores = `
             <option value="UNILEVER-FAMILIA">TAT: UNILEVER-FAMILIA</option>
             <option value="POLAR">TAT: POLAR</option>
-            <option value="ALPINA">TYM: ALPINA</option>
             <option value="ZENU">TYM: ZENU</option>
-            <option value="FLEISCHMANN">TYM: FLEISCHMANN</option>
             <option value="ALPINA-FLEISCHMANN">TYM: ALPINA-FLEISCHMANN</option>
         `;
     } else if (esTAT) {
@@ -2038,9 +2036,7 @@ async function generarPDF() {
     } else {
         // Proveedores de TYM (Excluyendo los de TAT)
         opcionesProveedores = `
-            <option value="ALPINA">ALPINA</option>
             <option value="ZENU">ZENU</option>
-            <option value="FLEISCHMANN">FLEISCHMANN</option>
             <option value="ALPINA-FLEISCHMANN">ALPINA-FLEISCHMANN</option>
         `;
     }
@@ -2115,6 +2111,8 @@ async function generarPDF() {
     if (proveedor) {
         if (proveedor === 'UNILEVER-FAMILIA') {
             query = query.in('proveedor', ['UNILEVER', 'FAMILIA', 'UNILEVER-FAMILIA']);
+        } else if (proveedor === 'ALPINA-FLEISCHMANN') {
+            query = query.in('proveedor', ['ALPINA', 'FLEISCHMANN', 'ALPINA-FLEISCHMANN']);
         } else {
             query = query.eq('proveedor', proveedor);
         }
@@ -2178,6 +2176,9 @@ async function generarPDF() {
         const prov = flatFlete.proveedor || 'SIN PROVEEDOR';
         if (['UNILEVER', 'FAMILIA', 'UNILEVER-FAMILIA'].includes(prov)) {
             return { ...flatFlete, _provAgrupado: 'UNILEVER-FAMILIA' };
+        }
+        if (['ALPINA', 'FLEISCHMANN', 'ALPINA-FLEISCHMANN'].includes(prov)) {
+            return { ...flatFlete, _provAgrupado: 'ALPINA-FLEISCHMANN' };
         }
         return { ...flatFlete, _provAgrupado: prov };
     });
@@ -2323,13 +2324,7 @@ async function generarPDF() {
             columnStyles: columnStyles,
             margin: { left: 10, right: 10 },
             didDrawPage: (data) => {
-                if (data.pageNumber > 1) {
-                    if (logoData) {
-                        try { doc.addImage(logoData, logoFormat, 10, 5, 15, 15); } catch (e) { }
-                    }
-                    doc.setFontSize(10);
-                    doc.text(headerText, 148, 12, { align: 'center' });
-                }
+                // No repetir logo ni título en siguientes hojas
             }
         });
 

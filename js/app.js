@@ -1077,7 +1077,7 @@ function calcularTotal(prefix = "") {
 
     // Seleccionar lista de precios según proveedor
     let precioBase = 0;
-    if (proveedor === 'ALPINA' || proveedor === 'FLEISCHMANN') {
+    if (proveedor === 'ALPINA' || proveedor === 'FLEISCHMANN' || proveedor === 'ALPINA-FLEISCHMANN') {
         precioBase = PRECIOS_ALPINA[poblacion] || 0;
     } else if (proveedor === 'ZENU') {
         precioBase = PRECIOS_ZENU[poblacion] || 0;
@@ -1384,7 +1384,13 @@ async function guardarCambiosFlete() {
 
     if (!ui.placa || !db.contratista || !db.zona || db.precio <= 0 || !db.no_planilla) {
         if (btn) btn.disabled = false;
-        return Swal.fire({ icon: 'warning', title: 'Faltan Datos', text: 'Verifique que la Planilla no esté vacía.', background: '#1a1a1a', color: '#fff' });
+        return Swal.fire({
+            icon: 'warning',
+            title: 'Faltan Datos',
+            text: 'Verifique que la Planilla no esté vacía y que todos los campos requeridos estén completos.',
+            background: '#1a1a1a',
+            color: '#fff'
+        });
     }
 
     // VALIDACIÓN: Motivo de Negociación Obligatorio (Modal)
@@ -1621,16 +1627,35 @@ window.editarFlete = async function (id) {
         return Swal.fire({ icon: 'error', title: 'Acceso Denegado', text: 'Solo administradores pueden editar.', background: '#1a1a1a', color: '#fff' });
     }
 
+    // Mostrar loader mientras se obtienen los datos más frescos
+    Swal.fire({
+        title: 'Cargando datos...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+        background: '#1a1a1a',
+        color: '#fff'
+    });
+
     ID_FLETE_EDITANDO = id;
 
-    // Obtener flete específico de la base de datos
+    // Obtener flete específico de la base de datos (datos más frescos)
     const { data: f, error } = await SupabaseClient.supabase
         .from('vista_fletes_completos')
         .select('*')
         .eq('id', id)
         .single();
 
-    if (error || !f) return;
+    Swal.close();
+
+    if (error || !f) {
+        return Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo cargar la información del flete.', background: '#1a1a1a', color: '#fff' });
+    }
+
+    // Actualizar indicador de planilla en el título
+    const infoTit = document.getElementById("modal-title-info");
+    if (infoTit) {
+        infoTit.innerHTML = `| Planilla: <span style="color: var(--accent-orange); font-weight: 800;">${f.no_planilla || 'N/A'}</span>`;
+    }
 
     // Helper para establecer valores
     const set = (k, v) => {

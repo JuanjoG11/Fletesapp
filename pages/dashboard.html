@@ -612,12 +612,34 @@
     <div id="modalEdicionFlete" class="modal-overlay">
         <div class="modal-glass">
             <div class="modal-header">
-                <h2>✏️ Editar Flete</h2>
+                <h2>✏️ Editar Flete <span id="modal-title-info"
+                        style="font-size: 0.9rem; margin-left:10px; opacity: 0.8;"></span></h2>
                 <button class="close-btn" onclick="ocultarModalEdicion()"><i class="ri-close-line"></i></button>
             </div>
 
             <div class="modal-body">
+                <style>
+                    .modal-section-title {
+                        grid-column: 1 / -1;
+                        padding: 10px 0;
+                        margin-top: 10px;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                        color: var(--accent-orange);
+                        font-size: 0.85rem;
+                        font-weight: 700;
+                        text-transform: uppercase;
+                        letter-spacing: 1px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                    }
+
+                    .modal-section-title i {
+                        font-size: 1.1rem;
+                    }
+                </style>
                 <div class="form-grid">
+                    <div class="modal-section-title"><i class="ri-information-line"></i> Información General</div>
                     <!-- Mismos campos con prefijo modal- -->
                     <div class="input-group"> <label>Fecha</label> <input id="modal-fecha" type="date"> </div>
                     <div class="input-group"> <label>Placa</label> <input id="modal-placa"
@@ -635,13 +657,11 @@
                         </select>
                     </div>
 
-                    <div class="input-group">
-                        <label>Zona</label>
-                        <div class="input-group">
-                            <label>Zona (Selección Múltiple)</label>
-                            <div id="modal-zona-container" class="select-checkbox-container">
-                                <!-- JS Generates Checkboxes Here -->
-                            </div>
+                    <div class="modal-section-title"><i class="ri-map-pin-line"></i> Ruta y Ubicación</div>
+                    <div class="input-group" style="grid-column: span 2;">
+                        <label>Zona (Selección Múltiple)</label>
+                        <div id="modal-zona-container" class="select-checkbox-container" style="max-height: 120px;">
+                            <!-- JS Generates Checkboxes Here -->
                         </div>
                     </div>
 
@@ -655,65 +675,10 @@
                         </select> </div>
 
                     <div class="input-group"> <label>Población</label> <select id="modal-poblacion">
-                            <option>AGUADAS</option>
-                            <option>AGUADAS-PACORA</option>
-                            <option>AGUILA-ANSERMA NUEVO</option>
-                            <option>ALCALA ULLOA</option>
-                            <option>ANSERMA</option>
-                            <option>ANSERMA NUEVO</option>
-                            <option>APIA- PUEBLO RICO</option>
-                            <option>ARABIA - ALTAGRACIA</option>
-                            <option>ARANZAZU FILADELFIA</option>
-                            <option>ARGELIA EL CAIRO</option>
-                            <option>ARGELIA-EL CAIRO</option>
-                            <option>ARMENIA</option>
-                            <option>BALBOA LA CELIA</option>
-                            <option>BELAL RDA SJOSE</option>
-                            <option>BELEN</option>
-                            <option>BELEN MISTRATO</option>
-                            <option>CAICEDONIA</option>
-                            <option>CAIMO BARCELONA</option>
-                            <option>CALARCA</option>
-                            <option>CARTAGO</option>
-                            <option>CHINCHINA</option>
-                            <option>CIRCASIA</option>
-                            <option>CORDOBA PIJAO BVISTA</option>
-                            <option>CUBA</option>
-                            <option>DOSQUEBRADAS</option>
-                            <option>EL AGUILA</option>
-                            <option>EL AGUILA - VILLANUEVA</option>
-                            <option>FILANDIA</option>
-                            <option>GENOVA</option>
-                            <option>GUATICA</option>
-                            <option>IRRA LA FELISA LA MERCED</option>
-                            <option>LA VIRGINIA</option>
-                            <option>LA VIRGINA -BELALCAZAR</option>
-                            <option>MANIZALES</option>
-                            <option>MANIZALES - VILLAMARIA</option>
-                            <option>MANIZALES-DESDE PEREIRA-CARGA EXTRA</option>
-                            <option>MARMATO</option>
-                            <option>MARSELLA</option>
-                            <option>MISTRATO</option>
-                            <option>MONTENEGRO</option>
-                            <option>MONTENEGRO - P TAPAO</option>
-                            <option>NEIRA</option>
-                            <option>PACORA</option>
-                            <option>PALESTINA ARAUCA LA PLATA</option>
-                            <option>PEREIRA</option>
-                            <option>PUEBLO RICO</option>
-                            <option>QUIMBAYA</option>
-                            <option>QUINCHIA</option>
-                            <option>RIOSUCIO</option>
-                            <option>SANTA CECILIA</option>
-                            <option>SANTA ROSA</option>
-                            <option>SANTUARIO</option>
-                            <option>SANTUARIO APIA</option>
-                            <option>SUPIA</option>
-                            <option>SUPIA-MARMATO</option>
-                            <option>TEBAIDA</option>
-                            <option>VITERBO</option>
+                            <!-- JS Fills this -->
                         </select> </div>
 
+                    <div class="modal-section-title"><i class="ri-truck-line"></i> Detalles del Flete</div>
                     <div class="input-group"> <label>Auxiliares</label> <input id="modal-auxiliares" type="text"
                             oninput="this.value = this.value.toUpperCase()"> </div>
                     <div class="input-group"> <label>No. Aux</label> <select id="modal-no_auxiliares">
@@ -728,24 +693,6 @@
                             class="money-input"> </div>
 
                     <div class="input-group">
-                        <label>Zona (Selección Múltiple)</label>
-                        <div id="modal-zona-container" class="select-checkbox-container">
-                            <!-- JS Generates Checkboxes Here -->
-                        </div>
-                    </div>
-
-
-
-                    <div class="input-group">
-                        <label>¿Adicionales?</label>
-                        <select id="modal-is_adicionales">
-                            <option value="No">No</option>
-                            <option value="Si">Si</option>
-                        </select>
-                    </div>
-
-                    <!-- NUEVOS CAMPOS MODAL -->
-                    <div class="input-group">
                         <label>No. Planilla</label>
                         <input id="modal-no_planilla" placeholder="Eje: 1234, 5678">
                     </div>
@@ -755,16 +702,26 @@
                         <input id="modal-facturas_adicionales" placeholder="Facturas extra...">
                     </div>
 
-                    <!-- Adicionales por Negociación (Modal) -->
+                    <div class="modal-section-title"><i class="ri-coins-line"></i> Extras y Totales</div>
+                    <div class="input-group">
+                        <label>¿Servicios Adicionales?</label>
+                        <select id="modal-is_adicionales">
+                            <option value="No">No</option>
+                            <option value="Si">Si</option>
+                        </select>
+                    </div>
+
                     <div class="input-group"> <label>Adicional Negociado</label> <input id="modal-valor_adicional"
                             type="text" class="money-input" placeholder="$ 0"> </div>
-                    <div class="input-group full-width"> <label>Razón del Adicional</label> <textarea
-                            id="modal-razon_adicional" rows="2" placeholder="Motivo del adicional"></textarea> </div>
 
-                    <div class="input-group"> <label>Total</label> <input id="modal-total_flete" type="text" readonly
-                            class="input-total"> </div>
+                    <div class="input-group full-width"> <label>Razón del Adicional</label> <textarea
+                            id="modal-razon_adicional" rows="1" placeholder="Motivo del adicional"></textarea> </div>
+
+                    <div class="input-group"> <label>Total a Pagar</label> <input id="modal-total_flete" type="text"
+                            readonly class="input-total" style="color: var(--accent-orange); font-size: 1.1rem;"> </div>
+
                     <div class="input-group"> <label>Participación %</label> <input id="modal-porcentaje_ruta"
-                            type="text" readonly style="font-weight: bold;"> </div>
+                            type="text" readonly style="font-weight: 800; font-size: 1.1rem;"> </div>
                 </div>
             </div>
 

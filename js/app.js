@@ -754,7 +754,7 @@ const PRECIOS_ALPINA = {
     "SUPIA": 445000,
     "RIOSUCIO": 485000,
     "MARMATO": 499000,
-    "SUPIA-MARMATO": 590000,    
+    "SUPIA-MARMATO": 590000,
     "QUINCHIA": 439000,
     "IRRA LA FELISA LA MERCED": 445000,
     "AGUADAS": 690000,
@@ -1981,8 +1981,11 @@ async function exportarExcel() {
     });
 
     let query = SupabaseClient.supabase
-        .from('vista_fletes_completos')
-        .select('*');
+        .from('fletes')
+        .select(`
+            *,
+            vehiculo:vehiculos(placa, conductor)
+        `);
 
     if (esRango) {
         query = query.gte('fecha', inicio).lte('fecha', fin);
@@ -2015,26 +2018,32 @@ async function exportarExcel() {
     }
 
     // Mapear datos incluyendo NOMBRE CONTRATISTA
-    const datosMapeados = fletes.map(f => ({
-        "ID": f.id,
-        "FECHA": f.fecha,
-        "DIA": f.dia,
-        "PROVEEDOR": (['UNILEVER', 'FAMILIA'].includes(f.proveedor)) ? 'UNILEVER-FAMILIA' : f.proveedor,
-        "PLACA": f.placa,
-        "NOMBRE CONTRATISTA": MAPA_CONTRATISTAS[f.placa] || 'N/A',
-        "CONDUCTOR": f.contratista, // RECORDATORIO: f.contratista en la vista es el NOMBRE DEL CONDUCTOR
-        "AUXILIARES": f.auxiliares || '',
-        "ZONA": f.zona,
-        "POBLACION": f.poblacion,
-        "PLANILLA": f.no_planilla || '',
-        "FACTURAS EXTRA": f.facturas_adicionales || '',
-        "ADICIONAL": f.is_adicionales,
-        "V. NEGOCIADO": f.valor_adicional || 0,
-        "RAZÓN": f.razon_adicional || '',
-        "VALOR FLETE": f.precio,
-        "PEDIDOS": f.no_pedidos || 0,
-        "VALOR RUTA": f.valor_ruta || 0
-    }));
+    const datosMapeados = fletes.map(f => {
+        // Aplanar datos del vehículo para compatibilidad
+        const placa = f.vehiculo?.placa || f.placa || 'N/A';
+        const conductor = f.vehiculo?.conductor || f.contratista || 'N/A';
+
+        return {
+            "ID": f.id,
+            "FECHA": f.fecha,
+            "DIA": f.dia,
+            "PROVEEDOR": (['UNILEVER', 'FAMILIA'].includes(f.proveedor)) ? 'UNILEVER-FAMILIA' : f.proveedor,
+            "PLACA": placa,
+            "NOMBRE CONTRATISTA": MAPA_CONTRATISTAS[placa] || 'N/A',
+            "CONDUCTOR": conductor,
+            "AUXILIARES": f.auxiliares || '',
+            "ZONA": f.zona,
+            "POBLACION": f.poblacion,
+            "PLANILLA": f.no_planilla || '',
+            "FACTURAS EXTRA": f.facturas_adicionales || '',
+            "ADICIONAL": f.adicionales || 'No', // Nombre real en tabla fletes
+            "V. NEGOCIADO": f.valor_adicional_negociacion || 0, // Nombre real en tabla fletes
+            "RAZÓN": f.razon_adicional_negociacion || '', // Nombre real en tabla fletes
+            "VALOR FLETE": f.precio,
+            "PEDIDOS": f.no_pedidos || 0,
+            "VALOR RUTA": f.valor_ruta || 0
+        };
+    });
 
     const ws = XLSX.utils.json_to_sheet(datosMapeados);
     const wb = XLSX.utils.book_new();

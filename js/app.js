@@ -767,7 +767,7 @@ const PRECIOS_ALPINA = {
     "MANIZALES - VILLAMARIA": 305000,
     "NEIRA": 340000,
     "SAN JOSÉ-BELALCAZAR": 320000
-    
+
 };
 
 // Precios ESPECIFICOS para ZENU
@@ -808,7 +808,7 @@ const POBLACIONES_RISARALDA = [
     "SANTUARIO", "PUEBLO RICO", "SANTA CECILIA", "BALBOA LA CELIA", "BALBOA-LA CELIA",
     "MARSELLA", "SANTUARIO APIA", "APIA- PUEBLO RICO", "BELEN MISTRATO",
     "PUEBLO RICO-SANTA CECILIA", "GUATICA-RISARALDA", "PEREIRA-DOSQUEBRADAS",
-    "PEREIRA MM CARRO GRANDE", "MANIZALES", "CARTAGO","SAN JOSÉ-BELALCAZAR", "ANSERMA"
+    "PEREIRA MM CARRO GRANDE", "MANIZALES", "CARTAGO", "SAN JOSÉ-BELALCAZAR", "ANSERMA"
 ];
 
 const ZONAS_CALDAS = ["M9552", "M9553", "M9554", "M9555", "M9556", "M9557", "M9560", "M9558", "M9559", "P7002", "M9550", "P7000", "P7001", "E7001-CALDAS"];
@@ -1302,9 +1302,9 @@ async function crearFlete() {
     }
     const { db, ui } = formData;
 
-    if (!ui.placa || !db.contratista || !db.zona || db.precio <= 0 || !db.no_planilla) {
+    if (!ui.placa || !db.contratista || !db.zona || db.precio <= 0 || !db.no_planilla || !db.auxiliares || db.no_auxiliares === 0) {
         Swal.fire({
-            icon: 'warning', title: 'Faltan Datos', text: 'Verifique Placa, Conductor, Zona, Valor y No. Planilla.',
+            icon: 'warning', title: 'Faltan Datos', text: 'Verifique Placa, Conductor, Zona, Valor, Auxiliares y No. Planilla.',
             background: '#1a1a1a', color: '#fff'
         });
         if (btn) btn.disabled = false;
@@ -1388,6 +1388,8 @@ async function guardarCambiosFlete() {
     const camposFaltantes = [];
     if (!ui.placa) camposFaltantes.push("Placa");
     if (!db.contratista) camposFaltantes.push("Conductor/Contratista");
+    if (!db.auxiliares) camposFaltantes.push("Nombres Auxiliares");
+    if (db.no_auxiliares === 0) camposFaltantes.push("Cant. Auxiliares");
     // if (!db.zona) camposFaltantes.push("Zona"); // Deshabilitado temporalmente para permitir correcciones
     if (db.precio <= 0) camposFaltantes.push("Precio/Población (Total)");
     // if (!db.no_planilla) camposFaltantes.push("Número de Planilla"); // Deshabilitado para permitir guardado de antiguos

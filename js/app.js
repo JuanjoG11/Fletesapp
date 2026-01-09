@@ -751,7 +751,7 @@ const PRECIOS_ALPINA = {
     "PEREIRA": 200000,
     "PEREIRA-DOSQUEBRADAS": 230000,
     "CUBA": 200000,
-    "SUPIA": 505000,
+    "SUPIA": 485000,
     "RIOSUCIO": 485000,
     "MARMATO": 499000,
     "SUPIA-MARMATO": 590000,
@@ -766,7 +766,7 @@ const PRECIOS_ALPINA = {
     "PALESTINA ARAUCA LA PLATA": 280000,
     "MANIZALES - VILLAMARIA": 305000,
     "NEIRA": 340000,
-    "SAN JOSÉ-BELALCAZAR": 320000
+    "SAN JOSÉ-BELALCAZAR": 320000,
 
 };
 
@@ -801,7 +801,7 @@ const PRECIOS_POLAR = {
 const COSTO_ADICIONAL = 60000;
 const COSTO_POR_AUXILIAR = 30000; // Costo adicional por cada auxiliar
 
-const ZONAS_RISARALDA = ["M9453", "M9454", "M9455", "M9456", "M9457", "M9458", "M9459", "M9460", "P7004", "P7005", "P7006", "P7007", "P7005B", "M9450", "M9451", "E7001-RISARALDA"];
+const ZONAS_RISARALDA = ["M9453", "M9454", "M9455", "M9456", "M9457", "M9458", "M9459", "M9460", "P7004", "P7005", "P7006", "P7007", "P7005B", "M9450", "M9451", "E7001-RISARALDA", "DOBLE F"];
 const POBLACIONES_RISARALDA = [
     "PEREIRA", "DOSQUEBRADAS", "SANTA ROSA", "SANTA ROSA DE C", "LA VIRGINIA",
     "BELEN DE UMBRIA", "BELEN", "MISTRATO", "GUATICA", "QUINCHIA", "APIA",
@@ -811,7 +811,7 @@ const POBLACIONES_RISARALDA = [
     "PEREIRA MM CARRO GRANDE", "MANIZALES", "CARTAGO", "SAN JOSÉ-BELALCAZAR", "ANSERMA"
 ];
 
-const ZONAS_CALDAS = ["M9552", "M9553", "M9554", "M9555", "M9556", "M9557", "M9560", "M9558", "M9559", "P7002", "M9550", "P7000", "P7001", "E7001-CALDAS"];
+const ZONAS_CALDAS = ["M9552", "M9553", "M9554", "M9555", "M9556", "M9557", "M9560", "M9558", "M9559", "P7002", "M9550", "P7000", "P7001", "E7001-CALDAS", "DOBLE F"];
 const POBLACIONES_CALDAS = [
     "MANIZALES", "MANIZALES - VILLAMARIA", "CHINCHINA", "NEIRA", "PALESTINA ARAUCA LA PLATA",
     "ARANZAZU FILADELFIA", "RIOSUCIO", "SUPIA", "MARMATO", "PACORA", "AGUADAS",
@@ -819,7 +819,7 @@ const POBLACIONES_CALDAS = [
     "BELEN", "VITERBO", "SAN JOSÉ-BELALCAZAR"
 ];
 
-const ZONAS_QUINDIO = ["M9601", "M9602", "M9603", "M9604", "M9605", "M9606", "M9600", "P7008", "P7009", "P7010"];
+const ZONAS_QUINDIO = ["M9601", "M9602", "M9603", "M9604", "M9605", "M9606", "M9600", "P7008", "P7009", "P7010", "DOBLE F"];
 const POBLACIONES_QUINDIO = [
     "ARMENIA", "ARMENIA 2T", "QUIMBAYA", "MONTENEGRO", "MONTENEGRO - P TAPAO",
     "CALARCA", "CIRCASIA", "LA TEBAIDA", "TEBAIDA", "FILANDIA", "SALENTO",
@@ -869,14 +869,41 @@ function actualizarPoblaciones(prefix = "") {
         listaUsar = Object.keys(PRECIOS_TAT_FAMILIA).sort();
     }
 
+    // --- Lógica Especial DOBLE F (SOLO ALPINA/ALPINA-FLEISCHMANN) ---
+    // Si DOBLE F está seleccionado, mostrar TODAS las poblaciones de los 3 departamentos
+    if (isAlpinaDeptLogic && zonaContainer) {
+        const checked = Array.from(zonaContainer.querySelectorAll('input[type="checkbox"]:checked'));
+        const selectedValues = checked.map(input => input.value);
+        const hasDobleF = selectedValues.includes("DOBLE F");
+
+        if (hasDobleF) {
+            // Combinar todas las poblaciones de los 3 departamentos
+            const todasPoblaciones = [
+                ...POBLACIONES_RISARALDA,
+                ...POBLACIONES_CALDAS,
+                ...POBLACIONES_QUINDIO
+            ];
+            // Eliminar duplicados y ordenar
+            const poblacionesUnicas = [...new Set(todasPoblaciones)].sort();
+            // Filtrar para que solo contenga poblaciones que existan en PRECIOS_ALPINA
+            listaUsar = listaUsar.filter(pob => poblacionesUnicas.includes(pob));
+
+            // Si la lista queda vacía, usar todas las poblaciones únicas como fallback
+            if (listaUsar.length === 0) {
+                listaUsar = poblacionesUnicas;
+            }
+        }
+    }
+
     // --- Lógica Especial Risaralda ---
-    // Si hay zonas de Risaralda seleccionadas, filtramos por poblaciones de Risaralda
+    // Si hay zonas de Risaralda seleccionadas (pero NO DOBLE F), filtramos por poblaciones de Risaralda
     if (zonaContainer) {
         const checked = Array.from(zonaContainer.querySelectorAll('input[type="checkbox"]:checked'));
         const selectedValues = checked.map(input => input.value);
-        const hasRisaraldaZone = selectedValues.some(v => ZONAS_RISARALDA.includes(v));
+        const hasDobleF = selectedValues.includes("DOBLE F");
+        const hasRisaraldaZone = selectedValues.some(v => ZONAS_RISARALDA.includes(v) && v !== "DOBLE F");
 
-        if (hasRisaraldaZone) {
+        if (hasRisaraldaZone && !hasDobleF) {
             // Filtrar la lista actual para que solo contenga poblaciones de Risaralda
             listaUsar = listaUsar.filter(pob => POBLACIONES_RISARALDA.includes(pob));
 
@@ -892,9 +919,10 @@ function actualizarPoblaciones(prefix = "") {
     if (isAlpinaDeptLogic && zonaContainer) {
         const checked = Array.from(zonaContainer.querySelectorAll('input[type="checkbox"]:checked'));
         const selectedValues = checked.map(input => input.value);
-        const hasCaldasZone = selectedValues.some(v => ZONAS_CALDAS.includes(v));
+        const hasDobleF = selectedValues.includes("DOBLE F");
+        const hasCaldasZone = selectedValues.some(v => ZONAS_CALDAS.includes(v) && v !== "DOBLE F");
 
-        if (hasCaldasZone) {
+        if (hasCaldasZone && !hasDobleF) {
             // Filtrar la lista de Alpina para que solo contenga poblaciones de Caldas
             listaUsar = listaUsar.filter(pob => POBLACIONES_CALDAS.includes(pob));
 
@@ -908,9 +936,10 @@ function actualizarPoblaciones(prefix = "") {
     if (isAlpinaDeptLogic && zonaContainer) {
         const checked = Array.from(zonaContainer.querySelectorAll('input[type="checkbox"]:checked'));
         const selectedValues = checked.map(input => input.value);
-        const hasQuindioZone = selectedValues.some(v => ZONAS_QUINDIO.includes(v));
+        const hasDobleF = selectedValues.includes("DOBLE F");
+        const hasQuindioZone = selectedValues.some(v => ZONAS_QUINDIO.includes(v) && v !== "DOBLE F");
 
-        if (hasQuindioZone) {
+        if (hasQuindioZone && !hasDobleF) {
             // Filtrar la lista de Alpina para que solo contenga poblaciones de Quindío
             listaUsar = listaUsar.filter(pob => POBLACIONES_QUINDIO.includes(pob));
 
@@ -980,7 +1009,7 @@ function actualizarZonasPorProveedor(prefix = "") {
         { value: "25029", text: "25029" }, { value: "FC01", text: "FC01" }, { value: "FC02", text: "FC02" },
         { value: "FC03", text: "FC03" }, { value: "FQ04", text: "FQ04" }, { value: "FQ05", text: "FQ05" },
         { value: "FQ06", text: "FQ06" }, { value: "FR07", text: "FR07" }, { value: "FR08", text: "FR08" },
-        { value: "FR09", text: "FR09" }
+        { value: "FR09", text: "FR09" }, { value: "DOBLE F", text: "DOBLE F" }
     ];
 
     // Usar la lista hardcoded en lugar de intentar leer el DOM vacío
@@ -1003,8 +1032,8 @@ function actualizarZonasPorProveedor(prefix = "") {
     }
     // ====== PROVEEDORES TYM ======
     else if (proveedor === "ALPINA") {
-        // Incluir zonas M (general), P7 (departamentos), E7001 (departamentos específicos), y vacías
-        filtered = master.filter(z => z.value.startsWith("M") || z.value.startsWith("P7") || z.value.startsWith("E7") || z.value === "");
+        // Incluir zonas M (general), P7 (departamentos), E7001 (departamentos específicos), DOBLE F, y vacías
+        filtered = master.filter(z => z.value.startsWith("M") || z.value.startsWith("P7") || z.value.startsWith("E7") || z.value === "DOBLE F" || z.value === "");
     } else if (proveedor === "ZENU") {
         filtered = master.filter(z => z.value.startsWith("250") || z.value === "");
     } else if (proveedor === "FLEISCHMANN") {
@@ -1012,8 +1041,8 @@ function actualizarZonasPorProveedor(prefix = "") {
         filtered = master.filter(z => allowed.includes(z.value) || z.value === "");
     } else if (proveedor === "ALPINA-FLEISCHMANN") {
         const fleischmannZones = ["FC01", "FC02", "FC03", "FQ04", "FQ05", "FQ06", "FR07", "FR08", "FR09"];
-        // Incluir zonas de Alpina (M, P7, E7) + zonas de Fleischmann
-        filtered = master.filter(z => z.value.startsWith("M") || z.value.startsWith("P7") || z.value.startsWith("E7") || fleischmannZones.includes(z.value) || z.value === "");
+        // Incluir zonas de Alpina (M, P7, E7) + zonas de Fleischmann + DOBLE F
+        filtered = master.filter(z => z.value.startsWith("M") || z.value.startsWith("P7") || z.value.startsWith("E7") || fleischmannZones.includes(z.value) || z.value === "DOBLE F" || z.value === "");
     } else {
         filtered = master;
     }

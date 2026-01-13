@@ -143,6 +143,18 @@ const CONFIG_TAT = {
 // 🛠️ UTILS & FORMATTERS
 // ==========================================================
 // Nota: save y load ya no se usarán para datos de negocio, solo para UI/Tema
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
 function saveUI(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
 function loadUI(key) { return JSON.parse(localStorage.getItem(key)) || null; }
 
@@ -1658,7 +1670,15 @@ function renderTable(fletes) {
     });
 }
 
-function buscarFletes() { listarFletes(true); }
+function buscarFletes() {
+    const q = document.getElementById("buscarFlete")?.value.toLowerCase() || "";
+    const fZona = document.getElementById("filtroZona")?.value || "";
+    const fFecha = document.getElementById("filtroFecha")?.value || "";
+
+    // Si no hay filtros activos y no hay búsqueda, simplemente listar el mes actual (reset=true)
+    // Esto evita que listarFletes cargue demasiados datos si el usuario borra la búsqueda
+    listarFletes(true);
+}
 
 window.editarFlete = async function (id) {
     // PERMISO: Verificar contra el perfil cargado que es más seguro
@@ -1821,22 +1841,23 @@ function ocultarModalEdicion() {
 // 📊 KPI & DASHBOARD ENRICHMENT
 // ==========================================================
 async function actualizarKPI() {
-    // Obtener estadísticas desde SupabaseClient
-    const stats = await SupabaseClient.fletes.getStats();
+    // OPTIMIZACIÓN: Obtener TODOS los datos del dashboard en una sola petición RPC
+    const stats = await SupabaseClient.fletes.getDashboardData();
 
     // 1. Total Fletes
     const el = document.getElementById("cantFletes");
-    if (el) el.innerText = stats.totalFletes;
+    if (el) el.innerText = stats.totalFletes || 0;
 
     // 2. Registros Mes Actual
     const kpiRegistros = document.getElementById("kpiRegistros");
-    if (kpiRegistros) kpiRegistros.innerText = moneyFormatter.format(stats.ingresosMes);
+    if (kpiRegistros) kpiRegistros.innerText = moneyFormatter.format(stats.ingresosMes || 0);
 
     // 3. Vehiculos Activos
     const kpiVehiculos = document.getElementById("kpiVehiculos");
-    if (kpiVehiculos) kpiVehiculos.innerText = stats.vehiculosActivos;
+    if (kpiVehiculos) kpiVehiculos.innerText = stats.vehiculosActivos || 0;
 
-    await generarGraficos();
+    // Pasar los datos ya cargados a la función de gráficos para evitar segunda consulta
+    await generarGraficos(stats);
 }
 
 // ==========================================================
@@ -2448,7 +2469,7 @@ async function generarPDF() {
 let myChart = null;
 let myChart2 = null;
 
-async function generarGraficos() {
+async function generarGraficos(providedStats = null) {
     const { session } = await SupabaseClient.auth.getSession();
     // Permitir a todos ver gráficos si están en la pestaña
 
@@ -2456,12 +2477,16 @@ async function generarGraficos() {
     const ctx2 = document.getElementById("chartRegistros");
     if (!ctx) return;
 
-    // Obtener solo los fletes de la empresa actual para graficar
-    // Obtener estadísticas pre-calculadas (incluye suma de valores por zona y por día)
-    const stats = await SupabaseClient.fletes.getEstadisticas();
-    const { zonas, valoresZonas, ingresosPorDia } = stats;
+    // OPTIMIZACIÓN: Si ya tenemos los datos (vía KPI RPC), usarlos directamente
+    // De lo contrario, cargarlos (fallback)
+    const stats = providedStats || await SupabaseClient.fletes.getEstadisticas();
 
-    if (Object.keys(zonas).length === 0) {
+    // Mapear campos si vienen del RPC (que usa 'zonas' para los valores)
+    const valoresZonas = providedStats ? stats.zonas : stats.valoresZonas;
+    const zonasCount = providedStats ? {} : stats.zonas; // El RPC no trae conteo por ahora, no se usa en el donut
+    const ingresosPorDia = stats.ingresosPorDia || {};
+
+    if (Object.keys(valoresZonas || {}).length === 0) {
         if (myChart) myChart.destroy();
         if (myChart2) myChart2.destroy();
 
@@ -2838,7 +2863,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
 
         // 4. Filtros
-        document.getElementById("buscarFlete")?.addEventListener("keyup", buscarFletes);
+        const throttledSearch = debounce(buscarFletes, 400);
+        document.getElementById("buscarFlete")?.addEventListener("input", throttledSearch);
         document.getElementById("filtroZona")?.addEventListener("change", buscarFletes);
         document.getElementById("filtroFecha")?.addEventListener("change", buscarFletes);
 

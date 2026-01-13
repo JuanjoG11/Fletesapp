@@ -2524,53 +2524,103 @@ async function generarGraficos(providedStats = null) {
     if (myChart) myChart.destroy();
     if (myChart2) myChart2.destroy();
 
-    // --- Chart 1: Fletes por Zona (VALOR TOTAL) ---
-
+    // --- Chart 1: Fletes por Zona (PREMIUM DOUGHNUT) ---
     const ctx1 = ctx.getContext("2d");
     if (ctx1) {
-        // Revertir a mostrar TODAS las zonas, pero sin leyenda lateral
         const allZones = valoresZonas || {};
-        // Ordenar por valor para que se vea ordenado en la rueda
         const sortedZones = Object.entries(allZones).sort(([, a], [, b]) => b - a);
 
-        const chartLabels = sortedZones.map(item => item[0]);
-        const chartData = sortedZones.map(item => item[1]);
+        let finalLabels = [];
+        let finalData = [];
+        const TOP_LIMIT = 20;
+
+        if (sortedZones.length > TOP_LIMIT) {
+            const topZones = sortedZones.slice(0, TOP_LIMIT);
+            finalLabels = topZones.map(item => item[0]);
+            finalData = topZones.map(item => item[1]);
+
+            const remainingValue = sortedZones.slice(TOP_LIMIT).reduce((sum, item) => sum + item[1], 0);
+            finalLabels.push("OTROS");
+            finalData.push(remainingValue);
+        } else {
+            finalLabels = sortedZones.map(item => item[0]);
+            finalData = sortedZones.map(item => item[1]);
+        }
+
+        const totalValue = finalData.reduce((a, b) => a + b, 0);
+
+        // Paleta Vibrante & Pro Extendida (21 colores)
+        const premiumColors = [
+            '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
+            '#8b5cf6', '#06b6d4', '#ec4899', '#6366f1',
+            '#14b8a6', '#f97316', '#84cc16', '#a855f7',
+            '#22c55e', '#eab308', '#f43f5e', '#38bdf8',
+            '#d946ef', '#4f46e5', '#fbbf24', '#00d2ff',
+            'rgba(148, 163, 184, 0.4)' // Color para "OTROS"
+        ];
 
         myChart = new Chart(ctx1, {
             type: 'doughnut',
             data: {
-                labels: chartLabels,
+                labels: finalLabels,
                 datasets: [{
-                    data: chartData,
-                    backgroundColor: [
-                        '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4',
-                        '#ec4899', '#6366f1', '#14b8a6', '#f97316', '#a855f7', '#d946ef',
-                        '#0ea5e9', '#22c55e', '#eab308', '#f43f5e', '#84cc16', '#64748b'
-                    ],
-                    borderWidth: 0
+                    data: finalData,
+                    backgroundColor: premiumColors,
+                    borderWidth: 0,
+                    hoverOffset: 15,
+                    borderRadius: 8,
+                    spacing: 4
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                cutout: '80%',
                 plugins: {
-                    legend: { display: false }, // Ocultar leyenda lateral
+                    legend: { display: false },
                     tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        padding: 12,
+                        titleFont: { size: 13, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        cornerRadius: 8,
                         callbacks: {
                             label: function (context) {
-                                let label = context.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                if (context.parsed !== null) {
-                                    label += moneyFormatter.format(context.parsed);
-                                }
-                                return label;
+                                const val = context.raw;
+                                const percent = ((val / totalValue) * 100).toFixed(1);
+                                return ` ${moneyFormatter.format(val)} (${percent}%)`;
                             }
                         }
                     }
                 }
-            }
+            },
+            plugins: [{
+                id: 'centerText',
+                beforeDraw: function (chart) {
+                    const { width, height, ctx } = chart;
+                    ctx.restore();
+
+                    // Cantidad de zonas únicas en el gráfico
+                    const zonesCount = finalLabels.length;
+                    const countStr = zonesCount === 1 ? "1 ZONA" : `${zonesCount} ZONAS`;
+
+                    // Texto Principal (Cantidad)
+                    ctx.font = "bold 1.4rem Inter, sans-serif";
+                    ctx.textBaseline = "middle";
+                    ctx.fillStyle = "#fff";
+                    const textX = Math.round((width - ctx.measureText(countStr).width) / 2);
+                    ctx.fillText(countStr, textX, height / 2 - 8);
+
+                    // Subtexto (Etiqueta)
+                    ctx.font = "600 0.7rem Inter, sans-serif";
+                    ctx.fillStyle = "#94a3b8";
+                    const subText = "DISTRIBUCIÓN";
+                    const subX = Math.round((width - ctx.measureText(subText).width) / 2);
+                    ctx.fillText(subText, subX, height / 2 + 15);
+
+                    ctx.save();
+                }
+            }]
         });
     }
 

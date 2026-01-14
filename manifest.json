@@ -1,0 +1,43 @@
+{
+  "name": "Fletes App",
+  "short_name": "FletesApp",
+  "description": "Sistema de gestión de fletes y devoluciones",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/img/pwa_logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/img/pwa_logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "productivity",
+    "business"
+  ],
+  "dir": "ltr",
+  "lang": "es-ES",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "pages/dashboard.html",
+      "icons": [
+        {
+          "src": "assets/img/pwa_logo.jpg",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

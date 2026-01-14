@@ -1,10 +1,10 @@
-const CACHE_NAME = 'fletes-app-v1';
+const CACHE_NAME = 'fletes-app-v4';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './css/styles.css',
     './js/app.js',
-    './assets/img/pwa_logo.jpg'
+    './assets/img/pwa_logo.png'
 ];
 
 // Instalar el Service Worker

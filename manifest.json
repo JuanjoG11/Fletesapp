@@ -2,23 +2,42 @@
   "name": "Fletes App",
   "short_name": "FletesApp",
   "description": "Sistema de gestión de fletes y devoluciones",
-  "start_url": "index.html",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#3b82f6",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "assets/img/pwa_logo.jpg",
-      "sizes": "192x192",
-      "type": "image/jpeg",
-      "purpose": "any maskable"
+      "src": "assets/img/pwa_logo.png?v=3",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "assets/img/pwa_logo.jpg",
+      "src": "assets/img/pwa_logo.png?v=3",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/img/pwa_logo.png?v=3",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/img/pwa_logo.png?v=3",
       "sizes": "512x512",
-      "type": "image/jpeg",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/img/pwa_logo.png?v=3",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "categories": [
@@ -34,7 +53,7 @@
       "url": "pages/dashboard.html",
       "icons": [
         {
-          "src": "assets/img/pwa_logo.jpg",
+          "src": "assets/img/pwa_logo.png",
           "sizes": "192x192"
         }
       ]

@@ -27,10 +27,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Fletes App">
-    <link rel="apple-touch-icon" href="../assets/img/pwa_logo.jpg">
-    <link rel="manifest" href="../manifest.json">
+    <link rel="apple-touch-icon" href="../assets/img/pwa_logo.png?v=3">
+    <link rel="icon" type="image/png" href="../assets/img/pwa_logo.png?v=3">
+    <link rel="manifest" href="../manifest.json?v=3">
 
     <script>
+        let deferredPrompt;
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('../sw.js')
@@ -38,6 +40,23 @@
                     .catch(err => console.error('Error al registrar Service Worker', err));
             });
         }
+
+        // Manejar el evento de instalación
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const btnInstalar = document.getElementById('btnInstalarPWA');
+            if (btnInstalar) {
+                btnInstalar.style.display = 'block';
+                btnInstalar.addEventListener('click', async () => {
+                    btnInstalar.style.display = 'none';
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`Usuario eligió instalar: ${outcome}`);
+                    deferredPrompt = null;
+                });
+            }
+        });
     </script>
 
     <script src="../js/supabase-client.js"></script>
@@ -99,6 +118,11 @@
             <button class="logout-btn" onclick="logout()"
                 style="width: 100%; border: none; cursor: pointer; background: transparent;">
                 <i class="ri-logout-box-r-line"></i> Salir
+            </button>
+            <!-- Botón de instalación PWA -->
+            <button id="btnInstalarPWA" class="btn"
+                style="display: none; width: 100%; margin-top: 15px; background: #22c55e; color: white;">
+                <i class="ri-download-2-line"></i> Instalar App
             </button>
         </div>
     </aside>

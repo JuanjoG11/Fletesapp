@@ -2273,48 +2273,53 @@ async function generarPDF() {
         const fletesProv = fletesMapeados.filter(f => f._provAgrupado === provActual);
         if (fletesProv.length === 0) continue;
 
-        // Configuración de Header y Logo por Proveedor
-        const esTAT = provActual === 'UNILEVER-FAMILIA'; // TAT posee estos
-        const logoData = esTAT ? logos.TAT : logos.TYM;
-        const logoFormat = esTAT ? 'JPEG' : 'PNG';
-        const headerText = esTAT
-            ? `PLANILLA FLETES TAT DISTRIBUCIONES DEL EJE CAFETERO SA`.toUpperCase()
-            : `PLANILLA FLETES TIENDAS Y MARCAS EJE CAFETERO`.toUpperCase();
-        const nitText = esTAT
-            ? `NIT 901568117-1`
-            : `NIT 900973929`;
-        const subtituloText = esTAT
-            ? `TAT - DISTRIBUCIONES DEL EJE CAFETERO SA NIT 901568117-1`
-            : `TIENDAS Y MARCAS EJE CAFETERO NIT 900973929`;
+        // Helper para dibujar el encabezado en cada página
+        const dibujarHeader = (docInstance) => {
+            const esTAT = provActual === 'UNILEVER-FAMILIA';
+            const logoData = esTAT ? logos.TAT : logos.TYM;
+            const logoFormat = esTAT ? 'JPEG' : 'PNG';
+            const headerText = esTAT
+                ? `PLANILLA FLETES TAT DISTRIBUCIONES DEL EJE CAFETERO SA`.toUpperCase()
+                : `PLANILLA FLETES TIENDAS Y MARCAS EJE CAFETERO`.toUpperCase();
+            const nitText = esTAT
+                ? `NIT 901568117-1`
+                : `NIT 900973929`;
+            const subtituloText = esTAT
+                ? `TAT - DISTRIBUCIONES DEL EJE CAFETERO SA NIT 901568117-1`
+                : `TIENDAS Y MARCAS EJE CAFETERO NIT 900973929`;
+
+            // Dibujar Logo
+            if (logoData) {
+                try {
+                    docInstance.addImage(logoData, logoFormat, 10, esTAT ? 2 : 5, esTAT ? 25 : 20, esTAT ? 25 : 20);
+                } catch (e) { }
+            }
+
+            docInstance.setFontSize(11);
+            docInstance.setFont(undefined, 'bold');
+
+            if (tipo === 'relacion') {
+                docInstance.text("RELACION DE PLANILLA Y FACTURAS", 148, 12, { align: 'center' });
+                docInstance.setFontSize(9);
+                docInstance.text(subtituloText, 148, 18, { align: 'center' });
+            } else {
+                docInstance.text(headerText, 148, 12, { align: 'center' });
+                docInstance.setFontSize(10);
+                docInstance.text(nitText, 148, 17, { align: 'center' });
+            }
+
+            docInstance.setFont(undefined, 'normal');
+            docInstance.setFontSize(8);
+            docInstance.text(`Generado: ${fechaImpresion} - Fecha Reporte: ${fecha}`, 280, 22, { align: 'right' });
+            docInstance.text(`Proveedor: ${provActual}`, 14, 28);
+        };
 
         // Nueva página por proveedor si no es el primero
         if (i > 0) doc.addPage();
         finalY = 20;
 
-        // Dibujar Logo
-        if (logoData) {
-            try {
-                doc.addImage(logoData, logoFormat, 10, esTAT ? 2 : 5, esTAT ? 25 : 20, esTAT ? 25 : 20);
-            } catch (e) { }
-        }
-
-        doc.setFontSize(11);
-        doc.setFont(undefined, 'bold');
-
-        if (tipo === 'relacion') {
-            doc.text("RELACION DE PLANILLA Y FACTURAS", 148, 12, { align: 'center' });
-            doc.setFontSize(9);
-            doc.text(subtituloText, 148, 18, { align: 'center' });
-        } else {
-            doc.text(headerText, 148, 12, { align: 'center' });
-            doc.setFontSize(10);
-            doc.text(nitText, 148, 17, { align: 'center' });
-        }
-
-        doc.setFont(undefined, 'normal');
-        doc.setFontSize(8);
-        doc.text(`Generado: ${fechaImpresion} - Fecha Reporte: ${fecha}`, 280, 22, { align: 'right' });
-        doc.text(`Proveedor: ${provActual}`, 14, 28);
+        // Dibujar el primer encabezado de la tabla para este proveedor
+        dibujarHeader(doc);
 
         let bodyData = [];
         let head = [];
@@ -2350,13 +2355,13 @@ async function generarPDF() {
             ]);
 
             columnStyles = {
-                0: { cellWidth: 22 }, // ZONA
-                1: { cellWidth: 40 }, // PLANILLA
-                2: { cellWidth: 55 }, // FACTURAS ADIC
-                3: { cellWidth: 55 }, // CONDUCTOR
+                0: { cellWidth: 25 }, // ZONA
+                1: { cellWidth: 35 }, // PLANILLA
+                2: { cellWidth: 50 }, // FACTURAS ADIC
+                3: { cellWidth: 50 }, // CONDUCTOR
                 4: { cellWidth: 45 }, // AUXILIAR
                 5: { cellWidth: 25, halign: 'center' }, // N. FACT
-                6: { cellWidth: 35, halign: 'right' }   // VALOR RUTA
+                6: { cellWidth: 47, halign: 'right' }   // VALOR RUTA (Ajustado para llenar 277mm)
             };
         } else {
             // Reporte Estándar de Fletes
@@ -2389,10 +2394,16 @@ async function generarPDF() {
             ]);
 
             columnStyles = {
-                0: { cellWidth: 22 }, 1: { cellWidth: 20 }, 2: { cellWidth: 55 }, 3: { cellWidth: 28 },
-                4: { cellWidth: 16, halign: 'center' }, 5: { cellWidth: 28, halign: 'right' },
-                6: { cellWidth: 35 }, 7: { cellWidth: 28, halign: 'right' }, 8: { cellWidth: 20, halign: 'center' },
-                9: { cellWidth: 35 }
+                0: { cellWidth: 25 }, // RUTA
+                1: { cellWidth: 18 }, // PLACA
+                2: { cellWidth: 50 }, // CONDUCTOR
+                3: { cellWidth: 35 }, // AUXILIAR
+                4: { cellWidth: 16, halign: 'center' }, // # PEDIDO
+                5: { cellWidth: 28, halign: 'right' },  // VR. PEDIDO
+                6: { cellWidth: 30 }, // POBLACIÓN
+                7: { cellWidth: 28, halign: 'right' },  // VALOR FLETE
+                8: { cellWidth: 22, halign: 'center' }, // PARTICIPACIÓN
+                9: { cellWidth: 25 }  // FIRMA (Ajustado para evitar overflow)
             };
         }
 
@@ -2401,16 +2412,25 @@ async function generarPDF() {
             head: head,
             body: bodyData,
             theme: 'grid',
-            headStyles: { fillColor: esTAT ? [249, 115, 22] : [41, 128, 185], fontSize: 7, halign: 'center' },
+            headStyles: {
+                fillColor: provActual === 'UNILEVER-FAMILIA' ? [249, 115, 22] : [41, 128, 185],
+                fontSize: 7,
+                halign: 'center'
+            },
             bodyStyles: { fontSize: 6.5, overflow: 'linebreak', cellPadding: 1.5 },
             columnStyles: columnStyles,
-            margin: { left: 10, right: 10 },
+            margin: { left: 10, right: 10, top: 33 }, // 'top' asegura que el salto de página no pegue la tabla al borde
+            rowPageBreak: 'avoid',
             didDrawPage: (data) => {
-                // No repetir logo ni título en siguientes hojas
+                // Si la tabla continúa en una nueva página, redibujar el encabezado
+                if (data.pageNumber > 1) {
+                    dibujarHeader(doc);
+                }
             }
         });
 
         finalY = doc.lastAutoTable.finalY;
+
     }
 
     // --- SECCIÓN: NOTAS DE NEGOCIACIÓN ---

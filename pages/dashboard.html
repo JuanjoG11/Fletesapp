@@ -788,7 +788,8 @@
                     <input type="hidden" id="edit-vehiculo-id">
                     <div class="input-group">
                         <label>Placa</label>
-                        <input id="edit-vehiculo-placa" readonly class="input-readonly">
+                        <input id="edit-vehiculo-placa" placeholder="EJ: ABC123"
+                            oninput="this.value = this.value.toUpperCase().replace('-', '')">
                     </div>
                     <div class="input-group">
                         <label>Conductor</label>

@@ -483,17 +483,19 @@ function ocultarModalVehiculo() {
 
 async function guardarCambiosVehiculo() {
     const id = document.getElementById("edit-vehiculo-id").value;
+    const placa = document.getElementById("edit-vehiculo-placa").value.toUpperCase().replace(/[\s-]/g, '').trim();
     const conductor = document.getElementById("edit-vehiculo-conductor").value.trim();
     const modelo = document.getElementById("edit-vehiculo-modelo").value.trim();
     const contratista = document.getElementById("edit-vehiculo-contratista").value.trim();
 
-    if (!conductor) {
-        return Swal.fire({ icon: 'warning', title: 'Atención', text: 'El nombre del conductor es obligatorio', background: '#1e293b', color: '#fff' });
+    if (!placa || !conductor) {
+        return Swal.fire({ icon: 'warning', title: 'Atención', text: 'Placa y conductor son obligatorios', background: '#1e293b', color: '#fff' });
     }
 
     Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
 
     const result = await SupabaseClient.vehiculos.update(id, {
+        placa,
         conductor,
         modelo,
         contratista

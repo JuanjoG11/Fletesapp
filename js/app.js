@@ -492,22 +492,41 @@ async function guardarCambiosVehiculo() {
         return Swal.fire({ icon: 'warning', title: 'Atención', text: 'Placa y conductor son obligatorios', background: '#1e293b', color: '#fff' });
     }
 
+    // Pre-check: ¿La placa ya existe en otro vehículo?
+    const existePlaca = FLOTA_VEHICULOS.find(v => v.placa === placa && v.id !== id);
+    if (existePlaca) {
+        return Swal.fire({
+            icon: 'error',
+            title: 'Placa Duplicada',
+            text: `Ya existe otro vehículo registrado con la placa ${placa}.`,
+            background: '#1e293b',
+            color: '#fff'
+        });
+    }
+
     Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
 
-    const result = await SupabaseClient.vehiculos.update(id, {
-        placa,
-        conductor,
-        modelo,
-        contratista
-    });
+    const updateData = { placa, conductor, modelo, contratista };
+    const result = await SupabaseClient.vehiculos.update(id, updateData);
 
     if (result.success) {
-        FLOTA_VEHICULOS = []; // Reset cache
-        await listarVehiculos();
+        // OPTIMIZACIÓN: Actualizar cache local en lugar de recargar TODO
+        const index = FLOTA_VEHICULOS.findIndex(v => v.id === id);
+        if (index !== -1) {
+            FLOTA_VEHICULOS[index] = { ...FLOTA_VEHICULOS[index], ...updateData };
+        }
+
+        await listarVehiculos(); // Esto ahora usará el cache actualizado
         ocultarModalVehiculo();
         Swal.fire({ icon: 'success', title: 'Actualizado', text: 'Vehículo actualizado correctamente', timer: 1500, showConfirmButton: false, background: '#1e293b', color: '#fff' });
     } else {
-        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar el vehículo', background: '#1e293b', color: '#fff' });
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo actualizar el vehículo: ' + (result.error || 'Error desconocido'),
+            background: '#1e293b',
+            color: '#fff'
+        });
     }
 }
 

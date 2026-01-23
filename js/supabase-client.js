@@ -286,7 +286,10 @@ async function actualizarVehiculo(vehiculoId, vehiculoData) {
             .update(vehiculoData)
             .eq('id', vehiculoId);
 
-        if (error) throw error;
+        if (error) {
+            console.error('Error de Supabase al actualizar:', error);
+            return { success: false, error: error.message || 'Error desconocido en base de datos' };
+        }
         return { success: true };
     } catch (error) {
         console.error('Error al actualizar vehículo:', error);

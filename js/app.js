@@ -1268,7 +1268,32 @@ async function obtenerDatosFormulario(prefix = "") {
         zona = checked.map(input => input.value).join(", ");
     }
 
-    const dia = val("dia");
+    let dia = val("dia");
+    let fechaDetectada = null;
+
+    if (prefix === "") {
+        const now = new Date();
+        // Fecha en formato YYYY-MM-DD para Colombia
+        const bogotaFormatter = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'America/Bogota',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+        fechaDetectada = bogotaFormatter.format(now);
+
+        // Día de la semana en español (sin acentos para compatibilidad)
+        const dayFormatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/Bogota',
+            weekday: 'long'
+        });
+        const weekday = dayFormatter.format(now);
+        const mapDias = {
+            'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miercoles',
+            'Thursday': 'Jueves', 'Friday': 'Viernes', 'Saturday': 'Sabado', 'Sunday': 'Domingo'
+        };
+        dia = mapDias[weekday] || weekday;
+    }
     const poblacion = val("poblacion");
     const auxiliares = val("auxiliares");
     const noAux = val("no_auxiliares");
@@ -1334,7 +1359,7 @@ async function obtenerDatosFormulario(prefix = "") {
             no_pedidos: parseInt(noPedidos || 0),
             auxiliares,
             no_auxiliares: parseInt(noAux || 0),
-            fecha: val("fecha") || new Date().toISOString().split('T')[0],
+            fecha: val("fecha") || fechaDetectada || new Date().toISOString().split('T')[0],
             // NUEVOS CAMPOS
             no_planilla: noPlanilla,
             facturas_adicionales: facturasAdicionales,

@@ -184,19 +184,29 @@ async function obtenerVehiculos() {
 }
 
 /**
- * Buscar vehículo por placa
+ * Buscar vehículo por placa (Filtrado por Empresa)
  * @param {string} placa - Placa del vehículo
+ * @param {string} razon_social - (Opcional) Empresa para filtrar
  * @returns {Promise<object|null>}
  */
-async function buscarVehiculoPorPlaca(placa) {
+async function buscarVehiculoPorPlaca(placa, razon_social = null) {
     try {
-        // No filtramos por razon_social aquí estrictamente para permitir validaciones globales si se requiere,
-        // pero idealmente RLS lo manejará.
-        const { data, error } = await _supabase
+        let rs = razon_social;
+        if (!rs) {
+            rs = await _getRazonSocialUsuario();
+        }
+
+        let query = _supabase
             .from('vehiculos')
             .select('*')
-            .eq('placa', placa.toUpperCase().replace(/[\s-]/g, ''))
-            .single();
+            .eq('placa', placa.toUpperCase().replace(/[\s-]/g, ''));
+
+        // Aplicar filtro de empresa si se proporcionó o se obtuvo del usuario
+        if (rs && rs !== 'GLOBAL') {
+            query = query.eq('razon_social', rs.toUpperCase());
+        }
+
+        const { data, error } = await query.single();
 
         if (error && error.code !== 'PGRST116') throw error;
         return { success: true, data };
@@ -340,6 +350,17 @@ async function obtenerFletes(filtros = {}) {
         if (filtros.fecha) query = query.eq('fecha', filtros.fecha);
         if (filtros.fechaInicio) query = query.gte('fecha', filtros.fechaInicio);
         if (filtros.fechaFin) query = query.lte('fecha', filtros.fechaFin);
+
+        // --- BÚSQUEDA DEL SERVIOER (Optimización) ---
+        if (filtros.busqueda) {
+            const q = `%${filtros.busqueda}%`;
+            // Buscamos en placa, conductor, planilla o proveedor
+            // Nota: Usamos or() con ilike para búsqueda insensible a mayúsculas
+            // IMPORTANTE: placa y conductor están en la tabla relacionada 'vehiculos' si usamos join,
+            // pero también están duplicados en 'fletes' según la estructura vista.
+            // Para simplicidad y rendimiento, buscamos en los campos denormalizados de 'fletes'.
+            query = query.or(`placa.ilike.${q},contratista.ilike.${q},no_planilla.ilike.${q},proveedor.ilike.${q},poblacion.ilike.${q}`);
+        }
 
         // --- PAGINACIÓN ---
         // page inicia en 0

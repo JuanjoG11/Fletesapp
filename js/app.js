@@ -393,8 +393,8 @@ function buscarConductorPorPlaca(placaId, conductorId) {
             conductorInput.style.borderColor = "#10b981";
             conductorInput.style.boxShadow = "0 0 10px rgba(16, 185, 129, 0.2)";
         } else {
-            // Si no está en cache, buscar en servidor (para casos cross-tenant como Polar)
-            SupabaseClient.vehiculos.getByPlaca(val).then(res => {
+            // Si no está en cache, buscar en servidor (Filtrado por Empresa actual)
+            SupabaseClient.vehiculos.getByPlaca(val, CURRENT_RAZON_SOCIAL).then(res => {
                 if (res.success && res.data) {
                     conductorInput.value = res.data.conductor;
                     conductorInput.style.borderColor = "#10b981";
@@ -606,7 +606,13 @@ async function registrarVehiculoOperario() {
             timer: 1500, showConfirmButton: false, background: '#1a1a1a', color: '#fff'
         });
     } else {
-        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo registrar el vehículo. Asegúrate de haber ejecutado el SQL en Supabase.', background: '#1a1a1a', color: '#fff' });
+        Swal.fire({
+            icon: 'error',
+            title: 'Error de Registro',
+            text: 'No se pudo registrar el vehículo: ' + (result.error || 'Asegúrate de haber ejecutado el SQL en Supabase.'),
+            background: '#1a1a1a',
+            color: '#fff'
+        });
     }
 }
 
@@ -1313,33 +1319,50 @@ async function obtenerDatosFormulario(prefix = "") {
 
     const { user } = await SupabaseClient.auth.getSession();
 
-    // Buscar el ID del vehículo por placa
-    let resV = await SupabaseClient.vehiculos.getByPlaca(placa);
+    const razonSocialActual = CURRENT_RAZON_SOCIAL || 'TYM';
+
+    // Buscar el ID del vehículo por placa (Filtrado por Empresa)
+    let resV = await SupabaseClient.vehiculos.getByPlaca(placa, razonSocialActual);
     let vehiculo = resV.data;
 
     if (!vehiculo && placa && contratista) {
-        // Opcional: registrar vehículo si no existe
+        // SEGURIDAD: Ya no autocreamos vehículos globalmente sin validar que pertenezcan a la empresa
+        // Si no existe en esta empresa, el operario debe crearlo manualmente o el admin asignarlo.
+        /* 
         const res = await SupabaseClient.vehiculos.create({
             placa,
             conductor: contratista,
             modelo: 'Autocreado',
-            activo: true // Por defecto activo
+            activo: true
         });
         if (res.success) {
             vehiculo = res.data;
         }
+        */
+        console.warn(`⚠️ Vehículo ${placa} no existe en la empresa ${razonSocialActual}`);
     }
 
-    // VALIDACIÓN: Vehículo inactivo
-    if (vehiculo && vehiculo.activo === false) {
+    // VALIDACIÓN: Vehículo inexistente o inactivo para la empresa actual
+    if (!vehiculo) {
         Swal.fire({
             icon: 'error',
-            title: 'Vehículo Inactivo',
-            text: `El vehículo con placa ${placa} está inactivo y no puede registrar nuevos fletes. Por favor, actívelo en la gestión de vehículos.`,
+            title: 'Vehículo no registrado',
+            text: `El vehículo con placa ${placa} no está registrado en ${razonSocialActual}. Por favor, regístrelo primero.`,
             background: '#1a1a1a',
             color: '#fff'
         });
-        return null; // Detener flujo
+        return null;
+    }
+
+    if (vehiculo.activo === false && razonSocialActual === 'TAT') {
+        Swal.fire({
+            icon: 'error',
+            title: 'Vehículo Inactivo para TAT',
+            text: `El vehículo ${placa} está inactivo en TAT y no puede registrar nuevos fletes.`,
+            background: '#1a1a1a',
+            color: '#fff'
+        });
+        return null;
     }
 
     const finalData = {
@@ -1603,15 +1626,24 @@ async function listarFletes(reset = true) {
         if (btnCargarMas) btnCargarMas.disabled = true;
     }
 
-    // OPTIMIZACIÓN: Cargar solo fletes del mes actual por defecto
+    // Obtener valor de búsqueda actual
+    const busqueda = document.getElementById("buscarFlete")?.value.trim() || "";
+    const fZona = document.getElementById("filtroZona")?.value || "";
+    const fFecha = document.getElementById("filtroFecha")?.value || "";
+
+    // OPTIMIZACIÓN: Si NO hay búsqueda ni filtros, cargar solo fletes del mes actual
+    // Si HAY búsqueda o filtros, no limitamos por fecha para encontrar registros antiguos
     const now = new Date();
-    const fechaInicio = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    const fechaFin = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+    const fechaInicio = (!busqueda && !fZona && !fFecha)
+        ? new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
+        : null;
 
     // Params para Supabase
     const params = {
+        busqueda,
+        zona: fZona,
+        fecha: fFecha,
         fechaInicio,
-        fechaFin,
         page: CURRENT_PAGE,
         pageSize: PAGE_SIZE
     };
@@ -1674,15 +1706,7 @@ function renderTable(fletes) {
     const role = (session?.profile?.rol || session?.user?.user_metadata?.rol || 'operario').toLowerCase();
     const currentUserId = session?.user?.id;
 
-    const filtered = fletes.filter(f => {
-        const contratista = f.contratista || '';
-        const placa = f.placa || '';
-        const no_planilla = f.no_planilla || '';
-        const matchQ = (placa.toLowerCase().includes(q) || contratista.toLowerCase().includes(q) || (f.proveedor || '').toLowerCase().includes(q) || no_planilla.toLowerCase().includes(q));
-        const matchZ = fZona ? f.zona === fZona : true;
-        const matchF = fFecha ? f.fecha === fFecha : true;
-        return matchQ && matchZ && matchF;
-    });
+    const filtered = fletes; // El filtrado ahora viene del servidor
 
     tbody.innerHTML = "";
     if (filtered.length === 0) {
@@ -1719,14 +1743,13 @@ function renderTable(fletes) {
     });
 }
 
-function buscarFletes() {
-    const q = document.getElementById("buscarFlete")?.value.toLowerCase() || "";
-    const fZona = document.getElementById("filtroZona")?.value || "";
-    const fFecha = document.getElementById("filtroFecha")?.value || "";
-
-    // Si no hay filtros activos y no hay búsqueda, simplemente listar el mes actual (reset=true)
-    // Esto evita que listarFletes cargue demasiados datos si el usuario borra la búsqueda
+// Versión debounced de la búsqueda para no saturar Supabase
+const buscarFletesDebounced = debounce(() => {
     listarFletes(true);
+}, 400);
+
+function buscarFletes() {
+    buscarFletesDebounced();
 }
 
 window.editarFlete = async function (id) {

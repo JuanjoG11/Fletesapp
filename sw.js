@@ -33,11 +33,32 @@ self.addEventListener('activate', (event) => {
     self.clients.claim();
 });
 
-// Estrategia de Cache: Network First (Red primero, luego cache)
+// Estrategia de Cache: Stale-While-Revalidate para assets, Network-First para el resto
 self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        fetch(event.request).catch(() => {
-            return caches.match(event.request);
-        })
-    );
+    const url = new URL(event.request.url);
+
+    // Si es un asset estático (CSS, JS, Imágenes), usar Stale-While-Revalidate
+    const isStaticAsset = ASSETS_TO_CACHE.some(asset => event.request.url.includes(asset.replace('./', ''))) ||
+        url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|woff2)$/);
+
+    if (isStaticAsset) {
+        event.respondWith(
+            caches.match(event.request).then((cachedResponse) => {
+                const fetchPromise = fetch(event.request).then((networkResponse) => {
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, networkResponse.clone());
+                    });
+                    return networkResponse;
+                });
+                return cachedResponse || fetchPromise;
+            })
+        );
+    } else {
+        // Para el resto (HTML, API calls de Supabase - aunque éstas suelen ser POST/PATCH), red primero
+        event.respondWith(
+            fetch(event.request).catch(() => {
+                return caches.match(event.request);
+            })
+        );
+    }
 });

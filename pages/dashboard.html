@@ -11,13 +11,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 
-    <!-- 📊 Librerías Externas -->
+    <!-- 📊 Librerías Externas (Deferred for Performance) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"
+        defer></script>
 
     <link rel="stylesheet" href="../css/styles.css">
 
@@ -493,12 +494,80 @@
                             <input id="op_conductor" placeholder="Nombre Completo">
                         </div>
                         <div class="input-group">
+                            <label>Cédula Conductor</label>
+                            <input id="op_cedula_conductor" placeholder="C.C. No.">
+                        </div>
+                        <div class="input-group">
+                            <label>Teléfono Conductor</label>
+                            <input id="op_telefono_conductor" placeholder="Celular">
+                        </div>
+                        <div class="input-group">
                             <label>Modelo del Vehículo</label>
                             <input id="op_modelo" placeholder="Ej: Camión Turbo, Van, etc.">
                         </div>
                         <div class="input-group">
                             <label>Nombre Contratista</label>
                             <input id="op_contratista" placeholder="Propietario del Vehículo">
+                        </div>
+                        <div class="input-group">
+                            <label>Doc. Contratista</label>
+                            <input id="op_doc_contratista" placeholder="C.C. o NIT">
+                        </div>
+                        <div class="input-group">
+                            <label>Titular de Contrato</label>
+                            <input id="op_titular_contrato" placeholder="Nombre completo">
+                        </div>
+                        <div class="input-group">
+                            <label>Licencia de Tránsito</label>
+                            <input id="op_licencia_transito" placeholder="Datos Licencia">
+                        </div>
+
+                        <!-- SECCIÓN DOCUMENTACIÓN -->
+                        <div
+                            style="grid-column: 1 / -1; margin-top: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 5px;">
+                            <h3 style="font-size: 0.9rem; color: var(--accent-orange);"><i
+                                    class="ri-file-info-line"></i> Vencimiento de Documentos</h3>
+                        </div>
+
+                        <div class="input-group">
+                            <label>SOAT (Vencimiento)</label>
+                            <input id="op_soat_vencimiento" type="date">
+                        </div>
+                        <div class="input-group">
+                            <label>Tecnomecánica</label>
+                            <input id="op_tecnomecanica_vencimiento" type="date">
+                        </div>
+                        <div class="input-group">
+                            <label>Inspección Sanitaria</label>
+                            <input id="op_inspeccion_sanitaria_vencimiento" type="date">
+                        </div>
+                        <div class="input-group">
+                            <label>Fumigación Vehicular</label>
+                            <input id="op_fumigacion_vencimiento" type="date">
+                        </div>
+                        <div class="input-group">
+                            <label>Carnet BPM Conductor</label>
+                            <input id="op_carnet_bpm_vencimiento" type="date">
+                        </div>
+                        <div class="input-group">
+                            <label>Licencia Cond. (Venc.)</label>
+                            <input id="op_licencia_conduccion_vencimiento" type="date">
+                        </div>
+                        <div class="input-group">
+                            <label>No. Licencia Cond.</label>
+                            <input id="op_num_licencia_conduccion" placeholder="No. Licencia">
+                        </div>
+                        <div class="input-group">
+                            <label>Afiliación ARL</label>
+                            <input id="op_arl_afiliacion" placeholder="Empresa/Estado">
+                        </div>
+                        <div class="input-group">
+                            <label>Exámenes Médicos</label>
+                            <input id="op_examenes_medicos_vencimiento" type="date">
+                        </div>
+                        <div class="input-group">
+                            <label>Afiliación EPS</label>
+                            <input id="op_eps_afiliacion" placeholder="Empresa EPS">
                         </div>
                     </div>
                     <div class="form-actions" style="gap: 10px; flex-wrap: wrap;">
@@ -516,9 +585,13 @@
                     style="margin-top:20px; border-top:1px solid var(--glass-border); padding-top:20px">
                     <div class="card-header flex-header">
                         <h2><i class="ri-list-check-2"></i> Flota Registrada</h2>
-                        <div class="filters">
+                        <div class="filters" style="display: flex; gap: 10px; align-items: center;">
                             <input id="buscarVehiculo" placeholder="Buscar placa, conductor o contratista..."
-                                onkeyup="listarVehiculos()">
+                                onkeyup="buscarVehiculosDebounced()" style="flex: 1;">
+                            <button id="btnExportarVehiculos" onclick="exportarVehiculosExcel()" class="action-btn"
+                                title="Exportar Vehículos a Excel" style="padding: 8px 12px; height: 42px;">
+                                <i class="ri-file-excel-2-line"></i>
+                            </button>
                         </div>
                     </div>
                     <div class="table-container">
@@ -527,8 +600,22 @@
                                 <tr>
                                     <th>Placa</th>
                                     <th>Nombre Contratista</th>
+                                    <th>Doc. Contratista</th>
+                                    <th>Titular Contrato</th>
+                                    <th>Lic. Tránsito</th>
                                     <th>Conductor</th>
+                                    <th>Cédula</th>
+                                    <th>Teléfono</th>
                                     <th>Modelo</th>
+                                    <th>SOAT (Venc.)</th>
+                                    <th>Tecno (Venc.)</th>
+                                    <th>Sanitaria</th>
+                                    <th>Fumigación</th>
+                                    <th>BPM</th>
+                                    <th>Lic. Conducción</th>
+                                    <th>ARL</th>
+                                    <th>EPS</th>
+                                    <th>Ex. Médicos</th>
                                     <th>Estado</th>
                                     <th class="actions-col">Acciones</th>
                                 </tr>
@@ -796,12 +883,76 @@
                         <input id="edit-vehiculo-conductor" placeholder="Nombre completo">
                     </div>
                     <div class="input-group">
-                        <label>Modelo</label>
-                        <input id="edit-vehiculo-modelo" placeholder="Modelo del vehículo">
+                        <label>Cédula Conductor</label>
+                        <input id="edit-vehiculo-cedula_conductor" placeholder="C.C. No.">
                     </div>
                     <div class="input-group">
-                        <label>Nombre Contratista</label>
-                        <input id="edit-vehiculo-contratista" placeholder="Nombre del propietario">
+                        <label>Teléfono Conductor</label>
+                        <input id="edit-vehiculo-telefono_conductor" placeholder="Celular">
+                    </div>
+                    <div class="input-group">
+                        <label>Modelo</label>
+                        <input id="edit-vehiculo-modelo" placeholder="Turbo, Sencillo...">
+                    </div>
+                    <div class="input-group">
+                        <label>Contratista</label>
+                        <input id="edit-vehiculo-contratista" placeholder="Empresa/Persona">
+                    </div>
+                    <div class="input-group">
+                        <label>Doc. Contratista</label>
+                        <input id="edit-vehiculo-doc_contratista" placeholder="NIT/C.C.">
+                    </div>
+                    <div class="input-group">
+                        <label>Titular Contrato</label>
+                        <input id="edit-vehiculo-titular_contrato" placeholder="Nombre completo">
+                    </div>
+                    <div class="input-group">
+                        <label>Licencia Tránsito</label>
+                        <input id="edit-vehiculo-licencia_transito" placeholder="Datos licencia">
+                    </div>
+
+                    <div class="modal-section-title" style="grid-column: 1 / -1; margin-top: 15px;"><i
+                            class="ri-file-list-2-line"></i> Documentación y Vencimientos</div>
+
+                    <div class="input-group">
+                        <label>SOAT (Venc.)</label>
+                        <input id="edit-vehiculo-soat_vencimiento" type="date">
+                    </div>
+                    <div class="input-group">
+                        <label>Tecnomecánica</label>
+                        <input id="edit-vehiculo-tecnomecanica_vencimiento" type="date">
+                    </div>
+                    <div class="input-group">
+                        <label>Insp. Sanitaria</label>
+                        <input id="edit-vehiculo-inspeccion_sanitaria_vencimiento" type="date">
+                    </div>
+                    <div class="input-group">
+                        <label>Fumigación Vehic.</label>
+                        <input id="edit-vehiculo-fumigacion_vencimiento" type="date">
+                    </div>
+                    <div class="input-group">
+                        <label>Carnet BPM</label>
+                        <input id="edit-vehiculo-carnet_bpm_vencimiento" type="date">
+                    </div>
+                    <div class="input-group">
+                        <label>Licencia Cond. (Venc.)</label>
+                        <input id="edit-vehiculo-licencia_conduccion_vencimiento" type="date">
+                    </div>
+                    <div class="input-group">
+                        <label>Num. Licencia Cond.</label>
+                        <input id="edit-vehiculo-num_licencia_conduccion" placeholder="No. de Licencia">
+                    </div>
+                    <div class="input-group">
+                        <label>ARL Afiliación</label>
+                        <input id="edit-vehiculo-arl_afiliacion" placeholder="Detalle ARL">
+                    </div>
+                    <div class="input-group">
+                        <label>Exámenes Médicos</label>
+                        <input id="edit-vehiculo-examenes_medicos_vencimiento" type="date">
+                    </div>
+                    <div class="input-group">
+                        <label>EPS Afiliación</label>
+                        <input id="edit-vehiculo-eps_afiliacion" placeholder="Detalle EPS">
                     </div>
                 </div>
             </div>

@@ -359,7 +359,7 @@ async function obtenerFletes(filtros = {}) {
             // IMPORTANTE: placa y conductor están en la tabla relacionada 'vehiculos' si usamos join,
             // pero también están duplicados en 'fletes' según la estructura vista.
             // Para simplicidad y rendimiento, buscamos en los campos denormalizados de 'fletes'.
-            query = query.or(`placa.ilike.${q},contratista.ilike.${q},no_planilla.ilike.${q},proveedor.ilike.${q},poblacion.ilike.${q}`);
+            query = query.or(`placa.ilike.${q},contratista.ilike.${q},no_planilla.ilike.${q},proveedor.ilike.${q},poblacion.ilike.${q},auxiliares.ilike.${q}`);
         }
 
         // --- PAGINACIÓN ---

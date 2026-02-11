@@ -412,6 +412,12 @@ async function listarVehiculos() {
     const tbody = document.getElementById("tablaVehiculos");
     if (!tbody) return;
 
+    // Elementos de Alertas
+    const kpiVencidos = document.getElementById("kpi-vencidos");
+    const countVencidos = document.getElementById("v_docs_vencidos");
+    const panelAlertas = document.getElementById("panel-alertas");
+    const listaAlertas = document.getElementById("lista-alertas");
+
     // Filtro de búsqueda
     const q = document.getElementById("buscarVehiculo")?.value.toLowerCase() || "";
 
@@ -424,17 +430,23 @@ async function listarVehiculos() {
 
     // Filtrar localmente
     const filtered = FLOTA_VEHICULOS.filter(v => {
-        const contratista = (MAPA_CONTRATISTAS[v.placa] || '').toLowerCase();
+        const contratista = (v.contratista || '').toLowerCase();
         const conductor = (v.conductor || '').toLowerCase();
         const placa = (v.placa || '').toLowerCase();
         return placa.includes(q) || conductor.includes(q) || contratista.includes(q);
     });
 
-    tbody.innerHTML = "";
     if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6" style="text-align:center">No se encontraron vehículos</td></tr>`;
         return;
     }
+
+    const hoy = new Date();
+    let totalVencidosGral = 0;
+    let htmlAlertas = '';
+
+    // OPTIMIZACIÓN: Usar DocumentFragment para minimizar reflujos del DOM
+    const fragment = document.createDocumentFragment();
 
     filtered.forEach(v => {
         const tr = document.createElement("tr");
@@ -442,14 +454,37 @@ async function listarVehiculos() {
             ? '<span class="status-badge-active" style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;"><i class="ri-checkbox-circle-line"></i> Activo</span>'
             : '<span class="status-badge-inactive" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;"><i class="ri-error-warning-line"></i> Inactivo</span>';
 
-        // Usamos el contratista de la DB y si no está, el mapa
+        // Helper para resaltar fechas vencidas
+        const formatFecha = (fechaStr) => {
+            if (!fechaStr) return '<span style="color:#94a3b8">N/A</span>';
+            const venc = new Date(fechaStr);
+            const vencido = venc < hoy;
+            if (vencido) totalVencidosGral++; // Contar para el panel de alertas si es necesario
+            const style = vencido ? 'color: #ef4444; font-weight: 700;' : '';
+            return `<span style="${style}">${fechaStr}</span>`;
+        };
+
         const contratista = v.contratista || MAPA_CONTRATISTAS[v.placa] || 'N/A';
 
         tr.innerHTML = `
             <td><span class="badge-plate">${v.placa}</span></td>
-            <td><span class="badge" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); font-size: 0.75rem;">${contratista}</span></td>
+            <td>${contratista}</td>
+            <td>${v.doc_contratista || 'N/A'}</td>
+            <td>${v.titular_contrato || 'N/A'}</td>
+            <td>${v.licencia_transito || 'N/A'}</td>
             <td>${v.conductor}</td>
-            <td style="color: var(--text-muted)">${v.modelo || 'N/A'}</td>
+            <td>${v.cedula_conductor || 'N/A'}</td>
+            <td>${v.telefono_conductor || 'N/A'}</td>
+            <td>${v.modelo || 'N/A'}</td>
+            <td>${formatFecha(v.soat_vencimiento)}</td>
+            <td>${formatFecha(v.tecnomecanica_vencimiento)}</td>
+            <td>${formatFecha(v.inspeccion_sanitaria_vencimiento)}</td>
+            <td>${formatFecha(v.fumigacion_vencimiento)}</td>
+            <td>${formatFecha(v.carnet_bpm_vencimiento)}</td>
+            <td>${formatFecha(v.licencia_conduccion_vencimiento)}</td>
+            <td>${v.arl_afiliacion || 'N/A'}</td>
+            <td>${v.eps_afiliacion || 'N/A'}</td>
+            <td>${formatFecha(v.examenes_medicos_vencimiento)}</td>
             <td>${statusBadge}</td>
             <td class="actions-cell">
                 <button class="btn-icon edit" onclick="abrirModalEditarVehiculo('${v.id}')" title="Editar Vehículo">
@@ -460,19 +495,140 @@ async function listarVehiculos() {
                 </button>
             </td>
         `;
-        tbody.appendChild(tr);
+        fragment.appendChild(tr);
     });
+
+    tbody.innerHTML = "";
+    tbody.appendChild(fragment);
+
+    // Actualizar Panel de Alertas
+    if (totalVencidosGral > 0) {
+        if (kpiVencidos) kpiVencidos.style.display = 'flex';
+        if (countVencidos) countVencidos.innerText = totalVencidosGral;
+        if (panelAlertas) panelAlertas.style.display = 'block';
+        if (listaAlertas) listaAlertas.innerHTML = htmlAlertas;
+    } else {
+        if (kpiVencidos) kpiVencidos.style.display = 'none';
+        if (panelAlertas) panelAlertas.style.display = 'none';
+    }
+}
+
+// Búsqueda de vehículos con Debounce para evitar lag al escribir
+const buscarVehiculosDebounced = debounce(() => {
+    listarVehiculos();
+}, 300);
+
+async function exportarVehiculosExcel() {
+    try {
+        Swal.fire({
+            title: 'Preparando Excel...',
+            text: 'Obteniendo base de datos de vehículos',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading(),
+            background: '#1e293b',
+            color: '#fff'
+        });
+
+        // Siempre exportamos lo que está en memoria (que es lo de la empresa actual)
+        const data = FLOTA_VEHICULOS;
+
+        if (!data || data.length === 0) {
+            Swal.close();
+            return Swal.fire({ icon: 'info', title: 'Sin datos', text: 'No hay vehículos para exportar.', background: '#1e293b', color: '#fff' });
+        }
+
+        // Mapear campos para Excel
+        const datosMapeados = data.map(v => ({
+            'Placa': v.placa,
+            'Conductor': v.conductor,
+            'Cédula Conductor': v.cedula_conductor || 'N/A',
+            'Teléfono': v.telefono_conductor || 'N/A',
+            'Modelo': v.modelo || 'N/A',
+            'Contratista': v.contratista || MAPA_CONTRATISTAS[v.placa] || 'N/A',
+            'Doc. Contratista': v.doc_contratista || 'N/A',
+            'Titular Contrato': v.titular_contrato || 'N/A',
+            'Licencia Tránsito': v.licencia_transito || 'N/A',
+            'SOAT Venc.': v.soat_vencimiento || 'N/A',
+            'Tecnomecánica Venc.': v.tecnomecanica_vencimiento || 'N/A',
+            'Inspec. Sanitaria Venc.': v.inspeccion_sanitaria_vencimiento || 'N/A',
+            'Fumigación Venc.': v.fumigacion_vencimiento || 'N/A',
+            'BPM Venc.': v.carnet_bpm_vencimiento || 'N/A',
+            'Licencia Cond. Venc.': v.licencia_conduccion_vencimiento || 'N/A',
+            'No. Licencia': v.num_licencia_conduccion || 'N/A',
+            'ARL': v.arl_afiliacion || 'N/A',
+            'EPS': v.eps_afiliacion || 'N/A',
+            'Exámenes Médicos Venc.': v.examenes_medicos_vencimiento || 'N/A',
+            'Estado': v.activo ? 'ACTIVO' : 'INACTIVO',
+            'Empresa': v.razon_social || 'TYM'
+        }));
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(datosMapeados);
+
+        // Ajustar anchos de columna básicos
+        const wscols = [
+            { wch: 10 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
+            { wch: 25 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 15 },
+            { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
+        ];
+        ws['!cols'] = wscols;
+
+        XLSX.utils.book_append_sheet(wb, ws, "Vehiculos");
+
+        const fechaStr = new Date().toISOString().split('T')[0];
+        const nombreArchivo = `Reporte_Vehiculos_${CURRENT_RAZON_SOCIAL}_${fechaStr}.xlsx`;
+
+        XLSX.writeFile(wb, nombreArchivo);
+
+        Swal.fire({
+            icon: 'success',
+            title: '¡Éxito!',
+            text: 'Archivo descargado correctamente.',
+            timer: 2000,
+            showConfirmButton: false,
+            background: '#1e293b',
+            color: '#fff'
+        });
+
+    } catch (error) {
+        console.error('Error al exportar Excel:', error);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo generar el Excel.', background: '#1e293b', color: '#fff' });
+    }
 }
 
 async function abrirModalEditarVehiculo(id) {
     const v = FLOTA_VEHICULOS.find(veh => veh.id === id);
     if (!v) return;
 
-    document.getElementById("edit-vehiculo-id").value = v.id;
+    ID_VEHICULO_EDITANDO = id;
+
+    // Poblar campos base
     document.getElementById("edit-vehiculo-placa").value = v.placa;
     document.getElementById("edit-vehiculo-conductor").value = v.conductor;
+    document.getElementById("edit-vehiculo-cedula_conductor").value = v.cedula_conductor || "";
+    document.getElementById("edit-vehiculo-telefono_conductor").value = v.telefono_conductor || "";
     document.getElementById("edit-vehiculo-modelo").value = v.modelo || "";
     document.getElementById("edit-vehiculo-contratista").value = v.contratista || MAPA_CONTRATISTAS[v.placa] || "";
+    document.getElementById("edit-vehiculo-doc_contratista").value = v.doc_contratista || "";
+    document.getElementById("edit-vehiculo-titular_contrato").value = v.titular_contrato || "";
+    document.getElementById("edit-vehiculo-licencia_transito").value = v.licencia_transito || "";
+
+    // Poblar fechas y documentos
+    const camposFecha = [
+        'soat_vencimiento', 'tecnomecanica_vencimiento', 'inspeccion_sanitaria_vencimiento',
+        'fumigacion_vencimiento', 'carnet_bpm_vencimiento', 'licencia_conduccion_vencimiento',
+        'examenes_medicos_vencimiento'
+    ];
+
+    camposFecha.forEach(f => {
+        const el = document.getElementById(`edit-vehiculo-${f}`);
+        if (el) el.value = v[f] || "";
+    });
+
+    // Poblar campos texto adicionales
+    document.getElementById("edit-vehiculo-num_licencia_conduccion").value = v.num_licencia_conduccion || "";
+    document.getElementById("edit-vehiculo-arl_afiliacion").value = v.arl_afiliacion || "";
+    document.getElementById("edit-vehiculo-eps_afiliacion").value = v.eps_afiliacion || "";
 
     document.getElementById("modalEdicionVehiculo").classList.add("visible");
 }
@@ -482,23 +638,40 @@ function ocultarModalVehiculo() {
 }
 
 async function guardarCambiosVehiculo() {
-    const id = document.getElementById("edit-vehiculo-id").value;
-    const placa = document.getElementById("edit-vehiculo-placa").value.toUpperCase().replace(/[\s-]/g, '').trim();
-    const conductor = document.getElementById("edit-vehiculo-conductor").value.trim();
-    const modelo = document.getElementById("edit-vehiculo-modelo").value.trim();
-    const contratista = document.getElementById("edit-vehiculo-contratista").value.trim();
+    const id = ID_VEHICULO_EDITANDO;
+    const vData = {
+        placa: document.getElementById("edit-vehiculo-placa").value.toUpperCase().replace(/[\s-]/g, '').trim(),
+        conductor: document.getElementById("edit-vehiculo-conductor").value.trim(),
+        cedula_conductor: document.getElementById("edit-vehiculo-cedula_conductor").value.trim(),
+        telefono_conductor: document.getElementById("edit-vehiculo-telefono_conductor").value.trim(),
+        modelo: document.getElementById("edit-vehiculo-modelo").value.trim(),
+        contratista: document.getElementById("edit-vehiculo-contratista").value.trim(),
+        doc_contratista: document.getElementById("edit-vehiculo-doc_contratista").value.trim(),
+        titular_contrato: document.getElementById("edit-vehiculo-titular_contrato").value.trim(),
+        licencia_transito: document.getElementById("edit-vehiculo-licencia_transito").value.trim(),
+        soat_vencimiento: document.getElementById("edit-vehiculo-soat_vencimiento").value || null,
+        tecnomecanica_vencimiento: document.getElementById("edit-vehiculo-tecnomecanica_vencimiento").value || null,
+        inspeccion_sanitaria_vencimiento: document.getElementById("edit-vehiculo-inspeccion_sanitaria_vencimiento").value || null,
+        fumigacion_vencimiento: document.getElementById("edit-vehiculo-fumigacion_vencimiento").value || null,
+        carnet_bpm_vencimiento: document.getElementById("edit-vehiculo-carnet_bpm_vencimiento").value || null,
+        licencia_conduccion_vencimiento: document.getElementById("edit-vehiculo-licencia_conduccion_vencimiento").value || null,
+        num_licencia_conduccion: document.getElementById("edit-vehiculo-num_licencia_conduccion").value.trim(),
+        arl_afiliacion: document.getElementById("edit-vehiculo-arl_afiliacion").value.trim(),
+        examenes_medicos_vencimiento: document.getElementById("edit-vehiculo-examenes_medicos_vencimiento").value || null,
+        eps_afiliacion: document.getElementById("edit-vehiculo-eps_afiliacion").value.trim()
+    };
 
-    if (!placa || !conductor) {
+    if (!vData.placa || !vData.conductor) {
         return Swal.fire({ icon: 'warning', title: 'Atención', text: 'Placa y conductor son obligatorios', background: '#1e293b', color: '#fff' });
     }
 
     // Pre-check: ¿La placa ya existe en otro vehículo?
-    const existePlaca = FLOTA_VEHICULOS.find(v => v.placa === placa && v.id !== id);
+    const existePlaca = FLOTA_VEHICULOS.find(v => v.placa === vData.placa && v.id !== id);
     if (existePlaca) {
         return Swal.fire({
             icon: 'error',
             title: 'Placa Duplicada',
-            text: `Ya existe otro vehículo registrado con la placa ${placa}.`,
+            text: `Ya existe otro vehículo registrado con la placa ${vData.placa}.`,
             background: '#1e293b',
             color: '#fff'
         });
@@ -506,14 +679,13 @@ async function guardarCambiosVehiculo() {
 
     Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
 
-    const updateData = { placa, conductor, modelo, contratista };
-    const result = await SupabaseClient.vehiculos.update(id, updateData);
+    const result = await SupabaseClient.vehiculos.update(id, vData);
 
     if (result.success) {
         // OPTIMIZACIÓN: Actualizar cache local en lugar de recargar TODO
         const index = FLOTA_VEHICULOS.findIndex(v => v.id === id);
         if (index !== -1) {
-            FLOTA_VEHICULOS[index] = { ...FLOTA_VEHICULOS[index], ...updateData };
+            FLOTA_VEHICULOS[index] = { ...FLOTA_VEHICULOS[index], ...vData };
         }
 
         await listarVehiculos(); // Esto ahora usará el cache actualizado
@@ -568,15 +740,29 @@ async function toggleEstadoVehiculo(id, estadoActual, placa) {
 }
 
 async function registrarVehiculoOperario() {
-    const placaInput = document.getElementById("op_placa");
-    const condInput = document.getElementById("op_conductor");
-    const modInput = document.getElementById("op_modelo");
-    const contInput = document.getElementById("op_contratista");
+    const getVal = (id) => document.getElementById(id)?.value?.trim() || "";
 
-    const placa = placaInput.value.toUpperCase().replace(/[\s-]/g, '').trim();
-    const conductor = condInput.value.trim();
-    const modelo = modInput.value.trim() || "Estándar";
-    const contratista = contInput.value.trim() || MAPA_CONTRATISTAS[placa] || "N/A";
+    const placa = getVal("op_placa").toUpperCase().replace(/[\s-]/g, '');
+    const conductor = getVal("op_conductor");
+    const cedula_conductor = getVal("op_cedula_conductor");
+    const telefono_conductor = getVal("op_telefono_conductor");
+    const modelo = getVal("op_modelo") || "Estándar";
+    const contratista = getVal("op_contratista") || MAPA_CONTRATISTAS[placa] || "N/A";
+    const doc_contratista = getVal("op_doc_contratista");
+    const titular_contrato = getVal("op_titular_contrato");
+    const licencia_transito = getVal("op_licencia_transito");
+
+    // Datos Documentación
+    const soat_vencimiento = getVal("op_soat_vencimiento") || null;
+    const tecnomecanica_vencimiento = getVal("op_tecnomecanica_vencimiento") || null;
+    const inspeccion_sanitaria_vencimiento = getVal("op_inspeccion_sanitaria_vencimiento") || null;
+    const fumigacion_vencimiento = getVal("op_fumigacion_vencimiento") || null;
+    const carnet_bpm_vencimiento = getVal("op_carnet_bpm_vencimiento") || null;
+    const licencia_conduccion_vencimiento = getVal("op_licencia_conduccion_vencimiento") || null;
+    const num_licencia_conduccion = getVal("op_num_licencia_conduccion");
+    const arl_afiliacion = getVal("op_arl_afiliacion");
+    const examenes_medicos_vencimiento = getVal("op_examenes_medicos_vencimiento") || null;
+    const eps_afiliacion = getVal("op_eps_afiliacion");
 
     if (!placa || !conductor) {
         return Swal.fire({ icon: 'warning', title: 'Faltan Datos', text: 'Ingrese Placa y Conductor', background: '#1a1a1a', color: '#fff' });
@@ -587,18 +773,34 @@ async function registrarVehiculoOperario() {
     const result = await SupabaseClient.vehiculos.create({
         placa,
         conductor,
+        cedula_conductor,
+        telefono_conductor,
         modelo,
         contratista,
+        doc_contratista,
+        titular_contrato,
+        licencia_transito,
+        soat_vencimiento,
+        tecnomecanica_vencimiento,
+        inspeccion_sanitaria_vencimiento,
+        fumigacion_vencimiento,
+        carnet_bpm_vencimiento,
+        licencia_conduccion_vencimiento,
+        num_licencia_conduccion,
+        arl_afiliacion,
+        examenes_medicos_vencimiento,
+        eps_afiliacion,
         created_by: user.id
     });
 
     if (result.success) {
+        FLOTA_VEHICULOS = []; // Forzar recarga completa para incluir el nuevo registro con ID
         await listarVehiculos();
         await actualizarKPI();
-        placaInput.value = "";
-        condInput.value = "";
-        if (modInput) modInput.value = "";
-        if (contInput) contInput.value = "";
+
+        // Limpiar campos manualmente
+        const inputs = document.querySelectorAll('#operario-vehiculos .input-group input');
+        inputs.forEach(i => i.value = "");
 
         Swal.fire({
             icon: 'success', title: 'Vehículo Registrado',
@@ -1368,6 +1570,7 @@ async function obtenerDatosFormulario(prefix = "") {
     const finalData = {
         // Campos para la Base de Datos
         db: {
+            placa, // GUARDAR PLACA EN TABLA FLETES PARA BÚSQUEDA
             vehiculo_id: vehiculo?.id,
             user_id: user.id,
             razon_social: CURRENT_RAZON_SOCIAL || 'TYM', // Agregar empresa
@@ -1708,15 +1911,20 @@ function renderTable(fletes) {
 
     const filtered = fletes; // El filtrado ahora viene del servidor
 
-    tbody.innerHTML = "";
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center">No se encontraron fletes</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="15" style="text-align:center">No se encontraron fletes</td></tr>`;
         return;
     }
 
+    // OPTIMIZACIÓN DE RENDIMIENTO: Construir el fragmento de una vez
+    const fragment = document.createDocumentFragment();
+
     filtered.forEach(f => {
         const tr = document.createElement("tr");
-        if (f.id && f.id.toString().startsWith('temp-')) tr.style.opacity = "0.5";
+        const opacity = (f.id && f.id.toString().startsWith('temp-')) ? 'opacity: 0.5;' : '';
+        const esAdicional = f.adicionales === 'Si';
+
+        tr.style = opacity;
 
         tr.innerHTML = `
             <td>${f.fecha}</td>
@@ -1728,7 +1936,7 @@ function renderTable(fletes) {
             <td>${f.zona || '-'}</td>
             <td>${f.poblacion || 'N/A'}</td>
             <td>${f.no_auxiliares || 0} (${f.auxiliares || '-'})</td>
-            <td><span class="badge" style="background: ${f.adicionales === 'Si' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.05)'}; color: ${f.adicionales === 'Si' ? 'var(--secondary)' : 'inherit'}; border: ${f.adicionales === 'Si' ? '1px solid var(--secondary)' : 'none'};">${f.adicionales || 'No'}</span></td>
+            <td><span class="badge" style="background: ${esAdicional ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.05)'}; color: ${esAdicional ? 'var(--secondary)' : 'inherit'}; border: ${esAdicional ? '1px solid var(--secondary)' : 'none'};">${f.adicionales || 'No'}</span></td>
             <td class="price-cell" style="color: var(--info);">${moneyFormatter.format(f.valor_adicional_negociacion || 0)}</td>
             <td style="font-size: 0.85rem; color: var(--text-muted); white-space: normal;" title="${f.razon_adicional_negociacion || ''}">${f.razon_adicional_negociacion || '-'}</td>
             <td class="price-cell">${moneyFormatter.format(f.valor_ruta || 0)}</td>
@@ -1739,8 +1947,11 @@ function renderTable(fletes) {
                 <button class="btn-icon delete" onclick="eliminarFlete('${f.id}')" title="Eliminar"><i class="ri-delete-bin-line"></i></button>
             </td>` : ''}
         `;
-        tbody.appendChild(tr);
+        fragment.appendChild(tr);
     });
+
+    tbody.innerHTML = "";
+    tbody.appendChild(fragment);
 }
 
 // Versión debounced de la búsqueda para no saturar Supabase

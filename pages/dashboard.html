@@ -487,7 +487,7 @@
                         <div class="input-group">
                             <label>Placa Vehículo</label>
                             <input id="op_placa" placeholder="EJ: XYZ789"
-                                oninput="this.value = this.value.toUpperCase().replace('-', '')">
+                                oninput="this.value = this.value.toUpperCase().replace('-', ''); autoFillConductorOperario(this.value)">
                         </div>
                         <div class="input-group">
                             <label>Nombre Conductor</label>
@@ -504,6 +504,25 @@
                         <div class="input-group">
                             <label>Modelo del Vehículo</label>
                             <input id="op_modelo" placeholder="Ej: Camión Turbo, Van, etc.">
+                        </div>
+                        <div class="input-group">
+                            <label>Carrocería</label>
+                            <input id="op_carroceria" placeholder="Tipo de carrocería">
+                        </div>
+                        <div class="input-group">
+                            <label>Capacidad</label>
+                            <input id="op_capacidad" placeholder="Capacidad de carga">
+                        </div>
+                        <div class="input-group">
+                            <label>Servicio</label>
+                            <input id="op_servicio" placeholder="Tipo de servicio">
+                        </div>
+                        <div class="input-group">
+                            <label>Contrato</label>
+                            <select id="op_contrato">
+                                <option value="SI" selected>SI</option>
+                                <option value="NO">NO</option>
+                            </select>
                         </div>
                         <div class="input-group">
                             <label>Nombre Contratista</label>
@@ -599,6 +618,10 @@
                             <thead>
                                 <tr>
                                     <th>Placa</th>
+                                    <th>Carrocería</th>
+                                    <th>Capacidad</th>
+                                    <th>Servicio</th>
+                                    <th>Contrato</th>
                                     <th>Nombre Contratista</th>
                                     <th>Doc. Contratista</th>
                                     <th>Titular Contrato</th>
@@ -893,6 +916,25 @@
                     <div class="input-group">
                         <label>Modelo</label>
                         <input id="edit-vehiculo-modelo" placeholder="Turbo, Sencillo...">
+                    </div>
+                    <div class="input-group">
+                        <label>Carrocería</label>
+                        <input id="edit-vehiculo-carroceria" placeholder="Tipo de carrocería">
+                    </div>
+                    <div class="input-group">
+                        <label>Capacidad</label>
+                        <input id="edit-vehiculo-capacidad" placeholder="Capacidad de carga">
+                    </div>
+                    <div class="input-group">
+                        <label>Servicio</label>
+                        <input id="edit-vehiculo-servicio" placeholder="Tipo de servicio">
+                    </div>
+                    <div class="input-group">
+                        <label>Contrato</label>
+                        <select id="edit-vehiculo-contrato">
+                            <option value="SI">SI</option>
+                            <option value="NO">NO</option>
+                        </select>
                     </div>
                     <div class="input-group">
                         <label>Contratista</label>

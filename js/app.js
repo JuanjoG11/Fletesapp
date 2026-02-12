@@ -468,6 +468,10 @@ async function listarVehiculos() {
 
         tr.innerHTML = `
             <td><span class="badge-plate">${v.placa}</span></td>
+            <td>${v.carroceria || 'N/A'}</td>
+            <td>${v.capacidad || 'N/A'}</td>
+            <td>${v.servicio || 'N/A'}</td>
+            <td><span class="badge" style="background: ${v.contrato === 'SI' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; color: ${v.contrato === 'SI' ? '#10b981' : '#ef4444'}; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;">${v.contrato || 'SI'}</span></td>
             <td>${contratista}</td>
             <td>${v.doc_contratista || 'N/A'}</td>
             <td>${v.titular_contrato || 'N/A'}</td>
@@ -540,6 +544,10 @@ async function exportarVehiculosExcel() {
         // Mapear campos para Excel
         const datosMapeados = data.map(v => ({
             'Placa': v.placa,
+            'Carrocería': v.carroceria || 'N/A',
+            'Capacidad': v.capacidad || 'N/A',
+            'Servicio': v.servicio || 'N/A',
+            'Contrato': v.contrato || 'SI',
             'Conductor': v.conductor,
             'Cédula Conductor': v.cedula_conductor || 'N/A',
             'Teléfono': v.telefono_conductor || 'N/A',
@@ -608,6 +616,10 @@ async function abrirModalEditarVehiculo(id) {
     document.getElementById("edit-vehiculo-cedula_conductor").value = v.cedula_conductor || "";
     document.getElementById("edit-vehiculo-telefono_conductor").value = v.telefono_conductor || "";
     document.getElementById("edit-vehiculo-modelo").value = v.modelo || "";
+    document.getElementById("edit-vehiculo-carroceria").value = v.carroceria || "";
+    document.getElementById("edit-vehiculo-capacidad").value = v.capacidad || "";
+    document.getElementById("edit-vehiculo-servicio").value = v.servicio || "";
+    document.getElementById("edit-vehiculo-contrato").value = v.contrato || "SI";
     document.getElementById("edit-vehiculo-contratista").value = v.contratista || MAPA_CONTRATISTAS[v.placa] || "";
     document.getElementById("edit-vehiculo-doc_contratista").value = v.doc_contratista || "";
     document.getElementById("edit-vehiculo-titular_contrato").value = v.titular_contrato || "";
@@ -645,6 +657,10 @@ async function guardarCambiosVehiculo() {
         cedula_conductor: document.getElementById("edit-vehiculo-cedula_conductor").value.trim(),
         telefono_conductor: document.getElementById("edit-vehiculo-telefono_conductor").value.trim(),
         modelo: document.getElementById("edit-vehiculo-modelo").value.trim(),
+        carroceria: document.getElementById("edit-vehiculo-carroceria").value.trim(),
+        capacidad: document.getElementById("edit-vehiculo-capacidad").value.trim(),
+        servicio: document.getElementById("edit-vehiculo-servicio").value.trim(),
+        contrato: document.getElementById("edit-vehiculo-contrato").value || "SI",
         contratista: document.getElementById("edit-vehiculo-contratista").value.trim(),
         doc_contratista: document.getElementById("edit-vehiculo-doc_contratista").value.trim(),
         titular_contrato: document.getElementById("edit-vehiculo-titular_contrato").value.trim(),
@@ -747,6 +763,10 @@ async function registrarVehiculoOperario() {
     const cedula_conductor = getVal("op_cedula_conductor");
     const telefono_conductor = getVal("op_telefono_conductor");
     const modelo = getVal("op_modelo") || "Estándar";
+    const carroceria = getVal("op_carroceria");
+    const capacidad = getVal("op_capacidad");
+    const servicio = getVal("op_servicio");
+    const contrato = getVal("op_contrato") || "SI";
     const contratista = getVal("op_contratista") || MAPA_CONTRATISTAS[placa] || "N/A";
     const doc_contratista = getVal("op_doc_contratista");
     const titular_contrato = getVal("op_titular_contrato");
@@ -776,6 +796,10 @@ async function registrarVehiculoOperario() {
         cedula_conductor,
         telefono_conductor,
         modelo,
+        carroceria,
+        capacidad,
+        servicio,
+        contrato,
         contratista,
         doc_contratista,
         titular_contrato,

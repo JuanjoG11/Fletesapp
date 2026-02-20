@@ -490,6 +490,15 @@
                                 oninput="this.value = this.value.toUpperCase().replace('-', ''); autoFillConductorOperario(this.value)">
                         </div>
                         <div class="input-group">
+                            <label>Proveedor</label>
+                            <select id="op_proveedor">
+                                <option value="" disabled selected>Seleccione...</option>
+                                <option>ALPINA</option>
+                                <option>ZENU</option>
+                                <option>FLEISCHMANN</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
                             <label>Nombre Conductor</label>
                             <input id="op_conductor" placeholder="Nombre Completo">
                         </div>
@@ -618,6 +627,7 @@
                             <thead>
                                 <tr>
                                     <th>Placa</th>
+                                    <th>Proveedor</th>
                                     <th>Carrocería</th>
                                     <th>Capacidad</th>
                                     <th>Servicio</th>
@@ -904,6 +914,15 @@
                     <div class="input-group">
                         <label>Conductor</label>
                         <input id="edit-vehiculo-conductor" placeholder="Nombre completo">
+                    </div>
+                    <div class="input-group">
+                        <label>Proveedor</label>
+                        <select id="edit-vehiculo-proveedor">
+                            <option value="" disabled selected>Seleccione...</option>
+                            <option>ALPINA</option>
+                            <option>ZENU</option>
+                            <option>FLEISCHMANN</option>
+                        </select>
                     </div>
                     <div class="input-group">
                         <label>Cédula Conductor</label>

@@ -468,6 +468,7 @@ async function listarVehiculos() {
 
         tr.innerHTML = `
             <td><span class="badge-plate">${v.placa}</span></td>
+            <td>${v.proveedor || 'N/A'}</td>
             <td>${v.carroceria || 'N/A'}</td>
             <td>${v.capacidad || 'N/A'}</td>
             <td>${v.servicio || 'N/A'}</td>
@@ -544,6 +545,7 @@ async function exportarVehiculosExcel() {
         // Mapear campos para Excel
         const datosMapeados = data.map(v => ({
             'Placa': v.placa,
+            'Proveedor': v.proveedor || 'N/A',
             'Carrocería': v.carroceria || 'N/A',
             'Capacidad': v.capacidad || 'N/A',
             'Servicio': v.servicio || 'N/A',
@@ -613,6 +615,7 @@ async function abrirModalEditarVehiculo(id) {
     // Poblar campos base
     document.getElementById("edit-vehiculo-placa").value = v.placa;
     document.getElementById("edit-vehiculo-conductor").value = v.conductor;
+    document.getElementById("edit-vehiculo-proveedor").value = v.proveedor || "";
     document.getElementById("edit-vehiculo-cedula_conductor").value = v.cedula_conductor || "";
     document.getElementById("edit-vehiculo-telefono_conductor").value = v.telefono_conductor || "";
     document.getElementById("edit-vehiculo-modelo").value = v.modelo || "";
@@ -654,6 +657,7 @@ async function guardarCambiosVehiculo() {
     const vData = {
         placa: document.getElementById("edit-vehiculo-placa").value.toUpperCase().replace(/[\s-]/g, '').trim(),
         conductor: document.getElementById("edit-vehiculo-conductor").value.trim(),
+        proveedor: document.getElementById("edit-vehiculo-proveedor").value,
         cedula_conductor: document.getElementById("edit-vehiculo-cedula_conductor").value.trim(),
         telefono_conductor: document.getElementById("edit-vehiculo-telefono_conductor").value.trim(),
         modelo: document.getElementById("edit-vehiculo-modelo").value.trim(),
@@ -760,6 +764,7 @@ async function registrarVehiculoOperario() {
 
     const placa = getVal("op_placa").toUpperCase().replace(/[\s-]/g, '');
     const conductor = getVal("op_conductor");
+    const proveedor = getVal("op_proveedor");
     const cedula_conductor = getVal("op_cedula_conductor");
     const telefono_conductor = getVal("op_telefono_conductor");
     const modelo = getVal("op_modelo") || "Estándar";
@@ -793,6 +798,7 @@ async function registrarVehiculoOperario() {
     const result = await SupabaseClient.vehiculos.create({
         placa,
         conductor,
+        proveedor,
         cedula_conductor,
         telefono_conductor,
         modelo,

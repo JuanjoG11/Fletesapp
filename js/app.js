@@ -140,6 +140,44 @@ const CONFIG_TAT = {
     preciosPoblacion: {}
 };
 
+const MAPA_PLACA_ZONA_MIERCOLES = {
+    "SPU120": "M9601", "SXF257": "M9602", "VZD334": "M9603", "SNP761": "M9604",
+    "WFV015": "M9605", "ESU446": "M9606", "KOL802": "M9552", "TJX795": "M9553",
+    "WHN436": "M9554", "SMH182": "M9555", "SLI587": "M9556", "TRL186": "M9557",
+    "EYZ091": "M9558", "TTL256": "M9559", "EST067": "P7005", "SQB119": "FLEISCHMANN"
+};
+
+const LISTA_AUXILIARES_ALPINA = [
+    "ESTIVEN GUTIERREZ SALAZAR", "ROVINSON TORRES RIVERA", "ARBEY DE JESUS LARGO LARGO",
+    "CRISTIAN CAMILO OSPINA PARRA", "VICTOR ALFONSO PULGARIN MEJIA", "CHRISTIAN DAVID CAICEDO MONTAÑO",
+    "JOSE ALEXANDER CONSTAIN PERLAZA", "EDWIN MAURICIO GOMEZ GALINDO", "ADRIAN FELIPE MARTINEZ ORTEGON",
+    "CARLOS ANDRES PINEDA CANO", "JUAN ALEJANDRO FRANCO MARIN", "LUIS CARLOS CADAVID RESTREPO",
+    "BRAHIAN STIVEN VALENCIA IGLESIAS", "JOHN EDWAR ZAPATA ACEVEDO", "BRANDON STEVEN GIL BAEZ",
+    "JUAN MANUEL DELGADO NARVAEZ", "GABRIEL ALEJANDRO GAMEZ VALERO", "YEISON DAVID RENDON SOTO",
+    "SEBASTIAN VILLADA VELASQUEZ", "CAMILO ANDRES CONTRERAS RIVAS", "ANDRES FELIPE VILLA OSORIO",
+    "JUAN DIEGO FRANCO VERGARA", "JUAN DAVID QUINTERO GRAJALES", "RONALD ADOLFO ANGULO MACUASE",
+    "JHONATAN RENDON RINCON", "NELSON ZULUAGA ACEVEDO", "JUAN ESTEBAN ALZATE VASQUEZ",
+    "CRISTIAN FABIAN CAMACHO MARTINEZ", "DIORLAN ANTONIO MESA FLOREZ", "OSCAR MAURICIO RESTREPO MORENO",
+    "JHON FREDY MORENO", "MICHAEL STEVEN HENAO RODRIGUEZ", "JUAN CAMILO COCOMA OROZCO"
+];
+
+const LISTA_AUXILIARES_ZENU = [
+    "CESAR AUGUSTO CASTILLO LONDOÑO", "JAMMES ALBERTO RAMIREZ NIETO", "SEBASTIAN SALAZAR HENAO",
+    "DANIEL FELIPE MURILLO GRANDA", "FELIPE MONTES RIVERA", "GUSTAVO ADOLFO MORALES TIRADO",
+    "JHONATAN MENA GALLEGO", "OSCAR MAURICIO GUARUMO CLAVIJO"
+];
+
+const LISTA_AUXILIARES_TAT = [
+    "DANIELA CASTIBLANCO RAMIREZ", "MICHAEL CONTRERAS HURTADO", "LUIS ALFONSO RIOS GONZALEZ",
+    "JOHN ANDRES CASTILLO GIRALDO", "MANUEL ALEJANDRO RAMIREZ OVALLE", "JULIAN DAVID RODRIGUEZ MONTOYA",
+    "YERFREY FLORES ARROYAVE", "FIDEL HERNANDO GARCIA CORREA", "JOHN RAUL GRAJALES CANO",
+    "JUAN GUILLERMO FERNANDEZ GIRALDO", "JOSE ARLEY MARIN HERRERA", "SAMUEL ANDRES ARIAS ARCILA",
+    "VALENTINA GARCIA GOMEZ", "NATALY MOLINA BECERRA", "LINO LOPEZ SIMONS",
+    "LUZ MARINA GUZMAN TORO", "VALENTINA LONDOÑO MARIN", "BRANDON STIVEN ALZATE GONZALEZ",
+    "NELLY YURANNY SALDARRIAGA CAÑAS"
+];
+
+
 // ==========================================================
 // 🛠️ UTILS & FORMATTERS
 // ==========================================================
@@ -395,7 +433,7 @@ function buscarConductorPorPlaca(placaId, conductorId) {
             conductorInput.style.borderColor = "#10b981";
             conductorInput.style.boxShadow = "0 0 10px rgba(16, 185, 129, 0.2)";
         } else {
-            // Si no está en cache, buscar en servidor (Filtrado por Empresa actual)
+            // Si no está en cache, buscar en servidor
             SupabaseClient.vehiculos.getByPlaca(val, CURRENT_RAZON_SOCIAL).then(res => {
                 if (res.success && res.data) {
                     conductorInput.value = res.data.conductor;
@@ -406,6 +444,36 @@ function buscarConductorPorPlaca(placaId, conductorId) {
                     conductorInput.style.boxShadow = "none";
                 }
             });
+        }
+
+        // --- DETECCIÓN AUTOMÁTICA DE ZONA POR PLACA (MIERCOLES) ---
+        const prefix = placaId.startsWith("modal-") ? "modal-" : "";
+        const diaInput = document.getElementById(prefix + "dia");
+        let diaActual = diaInput ? diaInput.value : "";
+        if (!diaActual) {
+            const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
+            diaActual = diasSemana[new Date().getDay()];
+        }
+
+        if (diaActual === 'Miercoles' && MAPA_PLACA_ZONA_MIERCOLES[val]) {
+            const zonaAuto = MAPA_PLACA_ZONA_MIERCOLES[val];
+            const provEl = document.getElementById(prefix + "proveedor");
+
+            if (provEl && !provEl.value) {
+                provEl.value = (val === "SQB119" || val.startsWith("FC")) ? "FLEISCHMANN" : "ALPINA";
+                actualizarZonasPorProveedor(prefix);
+            }
+
+            const container = document.getElementById(prefix + "zona-container");
+            if (container) {
+                const check = container.querySelector(`input[value="${zonaAuto}"]`);
+                if (check) {
+                    check.checked = true;
+                    ULTIMA_ZONA_SELECCIONADA[prefix] = zonaAuto;
+                    actualizarPoblaciones(prefix);
+                    calcularTotal(prefix);
+                }
+            }
         }
     });
 }
@@ -1021,7 +1089,7 @@ const PRECIOS_ALPINA = {
     "ANSERMA NUEVO": 250000,
     "ANSERMA NUEVO 2T": 280000, // 2 Toneladas
     "SANTA ROSA": 230000,
-    "DOSQUEBRADAS": 190000,
+    "DOSQUEBRADAS": 200000,
     "PEREIRA": 200000,
     "PEREIRA-DOSQUEBRADAS": 230000,
     "CUBA": 200000,
@@ -1084,7 +1152,7 @@ const POBLACIONES_RISARALDA = [
     "SANTUARIO", "PUEBLO RICO", "SANTA CECILIA", "BALBOA LA CELIA", "BALBOA-LA CELIA",
     "MARSELLA", "SANTUARIO APIA", "APIA- PUEBLO RICO", "BELEN MISTRATO",
     "PUEBLO RICO-SANTA CECILIA", "GUATICA-RISARALDA", "PEREIRA-DOSQUEBRADAS",
-    "PEREIRA MM CARRO GRANDE", "MANIZALES", "CARTAGO", "SAN JOSÉ-BELALCAZAR", "ANSERMA", "CAIRO ARGELIA"
+    "PEREIRA MM CARRO GRANDE", "MANIZALES", "CARTAGO", "SAN JOSÉ-BELALCAZAR", "ANSERMA", "ANSERMA NUEVO", "CAIRO ARGELIA"
 ];
 
 const ZONAS_CALDAS = ["M9552", "M9553", "M9554", "M9555", "M9556", "M9557", "M9560", "M9558", "M9559", "P7002", "M9550", "P7000", "P7001", "E7001-CALDAS", "DOBLE F"];
@@ -1092,7 +1160,7 @@ const POBLACIONES_CALDAS = [
     "MANIZALES", "MANIZALES - VILLAMARIA", "CHINCHINA", "NEIRA", "PALESTINA ARAUCA LA PLATA",
     "ARANZAZU FILADELFIA", "RIOSUCIO", "SUPIA", "MARMATO", "PACORA", "AGUADAS",
     "AGUADAS-PACORA", "SUPIA-MARMATO", "IRRA LA FELISA LA MERCED", "ANSERMA",
-    "BELEN", "VITERBO", "SAN JOSÉ-BELALCAZAR"
+    "BELEN", "VITERBO", "ANSERMA NUEVO", "SAN JOSÉ-BELALCAZAR"
 ];
 
 const ZONAS_QUINDIO = ["M9601", "M9602", "M9603", "M9604", "M9605", "M9606", "M9600", "P7008", "P7009", "P7010", "DOBLE F"];
@@ -1280,12 +1348,14 @@ const MAPA_ZONA_POBLACION_ALPINA = {
         "M9458": "PEREIRA",
         "M9459": "PEREIRA",
         "M9460": "DOSQUEBRADAS",
-        "P7005": "ANSERMA",
+        "P7005": "ANSERMA NUEVO",
         "M9450": "ANSERMA",
+        "P7004": "CARTAGO",
+        "FC02": "MANIZALES - VILLAMARIA",
+        "FLEISCHMANN": "PEREIRA-DOSQUEBRADAS",
         "P7006": "BALBOA LA CELIA",
         "P7007": "GUATICA",
-        "M9451": "GUATICA",
-        "FLEISCHMANN": "PEREIRA"
+        "M9451": "GUATICA"
     },
     "Jueves": {
         "M9557": "QUINCHIA",
@@ -1555,11 +1625,16 @@ function actualizarPoblaciones(prefix = "") {
                 const mappedName = manualMapeo[name] || name;
                 const searchPob = mappedName.replace(/[\s-]/g, '');
 
-                // Buscar coincidencia exacta o parecida en la lista actual
-                const found = listaUsar.find(p => {
-                    const candidate = p.toUpperCase().trim().replace(/[\s-]/g, '');
-                    return candidate === searchPob || candidate.includes(searchPob) || searchPob.includes(candidate);
-                });
+                // Buscar coincidencia exacta primero (prioridad máxima)
+                let found = listaUsar.find(p => p.toUpperCase().replace(/[\s-]/g, '') === searchPob);
+
+                // Si no hay exacta, buscar por contención (menos estricto)
+                if (!found) {
+                    found = listaUsar.find(p => {
+                        const candidate = p.toUpperCase().trim().replace(/[\s-]/g, '');
+                        return candidate.includes(searchPob) || searchPob.includes(candidate);
+                    });
+                }
 
                 if (found) {
                     pobEl.value = found;
@@ -1583,6 +1658,43 @@ function actualizarPoblaciones(prefix = "") {
     calcularTotal(prefix);
 }
 
+function actualizarListaAuxiliares(prefix = "") {
+    const provEl = document.getElementById(prefix + "proveedor");
+    const auxEl = document.getElementById(prefix + "auxiliares");
+    if (!provEl || !auxEl) return;
+
+    const proveedor = provEl.value;
+    let lista = [];
+
+    if (proveedor === "ALPINA" || proveedor === "FLEISCHMANN" || proveedor === "ALPINA-FLEISCHMANN") {
+        lista = LISTA_AUXILIARES_ALPINA;
+    } else if (proveedor === "ZENU") {
+        lista = LISTA_AUXILIARES_ZENU;
+    } else if (["UNILEVER", "FAMILIA", "POLAR"].includes(proveedor)) {
+        lista = LISTA_AUXILIARES_TAT;
+    } else if (CURRENT_RAZON_SOCIAL === 'TAT' && !proveedor) {
+        // Para TAT, todos los proveedores usan la misma lista, así que podemos mostrarla de entrada
+        lista = LISTA_AUXILIARES_TAT;
+    }
+
+    // Repoblar el select
+    const currentVal = auxEl.value;
+    const placeholderText = lista.length === 0 ? "Elija proveedor primero" : "Seleccione...";
+    auxEl.innerHTML = `<option value="" disabled selected>${placeholderText}</option>`;
+
+    lista.forEach(nombre => {
+        const opt = document.createElement("option");
+        opt.value = nombre;
+        opt.textContent = nombre;
+        auxEl.appendChild(opt);
+    });
+
+    // Intentar mantener selección si el nombre está en la nueva lista
+    if (lista.includes(currentVal)) {
+        auxEl.value = currentVal;
+    }
+}
+
 function actualizarZonasPorProveedor(prefix = "") {
     const provEl = document.getElementById(prefix + "proveedor");
     // ID unified logic: "zona-container" vs "modal-zona-container"
@@ -1592,6 +1704,9 @@ function actualizarZonasPorProveedor(prefix = "") {
     // asi que prefix + "zona-container" es correcto (modal-zona-container)
 
     if (!provEl || !zonaEl) return;
+
+    // Actualizar también la lista de auxiliares según el proveedor
+    actualizarListaAuxiliares(prefix);
 
     const proveedor = provEl.value;
 
@@ -1619,7 +1734,7 @@ function actualizarZonasPorProveedor(prefix = "") {
         { value: "25029", text: "25029" }, { value: "FC01", text: "FC01" }, { value: "FC02", text: "FC02" },
         { value: "FC03", text: "FC03" }, { value: "FQ04", text: "FQ04" }, { value: "FQ05", text: "FQ05" },
         { value: "FQ06", text: "FQ06" }, { value: "FR07", text: "FR07" }, { value: "FR08", text: "FR08" },
-        { value: "FR09", text: "FR09" }, { value: "DOBLE F", text: "DOBLE F" }
+        { value: "FR09", text: "FR09" }, { value: "FLEISCHMANN", text: "FLEISCHMANN" }, { value: "DOBLE F", text: "DOBLE F" }
     ];
 
     // Usar la lista hardcoded en lugar de intentar leer el DOM vacío
@@ -1647,8 +1762,9 @@ function actualizarZonasPorProveedor(prefix = "") {
     } else if (proveedor === "ZENU") {
         filtered = master.filter(z => z.value.startsWith("250") || z.value === "");
     } else if (proveedor === "FLEISCHMANN") {
-        const allowed = ["FC01", "FC02", "FC03", "FQ04", "FQ05", "FQ06", "FR07", "FR08", "FR09"];
-        filtered = master.filter(z => allowed.includes(z.value) || z.value === "");
+        const allowed = ["FC01", "FC02", "FC03", "FQ04", "FQ05", "FQ06", "FR07", "FR08", "FR09", "FLEISCHMANN"];
+        // Fleischmann ahora puede ver sus zonas + las zonas generales de Alpina (M, P7, E7) para permitir rutas a Pereira/Armenia
+        filtered = master.filter(z => allowed.includes(z.value) || z.value.startsWith("M") || z.value.startsWith("P7") || z.value.startsWith("E7") || z.value === "");
     } else if (proveedor === "ALPINA-FLEISCHMANN") {
         const fleischmannZones = ["FC01", "FC02", "FC03", "FQ04", "FQ05", "FQ06", "FR07", "FR08", "FR09"];
         // Incluir zonas de Alpina (M, P7, E7) + zonas de Fleischmann + DOBLE F
@@ -3640,6 +3756,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         setupCalculators("");
         setupCalculators("modal-");
+
+        // Inicializar listas de auxiliares
+        actualizarListaAuxiliares("");
+        actualizarListaAuxiliares("modal-");
 
         // Autocompletado de contratista al registrar vehículo
         document.getElementById("op_placa")?.addEventListener("input", (e) => {

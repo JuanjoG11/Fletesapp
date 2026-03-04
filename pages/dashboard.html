@@ -402,8 +402,9 @@
 
                         <div class="input-group">
                             <label>Nombres Auxiliares</label>
-                            <input id="auxiliares" type="text" placeholder="Nombre y Apellido"
-                                oninput="this.value = this.value.toUpperCase()" required>
+                            <select id="auxiliares" required>
+                                <option value="" disabled selected>Seleccione...</option>
+                            </select>
                         </div>
 
                         <div class="input-group">
@@ -842,8 +843,12 @@
                         </select> </div>
 
                     <div class="modal-section-title"><i class="ri-truck-line"></i> Detalles del Flete</div>
-                    <div class="input-group"> <label>Auxiliares</label> <input id="modal-auxiliares" type="text"
-                            oninput="this.value = this.value.toUpperCase()"> </div>
+                    <div class="input-group">
+                        <label>Auxiliares</label>
+                        <select id="modal-auxiliares">
+                            <option value="" disabled selected>Seleccione...</option>
+                        </select>
+                    </div>
                     <div class="input-group"> <label>No. Aux</label> <select id="modal-no_auxiliares">
                             <option>1</option>
                             <option>2</option>

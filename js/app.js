@@ -150,6 +150,17 @@ const MAPA_PLACA_ZONA_MIERCOLES = {
     "WTN748": "P7004", "ERK303": "P7006", "TNH494": "P7007"
 };
 
+const MAPA_PLACA_ZONA_JUEVES = {
+    "KOL802": "M9552", "TJX795": "M9553", "EYZ091": "M9554", "SMH182": "M9555",
+    "SLI587": "M9556", "TRL186": "M9557", "TTL256": "M9559",
+    "SPU120": "M9601", "SXF257": "M9602", "VZD334": "M9603", "SNP761": "M9604",
+    "WFV015": "M9605", "ESU446": "M9606", "EQY944": "P7008",
+    "WHM896": "M9453", "LUM993": "M9454", "SPQ814": "M9455", "TZM674": "M9456",
+    "WHM317": "M9457", "PEK019": "M9458", "SJT873": "M9459", "WLC133": "M9460",
+    "WTN748": "P7004", "EST067": "P7005", "ERK303": "P7006", "TNH494": "P7007",
+    "SQB119": "FLEISCHMANN"
+};
+
 const LISTA_AUXILIARES_ALPINA = [
     "ESTIVEN GUTIERREZ SALAZAR", "ROVINSON TORRES RIVERA", "ARBEY DE JESUS LARGO LARGO",
     "CRISTIAN CAMILO OSPINA PARRA", "VICTOR ALFONSO PULGARIN MEJIA", "CHRISTIAN DAVID CAICEDO MONTAÑO",
@@ -458,8 +469,10 @@ function buscarConductorPorPlaca(placaId, conductorId) {
             diaActual = diasSemana[new Date().getDay()];
         }
 
-        if (diaActual === 'Miercoles' && MAPA_PLACA_ZONA_MIERCOLES[val]) {
-            const zonaAuto = MAPA_PLACA_ZONA_MIERCOLES[val];
+        const mapaPlacasHoy = (diaActual === 'Miercoles') ? MAPA_PLACA_ZONA_MIERCOLES : (diaActual === 'Jueves') ? MAPA_PLACA_ZONA_JUEVES : null;
+
+        if (mapaPlacasHoy && mapaPlacasHoy[val]) {
+            const zonaAuto = mapaPlacasHoy[val];
             const provEl = document.getElementById(prefix + "proveedor");
 
             if (provEl && !provEl.value) {
@@ -1361,30 +1374,24 @@ const MAPA_ZONA_POBLACION_ALPINA = {
         "M9451": "GUATICA"
     },
     "Jueves": {
-        "M9557": "QUINCHIA",
-        "M9560": "RIOSUCIO",
-        "SABADO": "QUIMBAYA",
         "M9552": "MANIZALES - VILLAMARIA",
-        "SUPERCENTRO": "MANIZALES - VILLAMARIA",
-        "FC01": "MANIZALES - VILLAMARIA",
         "M9553": "MANIZALES - VILLAMARIA",
-        "M9554": "MANIZALES - VILLAMARIA",
+        "MANA": "MANIZALES - VILLAMARIA",
+        "M9554": "NEIRA",
         "M9555": "MANIZALES - VILLAMARIA",
-        "DEL": "MANIZALES - VILLAMARIA",
         "M9556": "MANIZALES - VILLAMARIA",
-        "FLORIDA": "MANIZALES - VILLAMARIA",
-        "M9559": "CHINCHINA",
-        "P7008": "CALARCA",
-        "M9601": "ARMENIA",
-        "BENIS": "ARMENIA",
+        "UNO": "MANIZALES - VILLAMARIA",
+        "M9557": "RIOSUCIO",
+        "M9560": "RIOSUCIO",
+        "M9559": "SAN JOSÉ-BELALCAZAR",
+        "M9601": "MONTENEGRO",
+        "P7009": "MONTENEGRO",
         "M9602": "ARMENIA",
-        "RINDEMAZ": "ARMENIA",
         "M9603": "ARMENIA",
-        "LA": "ARMENIA",
-        "M9604": "ARMENIA",
-        "MERCAMOS": "ARMENIA",
-        "M9605": "GENOVA",
-        "M9606": "CIRCASIA",
+        "M9604": "MONTENEGRO - P TAPAO",
+        "M9605": "CAICEDONIA",
+        "M9606": "ALCALÁ ULLOA",
+        "P7008": "CALARCA",
         "M9453": "DOSQUEBRADAS",
         "M9454": "DOSQUEBRADAS",
         "M9455": "DOSQUEBRADAS",
@@ -1393,6 +1400,7 @@ const MAPA_ZONA_POBLACION_ALPINA = {
         "M9458": "DOSQUEBRADAS",
         "M9459": "DOSQUEBRADAS",
         "M9460": "DOSQUEBRADAS",
+        "P7004": "ARABIA - ALTAGRACIA",
         "P7005": "CARTAGO",
         "P7006": "LA VIRGINIA",
         "P7007": "ANSERMA",
@@ -1685,7 +1693,10 @@ function actualizarListaAuxiliares(prefix = "") {
     const placeholderText = lista.length === 0 ? "Elija proveedor primero" : "Seleccione...";
     auxEl.innerHTML = `<option value="" disabled selected>${placeholderText}</option>`;
 
-    lista.forEach(nombre => {
+    // Ordenar alfabéticamente
+    const listaOrdenada = [...lista].sort();
+
+    listaOrdenada.forEach(nombre => {
         const opt = document.createElement("option");
         opt.value = nombre;
         opt.textContent = nombre;

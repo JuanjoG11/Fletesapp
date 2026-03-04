@@ -18,6 +18,6 @@ SELECT
     dia,
     COUNT(*) as total_fletes
 FROM fletes
-WHERE fecha = '2026-02-09'
+WHERE  |fecha = '2026-02-09'
   AND created_at >= now() - interval '10 minutes'
 GROUP BY proveedor, fecha, dia;

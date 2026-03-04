@@ -3,6 +3,7 @@ let ID_FLETE_EDITANDO = null;
 let CURRENT_SESSION = null; // Cache para la sesión
 let CACHED_FLETES = [];     // Cache para listados rápidos
 let CURRENT_RAZON_SOCIAL = null; // 'TYM' o 'TAT'
+let CURRENT_ROLE = null;      // 'admin', 'operario', 'caja'
 
 const MAPA_CONTRATISTAS = {
     "PEK019": "JOSE MIGUEL TABARES URIBE",
@@ -205,6 +206,7 @@ async function checkAuth() {
         console.warn("⚠️ Usuario sin razon_social definida, contacte al admin.");
     }
     const razonSocial = (razonSocialOrig || 'TYM').toUpperCase();
+    CURRENT_ROLE = role;
 
     // Almacenar razón social globalmente
     CURRENT_RAZON_SOCIAL = razonSocial;
@@ -999,21 +1001,21 @@ const PRECIOS_ALPINA = {
     "CALARCA": 312000,
     "CAIMO BARCELONA": 340000,
     "ARMENIA": 320000,
-    "BALBOA LA CELIA": 284000,
-    "SANTUARIO APIA": 284000,
-    "SANTA CECILIA": 368000,
-    "PUEBLO RICO": 305000,
-    "LA VIRGINIA": 230000,
+    "BALBOA LA CELIA": 305000,
+    "SANTUARIO APIA": 305000,
+    "SANTA CECILIA": 395000,
+    "PUEBLO RICO": 325000,
+    "LA VIRGINIA": 240000,
     "ARGELIA EL CAIRO": 335000,
     "EL AGUILA": 305000,
     "EL AGUILA - VILLANUEVA": 330000,
-    "MARSELLA": 280000,
-    "ARABIA - ALTAGRACIA": 199000,
-    "ANSERMA": 332000,
-    "BELEN": 332000,
-    "MISTRATO": 362000,
-    "GUATICA": 368000,
-    "VITERBO": 273000,
+    "MARSELLA": 230000,
+    "ARABIA - ALTAGRACIA": 212000,
+    "ANSERMA": 350000,
+    "BELEN": 350000,
+    "MISTRATO": 385000,
+    "GUATICA": 390000,
+    "VITERBO": 295000,
     "CARTAGO": 250000,
     "CARTAGO 2T": 280000, // 2 Toneladas
     "ANSERMA NUEVO": 250000,
@@ -1036,7 +1038,7 @@ const PRECIOS_ALPINA = {
     "BELAL RDA SJOSE": 320000,
     "CHINCHINA": 250000,
     "PALESTINA ARAUCA LA PLATA": 280000,
-    "MANIZALES - VILLAMARIA": 305000,
+    "MANIZALES - VILLAMARIA": 325000,
     "NEIRA": 340000,
     "SAN JOSÉ-BELALCAZAR": 320000,
     "CAIRO ARGELIA": 335000
@@ -1105,6 +1107,258 @@ let MASTER_ZONAS = [];
 let MASTER_ZONAS_MODAL = [];
 // Cache para poblaciones
 let MASTER_POBLACIONES = null;
+
+// Grupos de zonas que suelen ir juntas (según Rutero)
+const GRUPOS_ZONAS = {
+    "M9552": ["PRADERA", "FC01", "SUPERCENTRO", "MANA", "UNO"],
+    "PRADERA": ["M9552", "FC01"],
+    "FC01": ["M9552", "PRADERA", "M9553", "M9554", "UNO", "SUPERCENTRO", "PALERMO", "MANA", "MERCA", "PUNTO", "FLORIA", "M9555", "M9556", "MERCAPLAZA", "DEL", "FLORIDA"],
+    "M9553": ["FC01", "PALERMO", "MERCA", "MANA", "MERCAPLAZA"],
+    "M9554": ["UNO", "FC01", "PUNTO", "FLORIA", "FC03"],
+    "UNO": ["M9554", "FC01", "M9555", "M9552"],
+    "M9555": ["FC03", "UNO", "FC01", "DEL"],
+    "FC03": ["M9555", "M9556", "PARQUE", "M9554"],
+    "M9556": ["PARQUE", "FC03", "FC01", "PUNTO", "FLORIDA"],
+    "PARQUE": ["M9556", "FC03"],
+    "SUPERCENTRO": ["M9552", "FC01"],
+    "PALERMO": ["M9553", "FC01"],
+    "MANA": ["M9552", "FC01", "M9553"],
+    "MERCA": ["M9553", "FC01"],
+    "PUNTO": ["M9554", "FLORIA", "FC01", "M9556"],
+    "FLORIA": ["M9554", "PUNTO", "FC01"],
+    "MERCAPLAZA": ["M9553", "FC01"],
+    "M9557": ["M9560"],
+    "M9560": ["M9557"],
+    "M9559": ["P70002"],
+    "P70002": ["M9559"],
+    "DEL": ["M9555", "FC01"],
+    "FLORIDA": ["M9556", "FC01"],
+    "M9601": ["CANASTA", "BENIS", "P7009"],
+    "CANASTA": ["M9601"],
+    "M9602": ["PROGRESO", "RINDEMAX", "ANDY", "RINDEMAZ"],
+    "PROGRESO": ["M9602"],
+    "M9604": ["MERCAMOS", "LA"],
+    "MERCAMOS": ["M9604"],
+    "BENIS": ["M9601"],
+    "RINDEMAX": ["M9602"],
+    "M9603": ["HOREB", "LA"],
+    "HOREB": ["M9603"],
+    "ANDY": ["M9602"],
+    "LA": ["M9604", "M9603"],
+    "M9606": ["M9600"],
+    "M9600": ["M9606"],
+    "P7009": ["M9601"],
+    "M9605": ["P7008"],
+    "P7008": ["M9605"],
+    "RINDEMAZ": ["M9602"],
+    "P7006": ["M9450"],
+    "M9450": ["P7006", "P7005"],
+    "P7007": ["M9451"],
+    "M9451": ["P7007"],
+    "P7005": ["M9450"]
+};
+
+// Variable para rastrear la última zona seleccionada manualmente
+let ULTIMA_ZONA_SELECCIONADA = { "": null, "modal-": null };
+
+// Mapping Automático para Alpina / Fleischmann (Extraído de Rutero)
+const MAPA_ZONA_POBLACION_ALPINA = {
+    "Lunes": {
+        "M9552": "MANIZALES - VILLAMARIA",
+        "PRADERA": "MANIZALES - VILLAMARIA",
+        "FC01": "MANIZALES - VILLAMARIA",
+        "M9555": "MANIZALES - VILLAMARIA",
+        "FC03": "MANIZALES - VILLAMARIA",
+        "M9556": "MANIZALES - VILLAMARIA",
+        "PARQUE": "MANIZALES - VILLAMARIA",
+        "MIERCOLES": "QUIMBAYA",
+        "SUPERCENTRO": "MANIZALES - VILLAMARIA",
+        "M9553": "MANIZALES - VILLAMARIA",
+        "PALERMO": "MANIZALES - VILLAMARIA",
+        "M9554": "MANIZALES - VILLAMARIA",
+        "M9601": "ARMENIA",
+        "CANASTA": "QUIMBAYA",
+        "M9602": "ARMENIA",
+        "PROGRESO": "CALARCA",
+        "M9603": "ARMENIA",
+        "M9604": "QUIMBAYA",
+        "MERCAMOS": "QUIMBAYA",
+        "M9605": "CALARCA",
+        "M9606": "CALARCA",
+        "BENIS": "ARMENIA",
+        "RINDEMAX": "ARMENIA",
+        "HOREB": "ARMENIA",
+        "M9453": "CARTAGO",
+        "M9454": "CARTAGO",
+        "M9455": "SANTA ROSA",
+        "M9456": "SANTA ROSA",
+        "M9457": "SANTA ROSA",
+        "M9458": "CARTAGO",
+        "M9459": "SANTA ROSA",
+        "M9460": "SANTA ROSA",
+        "P7004": "CARTAGO",
+        "P7005": "CARTAGO",
+        "P7006": "LA VIRGINIA",
+        "M9450": "LA VIRGINIA",
+        "P7007": "ANSERMA",
+        "M9451": "ANSERMA",
+        "P7005B": "CARTAGO",
+        "DOBLE": "DOSQUEBRADAS"
+    },
+    "Martes": {
+        "M9552": "MANIZALES - VILLAMARIA",
+        "MANA": "MANIZALES - VILLAMARIA",
+        "FC01": "NEIRA",
+        "M9553": "MANIZALES - VILLAMARIA",
+        "MERCA": "MANIZALES - VILLAMARIA",
+        "M9554": "NEIRA",
+        "PUNTO": "MANIZALES - VILLAMARIA",
+        "FLORIA": "MANIZALES - VILLAMARIA",
+        "M9555": "MANIZALES - VILLAMARIA",
+        "UNO": "MANIZALES - VILLAMARIA",
+        "M9556": "MANIZALES - VILLAMARIA",
+        "M9560": "SUPIA",
+        "M9559": "CHINCHINA",
+        "JUEVES": "QUIMBAYA",
+        "M9601": "ARMENIA",
+        "M9602": "ARMENIA",
+        "ANDY": "ARMENIA",
+        "M9603": "ARMENIA",
+        "M9604": "ARMENIA",
+        "LA": "ARMENIA",
+        "M9605": "TEBAIDA",
+        "M9606": "FILANDIA",
+        "M9600": "FILANDIA",
+        "FLEISCHMANN": "ARMENIA",
+        "P7009": "MONTENEGRO",
+        "M9453": "PEREIRA",
+        "M9454": "PEREIRA",
+        "M9455": "PEREIRA",
+        "M9456": "PEREIRA",
+        "M9457": "PEREIRA",
+        "M9458": "PEREIRA",
+        "M9459": "PEREIRA",
+        "M9460": "PEREIRA",
+        "P7004": "MARSELLA",
+        "P7005": "ARGELIA EL CAIRO",
+        "P7006": "SANTUARIO APIA",
+        "P7007": "BELEN",
+        "M9451": "BELEN"
+    },
+    "Miercoles": {
+        "M9557": "MARMATO",
+        "M9558": "AGUADAS",
+        "M9559": "PALESTINA ARAUCA LA PLATA",
+        "VIERNES": "QUIMBAYA",
+        "M9552": "MANIZALES - VILLAMARIA",
+        "UNO": "MANIZALES - VILLAMARIA",
+        "FC01": "MANIZALES - VILLAMARIA",
+        "M9553": "MANIZALES - VILLAMARIA",
+        "MERCAPLAZA": "MANIZALES - VILLAMARIA",
+        "M9554": "MANIZALES - VILLAMARIA",
+        "FC03": "MANIZALES - VILLAMARIA",
+        "M9555": "MANIZALES - VILLAMARIA",
+        "M9556": "MANIZALES - VILLAMARIA",
+        "PUNTO": "MANIZALES - VILLAMARIA",
+        "M9560": "RIOSUCIO",
+        "P70002": "CHINCHINA",
+        "M9606": "CIRCASIA",
+        "M9600": "CIRCASIA",
+        "M9601": "ARMENIA",
+        "M9602": "ARMENIA",
+        "ANDY": "ARMENIA",
+        "M9603": "ARMENIA",
+        "LA": "ARMENIA",
+        "M9604": "ARMENIA",
+        "M9605": "CORDOBA PIJAO BVISTA",
+        "P7008": "TEBAIDA",
+        "M9453": "PEREIRA",
+        "M9454": "PEREIRA",
+        "M9455": "PEREIRA",
+        "M9456": "PEREIRA",
+        "M9457": "DOSQUEBRADAS",
+        "M9458": "PEREIRA",
+        "M9459": "PEREIRA",
+        "M9460": "DOSQUEBRADAS",
+        "P7005": "ANSERMA",
+        "M9450": "ANSERMA",
+        "P7006": "BALBOA LA CELIA",
+        "P7007": "GUATICA",
+        "M9451": "GUATICA",
+        "FLEISCHMANN": "PEREIRA"
+    },
+    "Jueves": {
+        "M9557": "QUINCHIA",
+        "M9560": "RIOSUCIO",
+        "SABADO": "QUIMBAYA",
+        "M9552": "MANIZALES - VILLAMARIA",
+        "SUPERCENTRO": "MANIZALES - VILLAMARIA",
+        "FC01": "MANIZALES - VILLAMARIA",
+        "M9553": "MANIZALES - VILLAMARIA",
+        "M9554": "MANIZALES - VILLAMARIA",
+        "M9555": "MANIZALES - VILLAMARIA",
+        "DEL": "MANIZALES - VILLAMARIA",
+        "M9556": "MANIZALES - VILLAMARIA",
+        "FLORIDA": "MANIZALES - VILLAMARIA",
+        "M9559": "CHINCHINA",
+        "P7008": "CALARCA",
+        "M9601": "ARMENIA",
+        "BENIS": "ARMENIA",
+        "M9602": "ARMENIA",
+        "RINDEMAZ": "ARMENIA",
+        "M9603": "ARMENIA",
+        "LA": "ARMENIA",
+        "M9604": "ARMENIA",
+        "MERCAMOS": "ARMENIA",
+        "M9605": "GENOVA",
+        "M9606": "CIRCASIA",
+        "M9453": "DOSQUEBRADAS",
+        "M9454": "DOSQUEBRADAS",
+        "M9455": "DOSQUEBRADAS",
+        "M9456": "DOSQUEBRADAS",
+        "M9457": "DOSQUEBRADAS",
+        "M9458": "DOSQUEBRADAS",
+        "M9459": "DOSQUEBRADAS",
+        "M9460": "DOSQUEBRADAS",
+        "P7005": "CARTAGO",
+        "P7006": "LA VIRGINIA",
+        "P7007": "ANSERMA",
+        "M9451": "ANSERMA",
+        "FLEISCHMANN": "CUBA",
+        "DOBLE": "SANTA ROSA"
+    },
+    "Viernes": {
+        "M9453": "PEREIRA",
+        "M9454": "PEREIRA",
+        "M9455": "PEREIRA",
+        "M9456": "PEREIRA",
+        "M9457": "PEREIRA",
+        "M9458": "PEREIRA",
+        "M9459": "PEREIRA",
+        "M9460": "PEREIRA",
+        "P7005": "CARTAGO",
+        "M9450": "CARTAGO",
+        "P7006": "LA VIRGINIA",
+        "P7007": "BELEN",
+        "M9451": "BELEN"
+    },
+    "Sabado": {
+        "M9453": "PEREIRA",
+        "M9454": "PEREIRA",
+        "M9455": "PEREIRA",
+        "M9456": "PEREIRA",
+        "M9457": "DOSQUEBRADAS",
+        "M9458": "PEREIRA",
+        "M9459": "PEREIRA",
+        "M9460": "DOSQUEBRADAS",
+        "P7005": "EL AGUILA",
+        "P7006": "PUEBLO RICO",
+        "M9450": "PUEBLO RICO",
+        "P7007": "VITERBO",
+        "M9451": "VITERBO",
+        "FLEISCHMANN": "DOSQUEBRADAS"
+    }
+};
 
 function actualizarPoblaciones(prefix = "") {
     const provEl = document.getElementById(prefix + "proveedor");
@@ -1238,8 +1492,90 @@ function actualizarPoblaciones(prefix = "") {
         pobEl.appendChild(opt);
     });
 
-    // Restaurar valor si existe en la nueva lista
-    if (listaUsar.includes(currentVal)) {
+    // Resetear bloqueo (por si estaba deshabilitado)
+    pobEl.disabled = false;
+
+    // 1. PRIORIDAD: Lógica de AUTO-FILL para Alpina/Fleischmann
+    let autoFound = false;
+    if (isAlpinaLike && zonaContainer) {
+        const diaInput = document.getElementById(prefix + "dia");
+        let diaActual = diaInput ? diaInput.value : "";
+        if (!diaActual) {
+            const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
+            diaActual = diasSemana[new Date().getDay()];
+        }
+
+        const normalize = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace('é', 'e');
+        const diaBusqueda = normalize(diaActual);
+
+        // Intentar usar la última zona clickeada, si no, la primera que esté marcada
+        let zonaParaAutoFill = ULTIMA_ZONA_SELECCIONADA[prefix];
+        if (!zonaParaAutoFill) {
+            const firstChecked = zonaContainer.querySelector('input[type="checkbox"]:checked');
+            if (firstChecked) zonaParaAutoFill = firstChecked.value;
+        }
+
+        if (zonaParaAutoFill) {
+            let autoPobName = null;
+
+            for (let dayKey in MAPA_ZONA_POBLACION_ALPINA) {
+                if (normalize(dayKey) === diaBusqueda) {
+                    autoPobName = MAPA_ZONA_POBLACION_ALPINA[dayKey][zonaParaAutoFill];
+                    break;
+                }
+            }
+            if (!autoPobName) {
+                for (let dayKey in MAPA_ZONA_POBLACION_ALPINA) {
+                    if (MAPA_ZONA_POBLACION_ALPINA[dayKey][zonaParaAutoFill]) {
+                        autoPobName = MAPA_ZONA_POBLACION_ALPINA[dayKey][zonaParaAutoFill];
+                        break;
+                    }
+                }
+            }
+
+            if (autoPobName) {
+                let name = autoPobName.toUpperCase().trim();
+
+                // Mapeo manual de barrios/sectores del Excel a Ciudades de la App
+                const manualMapeo = {
+                    "LA ENEA": "MANIZALES - VILLAMARIA",
+                    "MALTERIA": "MANIZALES - VILLAMARIA",
+                    "LA FLORIDA": "MANIZALES - VILLAMARIA",
+                    "PALERMO": "MANIZALES - VILLAMARIA",
+                    "VILLAMARIA": "MANIZALES - VILLAMARIA",
+                    "GALICIA CERRITOS": "PEREIRA",
+                    "CERRITOS": "PEREIRA",
+                    "GALICIA": "PEREIRA",
+                    "PARQUE INDUSTRIAL": "PEREIRA",
+                    "2500 LOTES": "PEREIRA",
+                    "SAN MARCOS": "PEREIRA",
+                    "SANTA ROSA DE C": "SANTA ROSA"
+                };
+
+                const mappedName = manualMapeo[name] || name;
+                const searchPob = mappedName.replace(/[\s-]/g, '');
+
+                // Buscar coincidencia exacta o parecida en la lista actual
+                const found = listaUsar.find(p => {
+                    const candidate = p.toUpperCase().trim().replace(/[\s-]/g, '');
+                    return candidate === searchPob || candidate.includes(searchPob) || searchPob.includes(candidate);
+                });
+
+                if (found) {
+                    pobEl.value = found;
+                    autoFound = true;
+
+                    // Bloquear si es operario para evitar que elijan opciones más caras
+                    if (CURRENT_ROLE !== 'admin') {
+                        pobEl.disabled = true;
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Restaurar valor previo SOLO si no se auto-detectó algo nuevo
+    if (!autoFound && listaUsar.includes(currentVal)) {
         pobEl.value = currentVal;
     }
 
@@ -1321,6 +1657,32 @@ function actualizarZonasPorProveedor(prefix = "") {
         filtered = master;
     }
 
+    // --- FILTRADO POR DÍA PARA OPERARIOS ---
+    if (CURRENT_ROLE !== 'admin' && (proveedor === 'ALPINA' || proveedor === 'FLEISCHMANN' || proveedor === 'ALPINA-FLEISCHMANN')) {
+        const diaInput = document.getElementById(prefix + "dia");
+        let diaActual = diaInput ? diaInput.value : "";
+        if (!diaActual) {
+            const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
+            diaActual = diasSemana[new Date().getDay()];
+        }
+        const normalize = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace('é', 'e');
+        const diaBusqueda = normalize(diaActual);
+
+        // Obtener zonas válidas para hoy según el mapa
+        let zonasHoy = [];
+        for (let dayKey in MAPA_ZONA_POBLACION_ALPINA) {
+            if (normalize(dayKey) === diaBusqueda) {
+                zonasHoy = Object.keys(MAPA_ZONA_POBLACION_ALPINA[dayKey]);
+                break;
+            }
+        }
+
+        // Si encontramos el día, filtramos. Si no (ej: Domingo), dejamos todas o ninguna.
+        if (zonasHoy.length > 0) {
+            filtered = filtered.filter(z => zonasHoy.includes(z.value) || z.value === "DOBLE F");
+        }
+    }
+
     // Repoblar con Checkboxes
     const currentValues = []; // No hay valor único
     zonaEl.innerHTML = "";
@@ -1341,8 +1703,18 @@ function actualizarZonasPorProveedor(prefix = "") {
         input.value = z.value;
         input.name = (prefix === "" ? "zona" : "modal-zona") + "[]";
 
+        // Si solo hay una zona tras el filtro (común para operarios), marcarla automáticamente
+        if (filtered.length === 1 || (filtered.length === 2 && filtered.some(f => f.value === "DOBLE F") && z.value !== "DOBLE F")) {
+            input.checked = true;
+        }
+
         // Evento para recalcular precio y actualizar poblaciones (Risaralda logic)
-        input.onchange = () => {
+        input.onchange = (e) => {
+            if (e.target.checked) {
+                ULTIMA_ZONA_SELECCIONADA[prefix] = e.target.value;
+            } else if (ULTIMA_ZONA_SELECCIONADA[prefix] === e.target.value) {
+                ULTIMA_ZONA_SELECCIONADA[prefix] = null;
+            }
             actualizarPoblaciones(prefix);
             calcularTotal(prefix);
         };
@@ -1354,6 +1726,17 @@ function actualizarZonasPorProveedor(prefix = "") {
         label.appendChild(span);
         zonaEl.appendChild(label);
     });
+
+    // Gatillar actualización si hay alguna zona marcada por defecto
+    const checked = zonaEl.querySelector('input[type="checkbox"]:checked');
+    if (checked) {
+        if (!ULTIMA_ZONA_SELECCIONADA[prefix]) ULTIMA_ZONA_SELECCIONADA[prefix] = checked.value;
+        actualizarPoblaciones(prefix);
+        calcularTotal(prefix);
+    } else {
+        // Si no hay nada marcado, limpiar
+        actualizarPoblaciones(prefix);
+    }
 }
 
 function calcularTotal(prefix = "") {

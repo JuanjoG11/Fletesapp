@@ -34,7 +34,7 @@ const MAPA_CONTRATISTAS = {
     "SYU652": "VALENTINA GUZMAN VALENCIA",
     "SXF257": "ELIO FABIO RUIZ HINCAPIE",
     "WHN436": "JOHN MAURICIO DIAZ HIDALGO",
-    "EYX091": "CARLOS ANDRES GOMEZ",
+    "EYZ091": "CARLOS ANDRES GOMEZ",
     "KOL802": "ADOLFO ENRIQUE OSPINO TREJOS",
     "WHU866": "GERMAN AUGUSTO BERNAL HOLGUIN",
     "CRZ810": "BLANCA INES HIDALGO DE DIAZ",
@@ -159,6 +159,16 @@ const MAPA_PLACA_ZONA_JUEVES = {
     "WHM317": "M9457", "PEK019": "M9458", "SJT873": "M9459", "WLC133": "M9460",
     "WTN748": "P7004", "EST067": "P7005", "ERK303": "P7006", "TNH494": "P7007",
     "SQB119": "FLEISCHMANN"
+};
+
+const MAPA_PLACA_ZONA_VIERNES = {
+    "WHM896": "M9453", "LUM993": "M9454", "SPQ814": "M9455", "TZM674": "M9456",
+    "WHM317": "M9457", "PEK019": "M9458", "SJT873": "M9459", "WLC133": "M9460",
+    "WTN748": "P7004", "EST067": "P7005", "ERK303": "P7006", "TNH494": "P7007",
+    "SPU120": "M9601", "SXF257": "M9602", "VZD334": "M9603", "SNP761": "M9604",
+    "WFV015": "M9605", "ESU446": "M9606",
+    "KOL802": "M9552", "TJX795": "M9553", "WHN436": "M9554", "SMH182": "M9555",
+    "SLI587": "M9556", "TRL186": "M9557", "EYZ091": "M9558", "TTL256": "M9559"
 };
 
 const LISTA_AUXILIARES_ALPINA = [
@@ -469,7 +479,7 @@ function buscarConductorPorPlaca(placaId, conductorId) {
             diaActual = diasSemana[new Date().getDay()];
         }
 
-        const mapaPlacasHoy = (diaActual === 'Miercoles') ? MAPA_PLACA_ZONA_MIERCOLES : (diaActual === 'Jueves') ? MAPA_PLACA_ZONA_JUEVES : null;
+        const mapaPlacasHoy = (diaActual === 'Miercoles') ? MAPA_PLACA_ZONA_MIERCOLES : (diaActual === 'Jueves') ? MAPA_PLACA_ZONA_JUEVES : (diaActual === 'Viernes') ? MAPA_PLACA_ZONA_VIERNES : null;
 
         if (mapaPlacasHoy && mapaPlacasHoy[val]) {
             const zonaAuto = mapaPlacasHoy[val];
@@ -1117,6 +1127,7 @@ const PRECIOS_ALPINA = {
     "IRRA LA FELISA LA MERCED": 445000,
     "AGUADAS": 690000,
     "AGUADAS-PACORA": 740000,
+    "SALAMINA - PACORA": 740000,
     "PACORA": 670000,
     "ARANZAZU FILADELFIA": 425000,
     "BELAL RDA SJOSE": 320000,
@@ -1175,7 +1186,7 @@ const ZONAS_CALDAS = ["M9552", "M9553", "M9554", "M9555", "M9556", "M9557", "M95
 const POBLACIONES_CALDAS = [
     "MANIZALES", "MANIZALES - VILLAMARIA", "CHINCHINA", "NEIRA", "PALESTINA ARAUCA LA PLATA",
     "ARANZAZU FILADELFIA", "RIOSUCIO", "SUPIA", "MARMATO", "PACORA", "AGUADAS",
-    "AGUADAS-PACORA", "SUPIA-MARMATO", "IRRA LA FELISA LA MERCED", "ANSERMA",
+    "AGUADAS-PACORA", "SALAMINA - PACORA", "SUPIA-MARMATO", "IRRA LA FELISA LA MERCED", "ANSERMA",
     "BELEN", "VITERBO", "ANSERMA NUEVO", "SAN JOSÉ-BELALCAZAR"
 ];
 
@@ -1417,11 +1428,40 @@ const MAPA_ZONA_POBLACION_ALPINA = {
         "M9458": "PEREIRA",
         "M9459": "PEREIRA",
         "M9460": "PEREIRA",
+        "P7004": "PEREIRA",
         "P7005": "CARTAGO",
         "M9450": "CARTAGO",
         "P7006": "LA VIRGINIA",
         "P7007": "BELEN",
-        "M9451": "BELEN"
+        "M9451": "BELEN",
+        // Armenia
+        "M9601": "ARMENIA",
+        "M9602": "ARMENIA",
+        "ANDY": "ARMENIA",
+        "M9603": "ARMENIA",
+        "LA 50": "ARMENIA",
+        "M9604": "ARMENIA",
+        "P ESPEJO": "ARMENIA",
+        "M9605": "TEBAIDA",
+        "P7008": "TEBAIDA",
+        "M9606": "SALENTO",
+        "M9600": "SALENTO",
+        // Manizales
+        "M9552": "MANIZALES - VILLAMARIA",
+        "UNO A CENTRO": "MANIZALES - VILLAMARIA",
+        "FC01": "MANIZALES - VILLAMARIA",
+        "M9553": "MANIZALES - VILLAMARIA",
+        "MERCAPLAZA": "MANIZALES - VILLAMARIA",
+        "FC03": "MANIZALES - VILLAMARIA",
+        "M9554": "MANIZALES - VILLAMARIA",
+        "M9555": "MANIZALES - VILLAMARIA",
+        "M9556": "MANIZALES - VILLAMARIA",
+        "PUNTO MERCO": "MANIZALES - VILLAMARIA",
+        "M9557": "IRRA LA FELISA LA MERCED",
+        "M9560": "IRRA LA FELISA LA MERCED",
+        "M9558": "SALAMINA - PACORA",
+        "M9559": "CHINCHINA",
+        "P70002": "CHINCHINA"
     },
     "Sabado": {
         "M9453": "PEREIRA",
@@ -1748,7 +1788,10 @@ function actualizarZonasPorProveedor(prefix = "") {
         { value: "25029", text: "25029" }, { value: "FC01", text: "FC01" }, { value: "FC02", text: "FC02" },
         { value: "FC03", text: "FC03" }, { value: "FQ04", text: "FQ04" }, { value: "FQ05", text: "FQ05" },
         { value: "FQ06", text: "FQ06" }, { value: "FR07", text: "FR07" }, { value: "FR08", text: "FR08" },
-        { value: "FR09", text: "FR09" }, { value: "FLEISCHMANN", text: "FLEISCHMANN" }, { value: "DOBLE F", text: "DOBLE F" }
+        { value: "FR09", text: "FR09" }, { value: "P70002", text: "P70002" },
+        { value: "ANDY", text: "ANDY" }, { value: "LA 50", text: "LA 50" }, { value: "P ESPEJO", text: "P ESPEJO" },
+        { value: "UNO A CENTRO", text: "UNO A CENTRO" }, { value: "MERCAPLAZA", text: "MERCAPLAZA" }, { value: "PUNTO MERCO", text: "PUNTO MERCO" },
+        { value: "FLEISCHMANN", text: "FLEISCHMANN" }, { value: "DOBLE F", text: "DOBLE F" }
     ];
 
     // Usar la lista hardcoded en lugar de intentar leer el DOM vacío

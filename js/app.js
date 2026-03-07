@@ -171,6 +171,17 @@ const MAPA_PLACA_ZONA_VIERNES = {
     "SLI587": "M9556", "TRL186": "M9557", "EYZ091": "M9558", "TTL256": "M9559"
 };
 
+const MAPA_PLACA_ZONA_SABADO = {
+    "WHM896": "M9453", "LUM993": "M9454", "SPQ814": "M9455", "TZM674": "M9456",
+    "WHM317": "M9457", "PEK019": "M9458", "SJT873": "M9459", "WLC133": "M9460",
+    "WTN748": "P7004", "EST067": "P7005", "ERK303": "P7006", "TNH494": "P7007",
+    "EQY944": "FLEISCHMANN",
+    "SPU120": "M9601", "SXF257": "M9602", "VZD334": "M9603", "SNP761": "M9604",
+    "WFV015": "M9605", "ESU446": "M9606", "SQB119": "FLEISCHMANN",
+    "KOL802": "M9552", "TJX795": "M9553", "WHN436": "M9554", "SMH182": "M9555",
+    "SLI587": "M9556", "TRL186": "M9557", "EYZ091": "M9558", "TTL256": "M9559"
+};
+
 const LISTA_AUXILIARES_ALPINA = [
     "ESTIVEN GUTIERREZ SALAZAR", "ROVINSON TORRES RIVERA", "ARBEY DE JESUS LARGO LARGO",
     "CRISTIAN CAMILO OSPINA PARRA", "VICTOR ALFONSO PULGARIN MEJIA", "CHRISTIAN DAVID CAICEDO MONTAÑO",
@@ -480,7 +491,7 @@ function buscarConductorPorPlaca(placaId, conductorId) {
             diaActual = diasSemana[new Date().getDay()];
         }
 
-        const mapaPlacasHoy = (diaActual === 'Miercoles') ? MAPA_PLACA_ZONA_MIERCOLES : (diaActual === 'Jueves') ? MAPA_PLACA_ZONA_JUEVES : (diaActual === 'Viernes') ? MAPA_PLACA_ZONA_VIERNES : null;
+        const mapaPlacasHoy = (diaActual === 'Miercoles') ? MAPA_PLACA_ZONA_MIERCOLES : (diaActual === 'Jueves') ? MAPA_PLACA_ZONA_JUEVES : (diaActual === 'Viernes') ? MAPA_PLACA_ZONA_VIERNES : (diaActual === 'Sabado') ? MAPA_PLACA_ZONA_SABADO : null;
 
         if (mapaPlacasHoy && mapaPlacasHoy[val]) {
             const zonaAuto = mapaPlacasHoy[val];
@@ -1473,12 +1484,34 @@ const MAPA_ZONA_POBLACION_ALPINA = {
         "M9458": "PEREIRA",
         "M9459": "PEREIRA",
         "M9460": "DOSQUEBRADAS",
+        "P7004": "PEREIRA",
         "P7005": "EL AGUILA",
         "P7006": "PUEBLO RICO",
         "M9450": "PUEBLO RICO",
         "P7007": "VITERBO",
         "M9451": "VITERBO",
-        "FLEISCHMANN": "DOSQUEBRADAS"
+        "FLEISCHMANN": "DOSQUEBRADAS",
+        // Armenia
+        "M9601": "ARMENIA",
+        "M9602": "ARMENIA",
+        "M9603": "ARMENIA",
+        "M9604": "ARMENIA",
+        "M9605": "GENOVA",
+        "M9606": "CIRCASIA",
+        // Manizales
+        "M9552": "MANIZALES - VILLAMARIA",
+        "SUPERCENTRO": "MANIZALES - VILLAMARIA",
+        "FC01": "MANIZALES - VILLAMARIA",
+        "M9553": "MANIZALES - VILLAMARIA",
+        "M9554": "MANIZALES - VILLAMARIA",
+        "FC03": "MANIZALES - VILLAMARIA",
+        "M9555": "MANIZALES - VILLAMARIA",
+        "DEL CAMPO": "MANIZALES - VILLAMARIA",
+        "M9556": "MANIZALES - VILLAMARIA",
+        "FLORIDA": "MANIZALES - VILLAMARIA",
+        "M9557": "QUINCHIA",
+        "M9558": "SALAMINA - PACORA",
+        "M9559": "CHINCHINA"
     }
 };
 
@@ -1640,8 +1673,16 @@ function actualizarPoblaciones(prefix = "") {
         if (zonaParaAutoFill) {
             let autoPobName = null;
 
+            const placaEl = document.getElementById(prefix + "placa");
+            const placaVal = placaEl ? placaEl.value.toUpperCase().replace(/[\s-]/g, '') : "";
+
             for (let dayKey in MAPA_ZONA_POBLACION_ALPINA) {
                 if (normalize(dayKey) === diaBusqueda) {
+                    // Lógica especial para la zona FLEISCHMANN los sábados (Ambigüedad entre Armenia y Pereira)
+                    if (zonaParaAutoFill === 'FLEISCHMANN' && normalize(dayKey) === 'Sabado') {
+                        if (placaVal === 'SQB119') { autoPobName = 'ARMENIA'; break; }
+                        if (placaVal === 'EQY944') { autoPobName = 'DOSQUEBRADAS'; break; }
+                    }
                     autoPobName = MAPA_ZONA_POBLACION_ALPINA[dayKey][zonaParaAutoFill];
                     break;
                 }

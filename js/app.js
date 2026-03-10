@@ -1356,7 +1356,7 @@ const MAPA_ZONA_POBLACION_ALPINA = {
         "UNO": "MANIZALES",
         "UNO A CENTRO": "MANIZALES",
         "M9556": "MANIZALES",
-        "M9560": "SUPIA",
+        "M9557": "SUPIA",
         "M9559": "CHINCHINA",
         "M9601": "ARMENIA",
         "M9602": "ARMENIA",

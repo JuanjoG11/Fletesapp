@@ -347,7 +347,7 @@ async function checkAuth() {
         // PERFIL ADMIN (GESTIONA VEHÍCULOS Y FLETES)
         if (navFletes) navFletes.style.display = 'flex';
         if (navVehiculos) navVehiculos.style.display = 'flex';
-        if (navCrear) navCrear.style.display = 'none';
+        if (navCrear) navCrear.style.display = 'flex';
 
         if (headerAcciones) headerAcciones.style.display = 'table-cell'; // Vehiculos
         if (headerAccionesFletes) headerAccionesFletes.style.display = 'table-cell'; // Fletes

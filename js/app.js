@@ -1178,9 +1178,18 @@ const PRECIOS_ALPINA = {
     "MANIZALES - VILLAMARIA": 325000,
     "NEIRA": 340000,
     "SAN JOSÉ-BELALCAZAR": 320000,
-    "CAIRO ARGELIA": 335000
-
-
+    "CAIRO ARGELIA": 335000,
+    "PEREIRA CUBA PANORAMAS": 200000,
+    "PEREIRA VIA ARMENIA": 200000,
+    "PEREIRA CENTRO CUBA": 200000,
+    "PEREIRA CUBA GUAYACANES": 200000,
+    "PEREIRA CUBA MONTELIBANO": 200000,
+    "PEREIRA PROVIDENCIA": 200000,
+    "PEREIRA SAMARIA": 200000,
+    "PEREIRA PERLA DEL SUR": 200000,
+    "GALICIA CERRITOS": 200000,
+    "APIA LA VIRGINIA": 240000,
+    "MISTRATO BELEN": 385000
 };
 
 // Precios ESPECIFICOS para ZENU
@@ -1314,7 +1323,7 @@ const MAPA_ZONA_POBLACION_ALPINA = {
         "PALERMO": "MANIZALES",
         "M9554": "MANIZALES",
         "UNO A GALERIA": "MANIZALES",
-        "M9558": "ARANZAZU - FILADELFIA",
+        "M9558": "ARANZAZU FILADELFIA",
         "M9601": "QUIMBAYA",
         "CANASTA": "QUIMBAYA",
         "M9602": "CALARCA",
@@ -1322,7 +1331,7 @@ const MAPA_ZONA_POBLACION_ALPINA = {
         "M9603": "CALARCA",
         "M9604": "QUIMBAYA",
         "MERCAMOS": "QUIMBAYA",
-        "M9605": "BARCELONA CALARCA",
+        "M9605": "CAIMO BARCELONA",
         "M9606": "CALARCA",
         "M9453": "CARTAGO",
         "M9454": "CARTAGO",
@@ -1462,20 +1471,20 @@ const MAPA_ZONA_POBLACION_ALPINA = {
         "DOBLE": "SANTA ROSA"
     },
     "Viernes": {
-        "M9453": "PEREIRA",
-        "M9454": "PEREIRA",
-        "M9455": "PEREIRA",
-        "M9456": "PEREIRA",
-        "M9457": "PEREIRA",
-        "M9458": "PEREIRA",
-        "M9459": "PEREIRA",
-        "M9460": "PEREIRA",
-        "P7004": "PEREIRA",
+        "M9453": "PEREIRA CUBA PANORAMAS",
+        "M9454": "PEREIRA VIA ARMENIA",
+        "M9455": "PEREIRA CENTRO CUBA",
+        "M9456": "PEREIRA CUBA GUAYACANES",
+        "M9457": "PEREIRA CUBA MONTELIBANO",
+        "M9458": "PEREIRA PROVIDENCIA",
+        "M9459": "PEREIRA SAMARIA",
+        "M9460": "PEREIRA PERLA DEL SUR",
+        "P7004": "GALICIA CERRITOS",
         "P7005": "CARTAGO",
         "M9450": "CARTAGO",
-        "P7006": "LA VIRGINIA",
-        "P7007": "BELEN",
-        "M9451": "BELEN",
+        "P7006": "APIA LA VIRGINIA",
+        "P7007": "MISTRATO BELEN",
+        "M9451": "MISTRATO BELEN",
         // Armenia
         "M9601": "ARMENIA",
         "M9602": "ARMENIA",
@@ -1679,6 +1688,7 @@ function actualizarPoblaciones(prefix = "") {
 
     // Resetear bloqueo (por si estaba deshabilitado)
     pobEl.disabled = false;
+    pobEl.classList.remove('input-locked');
 
     // 1. PRIORIDAD: Lógica de AUTO-FILL para Alpina/Fleischmann
     let autoFound = false;
@@ -1743,12 +1753,6 @@ function actualizarPoblaciones(prefix = "") {
                     "EL CARMEN": "MANIZALES",
                     "BARCELONA CALARCA": "CAIMO BARCELONA",
                     "ARANZAZU - FILADELFIA": "ARANZAZU FILADELFIA",
-                    "GALICIA CERRITOS": "PEREIRA",
-                    "CERRITOS": "PEREIRA",
-                    "GALICIA": "PEREIRA",
-                    "PARQUE INDUSTRIAL": "PEREIRA",
-                    "2500 LOTES": "PEREIRA",
-                    "SAN MARCOS": "PEREIRA",
                     "SANTA ROSA DE C": "SANTA ROSA"
                 };
 
@@ -1770,10 +1774,9 @@ function actualizarPoblaciones(prefix = "") {
                     pobEl.value = found;
                     autoFound = true;
 
-                    // Bloquear si es operario para evitar que elijan opciones más caras
-                    if (CURRENT_ROLE !== 'admin') {
-                        pobEl.disabled = true;
-                    }
+                    // Bloquear SIEMPRE si se auto-detecta por sistema (Regla de negocio)
+                    pobEl.disabled = true;
+                    pobEl.classList.add('input-locked'); // Feedback visual
                 }
             }
         }

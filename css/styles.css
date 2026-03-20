@@ -600,6 +600,15 @@ select:focus {
     cursor: default;
 }
 
+.input-locked {
+    background: rgba(59, 130, 246, 0.08) !important;
+    border-color: var(--primary) !important;
+    color: var(--primary) !important;
+    font-weight: 700 !important;
+    opacity: 1 !important;
+    cursor: not-allowed;
+}
+
 .full-width {
     grid-column: 1 / -1;
 }

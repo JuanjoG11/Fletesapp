@@ -1791,6 +1791,22 @@ function actualizarPoblaciones(prefix = "") {
     calcularTotal(prefix);
 }
 
+function handleAuxiliarExtraChange(prefix = "") {
+    const auxEl = document.getElementById(prefix + "auxiliares");
+    const container = document.getElementById(prefix + "auxiliares_extra_container");
+    const extraInput = document.getElementById(prefix + "auxiliares_extra");
+
+    if (auxEl && container) {
+        if (auxEl.value === "EXTRA") {
+            container.style.display = "block";
+            if (extraInput) extraInput.focus();
+        } else {
+            container.style.display = "none";
+            if (extraInput) extraInput.value = "";
+        }
+    }
+}
+
 function actualizarListaAuxiliares(prefix = "") {
     const provEl = document.getElementById(prefix + "proveedor");
     const auxEl = document.getElementById(prefix + "auxiliares");
@@ -1825,10 +1841,23 @@ function actualizarListaAuxiliares(prefix = "") {
         auxEl.appendChild(opt);
     });
 
-    // Intentar mantener selección si el nombre está en la nueva lista
-    if (lista.includes(currentVal)) {
+    // --- AGREGAR OPCIÓN EXTRA (SOLO TAT) ---
+    if (CURRENT_RAZON_SOCIAL === 'TAT') {
+        const optExtra = document.createElement("option");
+        optExtra.value = "EXTRA";
+        optExtra.textContent = "--- OTRO (ESCRIBIR NOMBRE) ---";
+        optExtra.style.fontWeight = "bold";
+        optExtra.style.color = "var(--accent-orange)";
+        auxEl.appendChild(optExtra);
+    }
+
+    // Intentar mantener selección si el nombre está en la nueva lista o es EXTRA
+    if (lista.includes(currentVal) || currentVal === "EXTRA") {
         auxEl.value = currentVal;
     }
+
+    // Actualizar visibilidad del campo extra
+    handleAuxiliarExtraChange(prefix);
 }
 
 function actualizarZonasPorProveedor(prefix = "") {
@@ -2171,7 +2200,10 @@ async function obtenerDatosFormulario(prefix = "") {
         dia = mapDias[weekday] || weekday;
     }
     const poblacion = val("poblacion");
-    const auxiliares = val("auxiliares");
+    let auxiliares = val("auxiliares");
+    if (auxiliares === "EXTRA") {
+        auxiliares = val("auxiliares_extra");
+    }
     const noAux = val("no_auxiliares");
     const noPedidos = val("no_pedidos");
     const adicionales = val("is_adicionales");
@@ -2430,7 +2462,7 @@ async function guardarCambiosFlete() {
 function limpiarFormulario(prefix) {
     const fields = [
         "placa", "contratista", "proveedor", "zona", "dia", "poblacion",
-        "auxiliares", "no_auxiliares", "no_pedidos",
+        "auxiliares", "auxiliares_extra", "no_auxiliares", "no_pedidos",
         "valor_ruta", "is_adicionales", "total_flete",
         "porcentaje_ruta", "fecha", "no_planilla", "facturas_adicionales",
         // Campos de adicionales que faltaban
@@ -2449,6 +2481,9 @@ function limpiarFormulario(prefix) {
             el.value = "";
         }
     });
+
+    // Resetear visibilidad del campo extra
+    handleAuxiliarExtraChange(prefix);
 
     // Limpiar Checkboxes de Zonas (Importante)
     const zonaContainerId = prefix === "" ? "zona-container" : "modal-zona-container";
@@ -2699,7 +2734,27 @@ window.editarFlete = async function (id) {
         set("placa", f.placa);
         set("contratista", f.contratista);
         set("dia", f.dia);
-        set("auxiliares", f.auxiliares);
+        // Nombres Auxiliares (Lógica para EXTRA)
+        const auxSelect = document.getElementById("modal-auxiliares");
+        let existsInList = false;
+        if (auxSelect && f.auxiliares) {
+            for (let i = 0; i < auxSelect.options.length; i++) {
+                if (auxSelect.options[i].value === f.auxiliares) {
+                    existsInList = true;
+                    break;
+                }
+            }
+        }
+
+        if (existsInList) {
+            set("auxiliares", f.auxiliares);
+        } else if (f.auxiliares) {
+            set("auxiliares", "EXTRA");
+            set("auxiliares_extra", f.auxiliares);
+            handleAuxiliarExtraChange("modal-");
+        } else {
+            set("auxiliares", "");
+        }
         set("no_auxiliares", f.no_auxiliares);
         set("no_pedidos", f.no_pedidos);
 

@@ -402,9 +402,14 @@
 
                         <div class="input-group">
                             <label>Nombres Auxiliares</label>
-                            <select id="auxiliares" required>
+                            <select id="auxiliares" required onchange="handleAuxiliarExtraChange('')">
                                 <option value="" disabled selected>Seleccione...</option>
                             </select>
+                        </div>
+
+                        <div id="auxiliares_extra_container" class="input-group" style="display: none;">
+                            <label>Nombre Auxiliar (Extra)</label>
+                            <input id="auxiliares_extra" placeholder="Escriba el nombre...">
                         </div>
 
                         <div class="input-group">
@@ -845,9 +850,14 @@
                     <div class="modal-section-title"><i class="ri-truck-line"></i> Detalles del Flete</div>
                     <div class="input-group">
                         <label>Auxiliares</label>
-                        <select id="modal-auxiliares">
+                        <select id="modal-auxiliares" onchange="handleAuxiliarExtraChange('modal-')">
                             <option value="" disabled selected>Seleccione...</option>
                         </select>
+                    </div>
+
+                    <div id="modal-auxiliares_extra_container" class="input-group" style="display: none;">
+                        <label>Nombre Auxiliar (Extra)</label>
+                        <input id="modal-auxiliares_extra" placeholder="Escriba el nombre...">
                     </div>
                     <div class="input-group"> <label>No. Aux</label> <select id="modal-no_auxiliares">
                             <option>1</option>

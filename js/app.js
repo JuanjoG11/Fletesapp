@@ -1845,7 +1845,7 @@ function actualizarListaAuxiliares(prefix = "") {
     if (CURRENT_RAZON_SOCIAL === 'TAT') {
         const optExtra = document.createElement("option");
         optExtra.value = "EXTRA";
-        optExtra.textContent = "--- OTRO (ESCRIBIR NOMBRE) ---";
+        optExtra.textContent = "OTRO (ESCRIBIR NOMBRE)";
         optExtra.style.fontWeight = "bold";
         optExtra.style.color = "var(--accent-orange)";
         auxEl.appendChild(optExtra);

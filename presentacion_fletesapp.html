@@ -21,13 +21,15 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
 
-        body {
+        html, body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg-deep);
             color: var(--text-main);
             overflow: hidden;
-            height: 100vh;
-            width: 100vw;
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            top: 0; left: 0;
         }
 
         /* Animated Background Particles */
@@ -78,8 +80,10 @@
         }
 
         .slide {
-            min-width: 100vw;
+            flex: 0 0 100%; /* Evita que las diapositivas se encojan o descuadren */
+            width: 100%;
             height: 100vh;
+            height: 100dvh;
             display: grid;
             grid-template-columns: 0.8fr 1.5fr;
             padding: 4% 6%;
@@ -281,10 +285,82 @@
         .badge-live::before { content: ''; width: 8px; height: 8px; background: var(--emerald-accent); border-radius: 50%; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.5); } 100% { opacity: 1; transform: scale(1); } }
 
+        /* Responsive Design */
         @media (max-width: 1200px) {
-            .slide { grid-template-columns: 1fr; padding-bottom: 8rem; }
-            .visual-panel { display: none; }
-            .impact-grid { grid-template-columns: 1fr; }
+            .slide { 
+                grid-template-columns: 1fr; 
+                gap: 2rem;
+                padding: 6rem 4rem; 
+                align-items: center;
+                overflow-y: auto;
+            }
+            .slide-full { padding-top: 4rem; }
+            .visual-panel { 
+                height: 40vh; 
+                display: flex;
+            }
+            .impact-grid { grid-template-columns: 1fr; gap: 1.5rem; margin-top: 2rem; }
+            h1 { font-size: 2.5rem; }
+            .title-huge { font-size: 3rem !important; }
+            p.lead { font-size: 1.2rem; }
+            .badge-live { top: -10px; right: 0; }
+        }
+
+        @media (max-width: 768px) {
+            body { font-size: 14px; }
+            .slide { 
+                padding: 4rem 1.5rem 6rem 1.5rem; 
+                display: flex; 
+                flex-direction: column; 
+                justify-content: center;
+                align-items: center;
+                gap: 1.5rem;
+                overflow-y: auto;
+            }
+            
+            h1 { font-size: 2rem; margin-bottom: 1rem; }
+            .title-huge { font-size: 2.2rem !important; }
+            p.lead { font-size: 1rem; margin-bottom: 1.5rem; text-align: left; }
+            .slide-full p.lead { text-align: center; }
+            
+            .slide-content { transform: none !important; opacity: 1 !important; flex-shrink: 0; }
+            .visual-panel { height: 28vh; width: 100%; margin-top: 0; align-items: flex-start; }
+            .visual-panel img { transform: none !important; width: 100%; height: 100%; object-fit: contain; }
+            
+            .feature-item { padding: 1rem; gap: 1rem; margin-bottom: 1rem; }
+            .icon-box { padding: 0.6rem; width: 45px; height: 45px; }
+            .feature-text h3 { font-size: 1.05rem; margin-bottom: 0.2rem; }
+            .feature-text p { font-size: 0.9rem; }
+            
+            .impact-card { padding: 1.5rem; }
+            .impact-card h3 { font-size: 1.2rem; }
+            .impact-card p { font-size: 0.95rem; }
+            
+            .footer-nav { 
+                position: absolute;
+                bottom: 0; 
+                left: 0;
+                width: 100%;
+                padding: 1rem 1.5rem; 
+                background: rgba(2, 6, 23, 0.98); /* Fondo ultra oscuro para asegurar contraste */
+                backdrop-filter: blur(15px);
+                border-top: 1px solid rgba(255,255,255,0.1);
+                z-index: 9999 !important; /* Capa máxima de visibilidad */
+            }
+            .footer-text { 
+                font-size: 0.65rem; 
+                max-width: 55%; 
+                line-height: 1.4; 
+                display: -webkit-box; 
+                -webkit-line-clamp: 2; 
+                line-clamp: 2;
+                -webkit-box-orient: vertical; 
+                overflow: hidden; 
+            }
+            .btn-circle { width: 48px; height: 48px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.5); }
+            .btn-circle i { color: white !important; width: 24px; height: 24px; }
+            .nav-controls { gap: 1rem; }
+            .accent-chip { font-size: 0.75rem; margin-bottom: 1rem; padding: 0.4rem 0.8rem; }
         }
     </style>
 </head>
@@ -488,7 +564,7 @@
         const nextBtn = document.getElementById('next');
 
         function update() {
-            slider.style.transform = `translateX(-${currentIdx * 100}vw)`;
+            slider.style.transform = `translateX(-${currentIdx * 100}%)`;
             bar.style.width = `${((currentIdx + 1) / count) * 100}%`;
             slides.forEach((s, i) => s.classList.toggle('active', i === currentIdx));
             prevBtn.disabled = currentIdx === 0;

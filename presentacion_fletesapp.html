@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FletesApp - Inteligencia Logística Elite</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
@@ -19,9 +21,15 @@
             --border-glass: rgba(255, 255, 255, 0.1);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
 
-        html, body {
+        html,
+        body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg-deep);
             color: var(--text-main);
@@ -29,21 +37,26 @@
             width: 100%;
             height: 100%;
             position: fixed;
-            top: 0; left: 0;
+            top: 0;
+            left: 0;
         }
 
         /* Animated Background Particles */
         .bg-dots {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
             background-size: 30px 30px;
             z-index: -1;
         }
 
         .glow-sphere {
             position: fixed;
-            width: 600px; height: 600px;
+            width: 600px;
+            height: 600px;
             background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
             border-radius: 50%;
             filter: blur(80px);
@@ -52,18 +65,32 @@
         }
 
         @keyframes floating {
-            0%, 100% { transform: translate(0, 0); }
-            33% { transform: translate(100px, 150px); }
-            66% { transform: translate(-50px, 200px); }
+
+            0%,
+            100% {
+                transform: translate(0, 0);
+            }
+
+            33% {
+                transform: translate(100px, 150px);
+            }
+
+            66% {
+                transform: translate(-50px, 200px);
+            }
         }
 
         /* Progress Bar */
         .progress-container {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 6px;
-            background: rgba(255,255,255,0.05);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
             z-index: 1001;
         }
+
         #progress-bar {
             height: 100%;
             background: linear-gradient(90deg, var(--blue-accent), var(--emerald-accent));
@@ -80,7 +107,8 @@
         }
 
         .slide {
-            flex: 0 0 100%; /* Evita que las diapositivas se encojan o descuadren */
+            flex: 0 0 100%;
+            /* Evita que las diapositivas se encojan o descuadren */
             width: 100%;
             height: 100vh;
             height: 100dvh;
@@ -97,7 +125,10 @@
             justify-items: center;
         }
 
-        .slide.active .slide-content { opacity: 1; transform: translateY(0); }
+        .slide.active .slide-content {
+            opacity: 1;
+            transform: translateY(0);
+        }
 
         h1 {
             font-size: 3rem;
@@ -144,7 +175,11 @@
             text-align: left;
         }
 
-        .slide-full p.lead { text-align: center; margin-left: auto; margin-right: auto; }
+        .slide-full p.lead {
+            text-align: center;
+            margin-left: auto;
+            margin-right: auto;
+        }
 
         /* Feature List */
         .feature-item {
@@ -158,29 +193,46 @@
             border-radius: 16px;
             transition: all 0.3s ease;
         }
-        .feature-item:hover { transform: scale(1.02) translateX(10px); border-color: var(--blue-accent); background: rgba(59, 130, 246, 0.05); }
-        
+
+        .feature-item:hover {
+            transform: scale(1.02) translateX(10px);
+            border-color: var(--blue-accent);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
         .icon-box {
             background: linear-gradient(135deg, var(--blue-accent), #1e40af);
             padding: 0.8rem;
             border-radius: 12px;
             color: white;
             display: flex;
-            align-items: center; justify-content: center;
+            align-items: center;
+            justify-content: center;
             box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
             flex-shrink: 0;
         }
-        .feature-text h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.2rem; }
-        .feature-text p { font-size: 0.95rem; color: var(--text-dim); }
+
+        .feature-text h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.2rem;
+        }
+
+        .feature-text p {
+            font-size: 0.95rem;
+            color: var(--text-dim);
+        }
 
         /* Visual Panel */
         .visual-panel {
             height: 75vh;
             display: flex;
-            align-items: center; justify-content: center;
+            align-items: center;
+            justify-content: center;
             position: relative;
             overflow: visible;
         }
+
         .visual-panel img {
             max-width: 110%;
             max-height: 100%;
@@ -191,12 +243,16 @@
             box-shadow: 0 35px 70px -15px rgba(0, 0, 0, 0.8);
             transition: transform 1.2s cubic-bezier(0.19, 1, 0.22, 1);
         }
-        .slide.active .visual-panel img { transform: scale(1.05); }
+
+        .slide.active .visual-panel img {
+            transform: scale(1.05);
+        }
 
         .placeholder-box {
             display: flex;
             flex-direction: column;
-            align-items: center; justify-content: center;
+            align-items: center;
+            justify-content: center;
             gap: 1.5rem;
             opacity: 0.3;
         }
@@ -226,8 +282,8 @@
         }
 
         .impact-card {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             padding: 2.5rem;
             border-radius: 24px;
             text-align: left;
@@ -236,138 +292,323 @@
             backdrop-filter: blur(10px);
         }
 
-        .impact-card:hover { transform: translateY(-10px) scale(1.02); background: rgba(59, 130, 246, 0.05); }
+        .impact-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            background: rgba(59, 130, 246, 0.05);
+        }
 
-        .impact-card.c1 { border-left: 5px solid #3b82f6; }
-        .impact-card.c2 { border-left: 5px solid #10b981; }
-        .impact-card.c3 { border-left: 5px solid #a855f7; }
-        .impact-card.c4 { border-left: 5px solid #f59e0b; }
+        .impact-card.c1 {
+            border-left: 5px solid #3b82f6;
+        }
 
-        .impact-card i { margin-bottom: 1.5rem; display: block; opacity: 0.8; }
-        .impact-card h3 { font-size: 1.4rem; font-weight: 800; margin-bottom: 0.8rem; }
-        .impact-card p { font-size: 1.05rem; color: var(--text-dim); line-height: 1.5; }
+        .impact-card.c2 {
+            border-left: 5px solid #10b981;
+        }
+
+        .impact-card.c3 {
+            border-left: 5px solid #a855f7;
+        }
+
+        .impact-card.c4 {
+            border-left: 5px solid #f59e0b;
+        }
+
+        .impact-card i {
+            margin-bottom: 1.5rem;
+            display: block;
+            opacity: 0.8;
+        }
+
+        .impact-card h3 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-bottom: 0.8rem;
+        }
+
+        .impact-card p {
+            font-size: 1.05rem;
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
 
         /* Footer Navigation (ZENTRA STYLE) */
         .footer-nav {
             position: fixed;
-            bottom: 2rem; left: 0; width: 100%;
+            bottom: 2rem;
+            left: 0;
+            width: 100%;
             padding: 0 4rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             z-index: 2000;
         }
-        .footer-text { font-size: 0.8rem; color: rgba(255,255,255,0.2); letter-spacing: 0.1em; font-weight: 600; }
-        .nav-controls { display: flex; gap: 0.8rem; }
+
+        .footer-text {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.2);
+            letter-spacing: 0.1em;
+            font-weight: 600;
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 0.8rem;
+        }
+
         .btn-circle {
-            width: 48px; height: 48px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
             display: flex;
-            align-items: center; justify-content: center;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
             transition: all 0.3s ease;
         }
-        .btn-circle:hover:not(:disabled) { background: white; color: black; transform: scale(1.1); }
-        .btn-circle:disabled { opacity: 0.2; cursor: not-allowed; }
+
+        .btn-circle:hover:not(:disabled) {
+            background: white;
+            color: black;
+            transform: scale(1.1);
+        }
+
+        .btn-circle:disabled {
+            opacity: 0.2;
+            cursor: not-allowed;
+        }
 
         .badge-live {
-            position: absolute; top: 1.5rem; right: 1.5rem;
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
             background: rgba(16, 185, 129, 0.15);
             color: var(--emerald-accent);
             padding: 0.4rem 0.8rem;
             border-radius: 8px;
-            font-size: 0.7rem; font-weight: 800;
-            display: flex; align-items: center; gap: 0.5rem;
+            font-size: 0.7rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
-        .badge-live::before { content: ''; width: 8px; height: 8px; background: var(--emerald-accent); border-radius: 50%; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.5); } 100% { opacity: 1; transform: scale(1); } }
+
+        .badge-live::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--emerald-accent);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.4;
+                transform: scale(1.5);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
 
         /* Responsive Design */
         @media (max-width: 1200px) {
-            .slide { 
-                grid-template-columns: 1fr; 
+            .slide {
+                grid-template-columns: 1fr;
                 gap: 2rem;
-                padding: 6rem 4rem; 
+                padding: 6rem 4rem;
                 align-items: center;
                 overflow-y: auto;
             }
-            .slide-full { padding-top: 4rem; }
-            .visual-panel { 
-                height: 40vh; 
+
+            .slide-full {
+                padding-top: 4rem;
+            }
+
+            .visual-panel {
+                height: 40vh;
                 display: flex;
             }
-            .impact-grid { grid-template-columns: 1fr; gap: 1.5rem; margin-top: 2rem; }
-            h1 { font-size: 2.5rem; }
-            .title-huge { font-size: 3rem !important; }
-            p.lead { font-size: 1.2rem; }
-            .badge-live { top: -10px; right: 0; }
+
+            .impact-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+                margin-top: 2rem;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .title-huge {
+                font-size: 3rem !important;
+            }
+
+            p.lead {
+                font-size: 1.2rem;
+            }
+
+            .badge-live {
+                top: -10px;
+                right: 0;
+            }
         }
 
         @media (max-width: 768px) {
-            body { font-size: 14px; }
-            .slide { 
-                padding: 4rem 1.5rem 6rem 1.5rem; 
-                display: flex; 
-                flex-direction: column; 
+            body {
+                font-size: 14px;
+            }
+
+            .slide {
+                padding: 4rem 1.5rem 6rem 1.5rem;
+                display: flex;
+                flex-direction: column;
                 justify-content: center;
                 align-items: center;
                 gap: 1.5rem;
                 overflow-y: auto;
             }
-            
-            h1 { font-size: 2rem; margin-bottom: 1rem; }
-            .title-huge { font-size: 2.2rem !important; }
-            p.lead { font-size: 1rem; margin-bottom: 1.5rem; text-align: left; }
-            .slide-full p.lead { text-align: center; }
-            
-            .slide-content { transform: none !important; opacity: 1 !important; flex-shrink: 0; }
-            .visual-panel { height: 28vh; width: 100%; margin-top: 0; align-items: flex-start; }
-            .visual-panel img { transform: none !important; width: 100%; height: 100%; object-fit: contain; }
-            
-            .feature-item { padding: 1rem; gap: 1rem; margin-bottom: 1rem; }
-            .icon-box { padding: 0.6rem; width: 45px; height: 45px; }
-            .feature-text h3 { font-size: 1.05rem; margin-bottom: 0.2rem; }
-            .feature-text p { font-size: 0.9rem; }
-            
-            .impact-card { padding: 1.5rem; }
-            .impact-card h3 { font-size: 1.2rem; }
-            .impact-card p { font-size: 0.95rem; }
-            
-            .footer-nav { 
+
+            h1 {
+                font-size: 2rem;
+                margin-bottom: 1rem;
+            }
+
+            .title-huge {
+                font-size: 2.2rem !important;
+            }
+
+            p.lead {
+                font-size: 1rem;
+                margin-bottom: 1.5rem;
+                text-align: left;
+            }
+
+            .slide-full p.lead {
+                text-align: center;
+            }
+
+            .slide-content {
+                transform: none !important;
+                opacity: 1 !important;
+                flex-shrink: 0;
+            }
+
+            .visual-panel {
+                height: 28vh;
+                width: 100%;
+                margin-top: 0;
+                align-items: flex-start;
+            }
+
+            .visual-panel img {
+                transform: none !important;
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+            }
+
+            .feature-item {
+                padding: 1rem;
+                gap: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            .icon-box {
+                padding: 0.6rem;
+                width: 45px;
+                height: 45px;
+            }
+
+            .feature-text h3 {
+                font-size: 1.05rem;
+                margin-bottom: 0.2rem;
+            }
+
+            .feature-text p {
+                font-size: 0.9rem;
+            }
+
+            .impact-card {
+                padding: 1.5rem;
+            }
+
+            .impact-card h3 {
+                font-size: 1.2rem;
+            }
+
+            .impact-card p {
+                font-size: 0.95rem;
+            }
+
+            .footer-nav {
                 position: absolute;
-                bottom: 0; 
+                bottom: 0;
                 left: 0;
                 width: 100%;
-                padding: 1rem 1.5rem; 
-                background: rgba(2, 6, 23, 0.98); /* Fondo ultra oscuro para asegurar contraste */
+                padding: 1rem 1.5rem;
+                background: rgba(2, 6, 23, 0.98);
+                /* Fondo ultra oscuro para asegurar contraste */
                 backdrop-filter: blur(15px);
-                border-top: 1px solid rgba(255,255,255,0.1);
-                z-index: 9999 !important; /* Capa máxima de visibilidad */
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                z-index: 9999 !important;
+                /* Capa máxima de visibilidad */
             }
-            .footer-text { 
-                font-size: 0.65rem; 
-                max-width: 55%; 
-                line-height: 1.4; 
-                display: -webkit-box; 
-                -webkit-line-clamp: 2; 
+
+            .footer-text {
+                font-size: 0.65rem;
+                max-width: 55%;
+                line-height: 1.4;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
                 line-clamp: 2;
-                -webkit-box-orient: vertical; 
-                overflow: hidden; 
+                -webkit-box-orient: vertical;
+                overflow: hidden;
             }
-            .btn-circle { width: 48px; height: 48px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.5); }
-            .btn-circle i { color: white !important; width: 24px; height: 24px; }
-            .nav-controls { gap: 1rem; }
-            .accent-chip { font-size: 0.75rem; margin-bottom: 1rem; padding: 0.4rem 0.8rem; }
+
+            .btn-circle {
+                width: 48px;
+                height: 48px;
+                background: rgba(59, 130, 246, 0.2);
+                border: 1px solid rgba(59, 130, 246, 0.5);
+            }
+
+            .btn-circle i {
+                color: white !important;
+                width: 24px;
+                height: 24px;
+            }
+
+            .nav-controls {
+                gap: 1rem;
+            }
+
+            .accent-chip {
+                font-size: 0.75rem;
+                margin-bottom: 1rem;
+                padding: 0.4rem 0.8rem;
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="bg-dots"></div>
     <div class="glow-sphere"></div>
-    <div class="progress-container"><div id="progress-bar"></div></div>
+    <div class="progress-container">
+        <div id="progress-bar"></div>
+    </div>
 
     <div class="slides-wrapper" id="slides-slider">
         <!-- 1. PORTADA -->
@@ -380,7 +621,8 @@
                 </div>
                 <span class="accent-chip">Optimización Logística</span>
                 <h1>FletesApp: Dominio Total de su Operación</h1>
-                <p class="lead">Menos caos, más rentabilidad. Toda su operación centralizada, validada y bajo control total.</p>
+                <p class="lead">Menos caos, más rentabilidad. Toda su operación centralizada, validada y bajo control
+                    total.</p>
             </div>
         </section>
 
@@ -389,20 +631,29 @@
             <div class="slide-content">
                 <span class="accent-chip">Transformación Digital</span>
                 <h1>El Fin del Caos Operativo</h1>
-                <p class="lead">Deje de perder tiempo en cálculos manuales y planillas infinitas. FletesApp lo hace por usted.</p>
+                <p class="lead">Deje de perder tiempo en cálculos manuales y planillas infinitas. FletesApp lo hace por
+                    usted.</p>
                 <div class="feature-item">
                     <div class="icon-box"><i data-lucide="target"></i></div>
-                    <div class="feature-text"><h3>Enfoque en lo que importa</h3><p>Elimine el 100% de los errores de digitación de su equipo.</p></div>
+                    <div class="feature-text">
+                        <h3>Enfoque en lo que importa</h3>
+                        <p>Elimine el 100% de los errores de digitación de su equipo.</p>
+                    </div>
                 </div>
                 <div class="feature-item">
                     <div class="icon-box"><i data-lucide="shield-alert"></i></div>
-                    <div class="feature-text"><h3>Evite Fugas de Capital</h3><p>Detecte inconsistencias antes de que se conviertan en gastos.</p></div>
+                    <div class="feature-text">
+                        <h3>Evite Fugas de Capital</h3>
+                        <p>Detecte inconsistencias antes de que se conviertan en gastos.</p>
+                    </div>
                 </div>
             </div>
             <div class="visual-panel">
                 <div class="badge-live">SISTEMA ACTIVO</div>
-                <div class="placeholder-box"><i data-lucide="layout" style="width: 64px; height: 64px;"></i><span>Vista de la App</span></div>
-                <img src="slides/slide1.png" style="display:none;" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+                <div class="placeholder-box"><i data-lucide="layout" style="width: 64px; height: 64px;"></i><span>Vista
+                        de la App</span></div>
+                <img src="slides/slide1.png" style="display:none;"
+                    onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
             </div>
         </section>
 
@@ -414,16 +665,24 @@
                 <p class="lead">¿Fuera de la oficina? Controle todo desde su celular o cualquier dispositivo.</p>
                 <div class="feature-item">
                     <div class="icon-box"><i data-lucide="smartphone"></i></div>
-                    <div class="feature-text"><h3>Control Móvil</h3><p>Aprobar, revisar y gestionar fletes desde cualquier lugar del mundo.</p></div>
+                    <div class="feature-text">
+                        <h3>Control Móvil</h3>
+                        <p>Aprobar, revisar y gestionar fletes desde cualquier lugar del mundo.</p>
+                    </div>
                 </div>
                 <div class="feature-item">
                     <div class="icon-box"><i data-lucide="refresh-cw"></i></div>
-                    <div class="feature-text"><h3>Dato al Instante</h3><p>Lo que pasa en la calle, se ve en su pantalla en un segundo.</p></div>
+                    <div class="feature-text">
+                        <h3>Dato al Instante</h3>
+                        <p>Lo que pasa en la calle, se ve en su pantalla en un segundo.</p>
+                    </div>
                 </div>
             </div>
             <div class="visual-panel">
-                <div class="placeholder-box"><i data-lucide="smartphone" style="width: 64px; height: 64px;"></i><span>Versión Móvil</span></div>
-                <img src="slides/slide2.png" style="display:none;" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+                <div class="placeholder-box"><i data-lucide="smartphone"
+                        style="width: 64px; height: 64px;"></i><span>Versión Móvil</span></div>
+                <img src="slides/slide2.png" style="display:none;"
+                    onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
             </div>
         </section>
 
@@ -435,16 +694,24 @@
                 <p class="lead">El sistema conoce cada tarifa. Nadie podrá cobrarle un peso más de lo pactado.</p>
                 <div class="feature-item">
                     <div class="icon-box"><i data-lucide="dollar-sign"></i></div>
-                    <div class="feature-text"><h3>Precios Blindados</h3><p>Tarifas automáticas por zona y proveedor. Imposible equivocarse.</p></div>
+                    <div class="feature-text">
+                        <h3>Precios Blindados</h3>
+                        <p>Tarifas automáticas por zona y proveedor. Imposible equivocarse.</p>
+                    </div>
                 </div>
                 <div class="feature-item">
                     <div class="icon-box"><i data-lucide="alert-triangle"></i></div>
-                    <div class="feature-text"><h3>Alertas de Margen</h3><p>Si un flete no es rentable, la app le avisa antes de despachar.</p></div>
+                    <div class="feature-text">
+                        <h3>Alertas de Margen</h3>
+                        <p>Si un flete no es rentable, la app le avisa antes de despachar.</p>
+                    </div>
                 </div>
             </div>
             <div class="visual-panel">
-                <div class="placeholder-box"><i data-lucide="tag" style="width: 64px; height: 64px;"></i><span>Módulo de Tarifas</span></div>
-                <img src="slides/slide3.png" style="display:none;" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+                <div class="placeholder-box"><i data-lucide="tag" style="width: 64px; height: 64px;"></i><span>Módulo de
+                        Tarifas</span></div>
+                <img src="slides/slide3.png" style="display:none;"
+                    onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
             </div>
         </section>
 
@@ -456,16 +723,24 @@
                 <p class="lead">Validación estricta de vehículos y conductores. Seguridad total para su mercancía.</p>
                 <div class="feature-item">
                     <div class="icon-box"><i data-lucide="truck"></i></div>
-                    <div class="feature-text"><h3>Filtro de Seguridad</h3><p>Solo placas y conductores autorizados pueden registrar fletes.</p></div>
+                    <div class="feature-text">
+                        <h3>Filtro de Seguridad</h3>
+                        <p>Solo placas y conductores autorizados pueden registrar fletes.</p>
+                    </div>
                 </div>
                 <div class="feature-item">
                     <div class="icon-box"><i data-lucide="user-check"></i></div>
-                    <div class="feature-text"><h3>Historial Operativo</h3><p>Historial exacto de cada viaje realizado por cada vehículo.</p></div>
+                    <div class="feature-text">
+                        <h3>Historial Operativo</h3>
+                        <p>Historial exacto de cada viaje realizado por cada vehículo.</p>
+                    </div>
                 </div>
             </div>
             <div class="visual-panel">
-                <div class="placeholder-box"><i data-lucide="shield-check" style="width: 64px; height: 64px;"></i><span>Gestión de Flota</span></div>
-                <img src="slides/slide4.png" style="display:none;" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+                <div class="placeholder-box"><i data-lucide="shield-check"
+                        style="width: 64px; height: 64px;"></i><span>Gestión de Flota</span></div>
+                <img src="slides/slide4.png" style="display:none;"
+                    onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
             </div>
         </section>
 
@@ -477,16 +752,24 @@
                 <p class="lead">Gráficas claras, sin rellenos. Entienda su negocio con solo mirar la pantalla.</p>
                 <div class="feature-item">
                     <div class="icon-box"><i data-lucide="bar-chart-3"></i></div>
-                    <div class="feature-text"><h3>Estado Real del Gasto</h3><p>Vea cuánto ha gastado este mes frente a su meta de ahorro.</p></div>
+                    <div class="feature-text">
+                        <h3>Estado Real del Gasto</h3>
+                        <p>Vea cuánto ha gastado este mes frente a su meta de ahorro.</p>
+                    </div>
                 </div>
                 <div class="feature-item">
                     <div class="icon-box"><i data-lucide="pie-chart"></i></div>
-                    <div class="feature-text"><h3>Zonas Críticas</h3><p>Identifique de inmediato qué rutas están costando más.</p></div>
+                    <div class="feature-text">
+                        <h3>Zonas Críticas</h3>
+                        <p>Identifique de inmediato qué rutas están costando más.</p>
+                    </div>
                 </div>
             </div>
             <div class="visual-panel">
-                <div class="placeholder-box"><i data-lucide="trending-up" style="width: 64px; height: 64px;"></i><span>Panel Gerencial</span></div>
-                <img src="slides/slide5.png" style="display:none;" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+                <div class="placeholder-box"><i data-lucide="trending-up"
+                        style="width: 64px; height: 64px;"></i><span>Panel Gerencial</span></div>
+                <img src="slides/slide5.png" style="display:none;"
+                    onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
             </div>
         </section>
 
@@ -498,16 +781,24 @@
                 <p class="lead">Olvide las horas redactando informes. Genere archivos oficiales listos para pagar.</p>
                 <div class="feature-item">
                     <div class="icon-box"><i data-lucide="file-check"></i></div>
-                    <div class="feature-text"><h3>PDFs Profesionales</h3><p>Planillas con firmas digitales y toda la información contable.</p></div>
+                    <div class="feature-text">
+                        <h3>PDFs Profesionales</h3>
+                        <p>Planillas con firmas digitales y toda la información contable.</p>
+                    </div>
                 </div>
                 <div class="feature-item">
                     <div class="icon-box"><i data-lucide="mail"></i></div>
-                    <div class="feature-text"><h3>Envío Inmediato</h3><p>Comparta los resultados con contabilidad al instante.</p></div>
+                    <div class="feature-text">
+                        <h3>Envío Inmediato</h3>
+                        <p>Comparta los resultados con contabilidad al instante.</p>
+                    </div>
                 </div>
             </div>
             <div class="visual-panel">
-                <div class="placeholder-box"><i data-lucide="file-text" style="width: 64px; height: 64px;"></i><span>Planillas PDF</span></div>
-                <img src="slides/slide6.png" style="display:none;" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+                <div class="placeholder-box"><i data-lucide="file-text"
+                        style="width: 64px; height: 64px;"></i><span>Planillas PDF</span></div>
+                <img src="slides/slide6.png" style="display:none;"
+                    onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
             </div>
         </section>
 
@@ -517,7 +808,7 @@
                 <div class="category-tag">Resumen de Valor</div>
                 <h1 class="title-huge">Lo que <b>FletesApp</b><br><span>genera para ti</span></h1>
                 <p class="lead">Una solución diseñada para transformar datos logísticos en resultados reales.</p>
-                
+
                 <div class="impact-grid">
                     <div class="impact-card c1">
                         <i data-lucide="zap" style="color: #3b82f6;"></i>
@@ -545,7 +836,7 @@
     </div>
 
     <div class="footer-nav">
-        <div class="footer-text">FLETESAPP · INTELIGENCIA LOGÍSTICA ELITE · TYM & TAT</div>
+        <div class="footer-text">FLETESAPP · INTELIGENCIA LOGÍSTICA ELITE</div>
         <div class="nav-controls">
             <button class="btn-circle" id="prev"><i data-lucide="arrow-left"></i></button>
             <button class="btn-circle" id="next"><i data-lucide="arrow-right"></i></button>
@@ -571,13 +862,14 @@
             nextBtn.disabled = currentIdx === count - 1;
         }
 
-        prevBtn.onclick = () => { if(currentIdx > 0) { currentIdx--; update(); } };
-        nextBtn.onclick = () => { if(currentIdx < count - 1) { currentIdx++; update(); } };
+        prevBtn.onclick = () => { if (currentIdx > 0) { currentIdx--; update(); } };
+        nextBtn.onclick = () => { if (currentIdx < count - 1) { currentIdx++; update(); } };
         document.onkeydown = (e) => {
-            if(e.key === 'ArrowRight' || e.key === ' ') { if(currentIdx < count-1) { currentIdx++; update(); } }
-            if(e.key === 'ArrowLeft') { if(currentIdx > 0) { currentIdx--; update(); } }
+            if (e.key === 'ArrowRight' || e.key === ' ') { if (currentIdx < count - 1) { currentIdx++; update(); } }
+            if (e.key === 'ArrowLeft') { if (currentIdx > 0) { currentIdx--; update(); } }
         };
         update();
     </script>
 </body>
+
 </html>

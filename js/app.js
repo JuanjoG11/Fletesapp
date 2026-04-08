@@ -4,6 +4,7 @@ let CURRENT_SESSION = null; // Cache para la sesión
 let CACHED_FLETES = [];     // Cache para listados rápidos
 let CURRENT_RAZON_SOCIAL = null; // 'TYM' o 'TAT'
 let CURRENT_ROLE = null;      // 'admin', 'operario', 'caja'
+let ID_VEHICULO_EDITANDO = null; // ID del vehículo cargado para editar
 
 const MAPA_CONTRATISTAS = {
     "PEK019": "JOSE MIGUEL TABARES URIBE",
@@ -467,6 +468,24 @@ function actualizarProveedoresTAT() {
 }
 
 
+// Helper para autocompletar conductor en sección operario
+function autoFillConductorOperario(placa) {
+    if (!placa) return;
+    const cleanPlaca = placa.toUpperCase().replace(/[\s-]/g, '');
+    const vehiculo = FLOTA_VEHICULOS.find(v => v.placa.toUpperCase().replace(/[\s-]/g, '') === cleanPlaca);
+    
+    if (vehiculo) {
+        const conductorInput = document.getElementById("op_conductor");
+        if (conductorInput) conductorInput.value = vehiculo.conductor;
+    } else {
+        // Podríamos buscar en el mapa estático si no está en la flota dinámica
+        if (MAPA_CONTRATISTAS[cleanPlaca]) {
+            const conductorInput = document.getElementById("op_conductor");
+            if (conductorInput) conductorInput.value = MAPA_CONTRATISTAS[cleanPlaca];
+        }
+    }
+}
+
 // ==========================================================
 // 🚗 AUTO-FILL LOGIC & FLEET MANAGEMENT
 // ==========================================================
@@ -835,26 +854,33 @@ async function guardarCambiosVehiculo() {
 
     Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
 
-    const result = await SupabaseClient.vehiculos.update(id, vData);
+    try {
+        console.log("📝 Enviando actualización de vehículo:", id, vData);
+        const result = await SupabaseClient.vehiculos.update(id, vData);
 
-    if (result.success) {
-        // OPTIMIZACIÓN: Actualizar cache local en lugar de recargar TODO
-        const index = FLOTA_VEHICULOS.findIndex(v => v.id === id);
-        if (index !== -1) {
-            FLOTA_VEHICULOS[index] = { ...FLOTA_VEHICULOS[index], ...vData };
+        if (result.success) {
+            // OPTIMIZACIÓN: Actualizar cache local en lugar de recargar TODO
+            const index = FLOTA_VEHICULOS.findIndex(v => v.id === id);
+            if (index !== -1) {
+                FLOTA_VEHICULOS[index] = { ...FLOTA_VEHICULOS[index], ...vData };
+            }
+
+            await listarVehiculos(); // Esto ahora usará el cache actualizado
+            ocultarModalVehiculo();
+            Swal.fire({ icon: 'success', title: 'Actualizado', text: 'Vehículo actualizado correctamente', timer: 1500, showConfirmButton: false, background: '#1e293b', color: '#fff' });
+        } else {
+            console.error("❌ Error al actualizar vehículo:", result.error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error al Guardar',
+                text: 'No se pudo actualizar el vehículo: ' + (result.error || 'Error desconocido'),
+                background: '#1e293b',
+                color: '#fff'
+            });
         }
-
-        await listarVehiculos(); // Esto ahora usará el cache actualizado
-        ocultarModalVehiculo();
-        Swal.fire({ icon: 'success', title: 'Actualizado', text: 'Vehículo actualizado correctamente', timer: 1500, showConfirmButton: false, background: '#1e293b', color: '#fff' });
-    } else {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'No se pudo actualizar el vehículo: ' + (result.error || 'Error desconocido'),
-            background: '#1e293b',
-            color: '#fff'
-        });
+    } catch (e) {
+        console.error("❌ Error Crítico en guardarCambiosVehiculo:", e);
+        Swal.fire({ icon: 'error', title: 'Error Crítico', text: 'Ocurrió un error inesperado al procesar la solicitud.', background: '#1e293b', color: '#fff' });
     }
 }
 
@@ -929,58 +955,66 @@ async function registrarVehiculoOperario() {
         return Swal.fire({ icon: 'warning', title: 'Faltan Datos', text: 'Ingrese Placa y Conductor', background: '#1a1a1a', color: '#fff' });
     }
 
-    const { user } = await SupabaseClient.auth.getSession();
+    Swal.fire({ title: 'Registrando...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), background: '#1a1a1a', color: '#fff' });
 
-    const result = await SupabaseClient.vehiculos.create({
-        placa,
-        conductor,
-        proveedor,
-        cedula_conductor,
-        telefono_conductor,
-        modelo,
-        carroceria,
-        capacidad,
-        servicio,
-        contrato,
-        contratista,
-        doc_contratista,
-        titular_contrato,
-        licencia_transito,
-        soat_vencimiento,
-        tecnomecanica_vencimiento,
-        inspeccion_sanitaria_vencimiento,
-        fumigacion_vencimiento,
-        carnet_bpm_vencimiento,
-        licencia_conduccion_vencimiento,
-        num_licencia_conduccion,
-        arl_afiliacion,
-        examenes_medicos_vencimiento,
-        eps_afiliacion,
-        created_by: user.id
-    });
+    try {
+        const sesion = await SupabaseClient.auth.getSession();
+        const userId = sesion?.user?.id || sesion?.session?.user?.id;
 
-    if (result.success) {
-        FLOTA_VEHICULOS = []; // Forzar recarga completa para incluir el nuevo registro con ID
-        await listarVehiculos();
-        await actualizarKPI();
-
-        // Limpiar campos manualmente
-        const inputs = document.querySelectorAll('#operario-vehiculos .input-group input');
-        inputs.forEach(i => i.value = "");
-
-        Swal.fire({
-            icon: 'success', title: 'Vehículo Registrado',
-            text: 'El vehículo ha sido guardado exitosamente.',
-            timer: 1500, showConfirmButton: false, background: '#1a1a1a', color: '#fff'
+        const result = await SupabaseClient.vehiculos.create({
+            placa,
+            conductor,
+            proveedor,
+            cedula_conductor,
+            telefono_conductor,
+            modelo,
+            carroceria,
+            capacidad,
+            servicio,
+            contrato,
+            contratista,
+            doc_contratista,
+            titular_contrato,
+            licencia_transito,
+            soat_vencimiento,
+            tecnomecanica_vencimiento,
+            inspeccion_sanitaria_vencimiento,
+            fumigacion_vencimiento,
+            carnet_bpm_vencimiento,
+            licencia_conduccion_vencimiento,
+            num_licencia_conduccion,
+            arl_afiliacion,
+            examenes_medicos_vencimiento,
+            eps_afiliacion,
+            created_by: userId
         });
-    } else {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error de Registro',
-            text: 'No se pudo registrar el vehículo: ' + (result.error || 'Asegúrate de haber ejecutado el SQL en Supabase.'),
-            background: '#1a1a1a',
-            color: '#fff'
-        });
+
+        if (result.success) {
+            FLOTA_VEHICULOS = []; // Forzar recarga completa para incluir el nuevo registro con ID
+            await listarVehiculos();
+            await actualizarKPI();
+
+            // Limpiar campos manualmente
+            const inputs = document.querySelectorAll('#operario-vehiculos .input-group input');
+            inputs.forEach(i => i.value = "");
+
+            Swal.fire({
+                icon: 'success', title: 'Vehículo Registrado',
+                text: 'El vehículo ha sido guardado exitosamente.',
+                timer: 1500, showConfirmButton: false, background: '#1a1a1a', color: '#fff'
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de Registro',
+                text: 'No se pudo registrar el vehículo: ' + (result.error || 'Asegúrate de haber ejecutado el SQL en Supabase.'),
+                background: '#1a1a1a',
+                color: '#fff'
+            });
+        }
+    } catch (e) {
+        console.error("Error en registrarVehiculoOperario:", e);
+        Swal.fire({ icon: 'error', title: 'Error Crítico', text: 'Ocurrió un error inesperado al registrar el vehículo.', background: '#1a1a1a', color: '#fff' });
     }
 }
 
@@ -1591,88 +1625,10 @@ function actualizarPoblaciones(prefix = "") {
         listaUsar = Object.keys(PRECIOS_TAT_FAMILIA).sort();
     }
 
-    // --- Lógica Especial DOBLE F (SOLO ALPINA/ALPINA-FLEISCHMANN) ---
-    // Si DOBLE F está seleccionado, mostrar TODAS las poblaciones de los 3 departamentos
-    if (isAlpinaDeptLogic && zonaContainer) {
-        const checked = Array.from(zonaContainer.querySelectorAll('input[type="checkbox"]:checked'));
-        const selectedValues = checked.map(input => input.value);
-        const hasDobleF = selectedValues.includes("DOBLE F");
-
-        if (hasDobleF) {
-            // Combinar todas las poblaciones de los 3 departamentos
-            const todasPoblaciones = [
-                ...POBLACIONES_RISARALDA,
-                ...POBLACIONES_CALDAS,
-                ...POBLACIONES_QUINDIO
-            ];
-            // Eliminar duplicados y ordenar
-            const poblacionesUnicas = [...new Set(todasPoblaciones)].sort();
-            // Filtrar para que solo contenga poblaciones que existan en PRECIOS_ALPINA
-            listaUsar = listaUsar.filter(pob => poblacionesUnicas.includes(pob));
-
-            // Si la lista queda vacía, usar todas las poblaciones únicas como fallback
-            if (listaUsar.length === 0) {
-                listaUsar = poblacionesUnicas;
-            }
-        }
-    }
-
-    // --- Lógica Especial Risaralda ---
-    // Si hay zonas de Risaralda seleccionadas (pero NO DOBLE F), filtramos por poblaciones de Risaralda
-    if (zonaContainer) {
-        const checked = Array.from(zonaContainer.querySelectorAll('input[type="checkbox"]:checked'));
-        const selectedValues = checked.map(input => input.value);
-        const hasDobleF = selectedValues.includes("DOBLE F");
-        const hasRisaraldaZone = selectedValues.some(v => ZONAS_RISARALDA.includes(v) && v !== "DOBLE F");
-
-        if (hasRisaraldaZone && !hasDobleF) {
-            // Filtrar la lista actual para que solo contenga poblaciones de Risaralda
-            listaUsar = listaUsar.filter(pob => POBLACIONES_RISARALDA.includes(pob));
-
-            // Si la lista queda vacía (porque el proveedor no tiene esas poblaciones), 
-            // mostramos todas las de Risaralda como fallback
-            if (listaUsar.length === 0) {
-                listaUsar = POBLACIONES_RISARALDA.sort();
-            }
-        }
-    }
-
-    // --- Lógica Especial Caldas (SOLO ALPINA) ---
-    if (isAlpinaDeptLogic && zonaContainer) {
-        const checked = Array.from(zonaContainer.querySelectorAll('input[type="checkbox"]:checked'));
-        const selectedValues = checked.map(input => input.value);
-        const hasDobleF = selectedValues.includes("DOBLE F");
-        const hasCaldasZone = selectedValues.some(v => ZONAS_CALDAS.includes(v) && v !== "DOBLE F");
-
-        if (hasCaldasZone && !hasDobleF) {
-            // Filtrar la lista de Alpina para que solo contenga poblaciones de Caldas
-            listaUsar = listaUsar.filter(pob => POBLACIONES_CALDAS.includes(pob));
-
-            // Fallback si por alguna razón la intersección es vacía
-            if (listaUsar.length === 0) {
-                listaUsar = POBLACIONES_CALDAS.sort();
-            }
-        }
-    }
-    // --- Lógica Especial Quindío (SOLO ALPINA) ---
-    if (isAlpinaDeptLogic && zonaContainer) {
-        const checked = Array.from(zonaContainer.querySelectorAll('input[type="checkbox"]:checked'));
-        const selectedValues = checked.map(input => input.value);
-        const hasDobleF = selectedValues.includes("DOBLE F");
-        const hasQuindioZone = selectedValues.some(v => ZONAS_QUINDIO.includes(v) && v !== "DOBLE F");
-
-        if (hasQuindioZone && !hasDobleF) {
-            // Filtrar la lista de Alpina para que solo contenga poblaciones de Quindío
-            listaUsar = listaUsar.filter(pob => POBLACIONES_QUINDIO.includes(pob));
-
-            // Fallback si por alguna razón la intersección es vacía
-            if (listaUsar.length === 0) {
-                listaUsar = POBLACIONES_QUINDIO.sort();
-            }
-        }
-    }
-    // --------------------------------------------
-    // --------------------------------
+    // --- LÓGICA DE FILTRADO POR DEPARTAMENTO DESHABILITADA (Solicitud del Usuario) ---
+    // El usuario indicó que desea ver "todas las zonas y todas las poblaciones" 
+    // para seleccionar manualmente sin restricciones.
+    // La variable `listaUsar` permanece intacta con todo el catálogo de PRECIOS_ALPINA.
 
     // Guardar valor actual para intentar mantenerlo
     const currentVal = pobEl.value;
@@ -1692,6 +1648,7 @@ function actualizarPoblaciones(prefix = "") {
 
     // 1. PRIORIDAD: Lógica de AUTO-FILL para Alpina/Fleischmann
     let autoFound = false;
+    /* --- AUTO-FILL DESHABILITADO POR SOLICITUD DEL USUARIO ---
     if (isAlpinaLike && zonaContainer) {
         const diaInput = document.getElementById(prefix + "dia");
         let diaActual = diaInput ? diaInput.value : "";
@@ -1781,6 +1738,7 @@ function actualizarPoblaciones(prefix = "") {
             }
         }
     }
+    */
 
     // 2. Restaurar valor previo SOLO si no se auto-detectó algo nuevo
     if (!autoFound && listaUsar.includes(currentVal)) {
@@ -1924,24 +1882,18 @@ function actualizarZonasPorProveedor(prefix = "") {
         filtered = CONFIG_TAT.zonas['POLAR'];
     }
     // ====== PROVEEDORES TYM ======
-    else if (proveedor === "ALPINA") {
-        // Incluir zonas M (general), P7 (departamentos), E7001 (departamentos específicos), DOBLE F, y vacías
-        filtered = master.filter(z => z.value.startsWith("M") || z.value.startsWith("P7") || z.value.startsWith("E7") || z.value === "DOBLE F" || z.value === "");
+    else if (proveedor === "ALPINA" || proveedor === "FLEISCHMANN" || proveedor === "ALPINA-FLEISCHMANN") {
+        // Solicitud del usuario: Mostrar TODAS las zonas disponibles ("que salgan todas las zonas")
+        // Mostraremos todo el maestro de zonas, excluyendo solo los de ZENU (250xx) para no ensuciar.
+        filtered = master.filter(z => !z.value.startsWith("250"));
     } else if (proveedor === "ZENU") {
         filtered = master.filter(z => z.value.startsWith("250") || z.value === "");
-    } else if (proveedor === "FLEISCHMANN") {
-        const allowed = ["FC01", "FC02", "FC03", "FQ04", "FQ05", "FQ06", "FR07", "FR08", "FR09", "FLEISCHMANN"];
-        // Fleischmann ahora puede ver sus zonas + las zonas generales de Alpina (M, P7, E7) para permitir rutas a Pereira/Armenia
-        filtered = master.filter(z => allowed.includes(z.value) || z.value.startsWith("M") || z.value.startsWith("P7") || z.value.startsWith("E7") || z.value === "");
-    } else if (proveedor === "ALPINA-FLEISCHMANN") {
-        const fleischmannZones = ["FC01", "FC02", "FC03", "FQ04", "FQ05", "FQ06", "FR07", "FR08", "FR09"];
-        // Incluir zonas de Alpina (M, P7, E7) + zonas de Fleischmann + DOBLE F
-        filtered = master.filter(z => z.value.startsWith("M") || z.value.startsWith("P7") || z.value.startsWith("E7") || fleischmannZones.includes(z.value) || z.value === "DOBLE F" || z.value === "");
     } else {
         filtered = master;
     }
 
-    // --- FILTRADO POR DÍA PARA OPERARIOS ---
+    // --- FILTRADO POR DÍA PARA OPERARIOS (Deshabilitado a petición del usuario) ---
+    /*
     if (CURRENT_ROLE !== 'admin' && (proveedor === 'ALPINA' || proveedor === 'FLEISCHMANN' || proveedor === 'ALPINA-FLEISCHMANN')) {
         const diaInput = document.getElementById(prefix + "dia");
         let diaActual = diaInput ? diaInput.value : "";
@@ -1966,6 +1918,7 @@ function actualizarZonasPorProveedor(prefix = "") {
             filtered = filtered.filter(z => zonasHoy.includes(z.value) || z.value === "DOBLE F");
         }
     }
+    */
 
     // Repoblar con Checkboxes
     const currentValues = []; // No hay valor único
@@ -3947,6 +3900,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         // 5. Configuración Lógica
         buscarConductorPorPlaca("placa", "contratista");
         buscarConductorPorPlaca("modal-placa", "modal-contratista");
+        buscarConductorPorPlaca("op_placa", "op_conductor");
 
         setupCalculators("");
         setupCalculators("modal-");
@@ -3955,14 +3909,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         actualizarListaAuxiliares("");
         actualizarListaAuxiliares("modal-");
 
-        // Autocompletado de contratista al registrar vehículo
-        document.getElementById("op_placa")?.addEventListener("input", (e) => {
-            const placa = e.target.value.toUpperCase().replace(/[\s-]/g, '');
-            const contratistaInput = document.getElementById("op_contratista");
-            if (contratistaInput && MAPA_CONTRATISTAS[placa]) {
-                contratistaInput.value = MAPA_CONTRATISTAS[placa];
-            }
-        });
 
         // 7. Menu Mobile
         const menuBtn = document.getElementById("menuToggleBtn");

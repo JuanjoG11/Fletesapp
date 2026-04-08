@@ -239,11 +239,14 @@ async function crearVehiculo(vehiculoData) {
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) {
+            console.error('❌ Error de Supabase al insertar vehículo:', error);
+            throw error;
+        }
         return { success: true, data };
     } catch (error) {
-        console.error('Error al crear vehículo:', error);
-        return { success: false, error: error.message };
+        console.error('❌ Error en crearVehiculo:', error);
+        return { success: false, error: error.message || 'Error desconocido al insertar en DB' };
     }
 }
 
@@ -272,7 +275,7 @@ async function importarVehiculos(vehiculos) {
 
         const { data, error } = await _supabase
             .from('vehiculos')
-            .upsert(dataToInsert, { onConflict: 'placa' })
+            .upsert(dataToInsert, { onConflict: 'placa,razon_social' })
             .select();
 
         if (error) throw error;
@@ -291,18 +294,26 @@ async function importarVehiculos(vehiculos) {
  */
 async function actualizarVehiculo(vehiculoId, vehiculoData) {
     try {
+        if (!vehiculoId) throw new Error('ID de vehículo no proporcionado');
+
+        // Sanitizar placa si viene en la data
+        const dataToUpdate = { ...vehiculoData };
+        if (dataToUpdate.placa) {
+            dataToUpdate.placa = dataToUpdate.placa.toUpperCase().replace(/[\s-]/g, '').trim();
+        }
+
         const { error } = await _supabase
             .from('vehiculos')
-            .update(vehiculoData)
+            .update(dataToUpdate)
             .eq('id', vehiculoId);
 
         if (error) {
-            console.error('Error de Supabase al actualizar:', error);
+            console.error('❌ Error de Supabase al actualizar:', error);
             return { success: false, error: error.message || 'Error desconocido en base de datos' };
         }
         return { success: true };
     } catch (error) {
-        console.error('Error al actualizar vehículo:', error);
+        console.error('❌ Error al actualizar vehículo:', error);
         return { success: false, error: error.message };
     }
 }

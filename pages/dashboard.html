@@ -324,6 +324,11 @@
                         </div>
 
                         <div class="input-group">
+                            <label>Fecha</label>
+                            <input id="fecha" type="date" onchange="actualizarDiaPorFecha('')">
+                        </div>
+
+                        <div class="input-group">
                             <label>Día</label>
                             <select id="dia">
                                 <option value="" disabled selected>Seleccione...</option>
@@ -810,7 +815,7 @@
                 <div class="form-grid">
                     <div class="modal-section-title"><i class="ri-information-line"></i> Información General</div>
                     <!-- Mismos campos con prefijo modal- -->
-                    <div class="input-group"> <label>Fecha</label> <input id="modal-fecha" type="date"> </div>
+                    <div class="input-group"> <label>Fecha</label> <input id="modal-fecha" type="date" onchange="actualizarDiaPorFecha('modal-')"> </div>
                     <div class="input-group"> <label>Placa</label> <input id="modal-placa"
                             oninput="this.value = this.value.toUpperCase().replace('-', '')"> </div>
                     <div class="input-group"> <label>Conductor</label> <input id="modal-contratista" readonly

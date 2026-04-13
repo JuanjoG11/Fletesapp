@@ -2107,6 +2107,26 @@ function setupCalculators(prefix = "") {
 // ==========================================================
 // 📝 FLETES C.R.U.D
 // ==========================================================
+function actualizarDiaPorFecha(prefix = "") {
+    const p = prefix;
+    const fechaInput = document.getElementById(p + "fecha");
+    const diaInput = document.getElementById(p + "dia");
+    if (fechaInput && fechaInput.value && diaInput) {
+        // Enforce 12:00:00 so it doesn't shift by timezone
+        const dateObj = new Date(fechaInput.value + "T12:00:00");
+        const dayFormatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/Bogota',
+            weekday: 'long'
+        });
+        const weekday = dayFormatter.format(dateObj);
+        const mapDias = {
+            'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miercoles',
+            'Thursday': 'Jueves', 'Friday': 'Viernes', 'Saturday': 'Sabado', 'Sunday': 'Domingo'
+        };
+        diaInput.value = mapDias[weekday] || weekday;
+    }
+}
+
 async function obtenerDatosFormulario(prefix = "") {
     const p = prefix;
     const val = (id) => document.getElementById(p + id)?.value || "";
@@ -2127,25 +2147,25 @@ async function obtenerDatosFormulario(prefix = "") {
     }
 
     let dia = val("dia");
+    let fechaInput = val("fecha");
     let fechaDetectada = null;
 
-    if (prefix === "") {
-        const now = new Date();
-        // Fecha en formato YYYY-MM-DD para Colombia
-        const bogotaFormatter = new Intl.DateTimeFormat('en-CA', {
-            timeZone: 'America/Bogota',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        });
-        fechaDetectada = bogotaFormatter.format(now);
+    // Fecha en formato YYYY-MM-DD para Colombia
+    const bogotaFormatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Bogota',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    });
+    fechaDetectada = bogotaFormatter.format(new Date());
 
-        // Día de la semana en español (sin acentos para compatibilidad)
+    if (prefix === "" && !dia) {
+        const dateObj = fechaInput ? new Date(fechaInput + "T12:00:00") : new Date();
         const dayFormatter = new Intl.DateTimeFormat('en-US', {
             timeZone: 'America/Bogota',
             weekday: 'long'
         });
-        const weekday = dayFormatter.format(now);
+        const weekday = dayFormatter.format(dateObj);
         const mapDias = {
             'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miercoles',
             'Thursday': 'Jueves', 'Friday': 'Viernes', 'Saturday': 'Sabado', 'Sunday': 'Domingo'
@@ -2437,6 +2457,18 @@ function limpiarFormulario(prefix) {
 
     // Resetear visibilidad del campo extra
     handleAuxiliarExtraChange(prefix);
+
+    // Reiniciar fecha a hoy
+    const fechaInput = document.getElementById(prefix + "fecha");
+    if (fechaInput) {
+        const bogotaFormatter = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'America/Bogota',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+        fechaInput.value = bogotaFormatter.format(new Date());
+    }
 
     // Limpiar Checkboxes de Zonas (Importante)
     const zonaContainerId = prefix === "" ? "zona-container" : "modal-zona-container";
@@ -3908,6 +3940,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Inicializar listas de auxiliares
         actualizarListaAuxiliares("");
         actualizarListaAuxiliares("modal-");
+
+        // Inicializar fecha actual por defecto
+        const defaultFechaInput = document.getElementById("fecha");
+        if (defaultFechaInput) {
+            const bogotaFormatter = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'America/Bogota',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+            defaultFechaInput.value = bogotaFormatter.format(new Date());
+        }
 
 
         // 7. Menu Mobile

@@ -409,7 +409,9 @@ async function checkAuth() {
         if (navCrear) navCrear.style.display = 'flex';
 
         if (headerAcciones) headerAcciones.style.display = 'none';
-        if (headerAccionesFletes) headerAccionesFletes.style.display = 'none';
+        if (headerAccionesFletes) {
+            headerAccionesFletes.style.display = razonSocial === 'TYM' ? 'table-cell' : 'none';
+        }
 
         // Operarios solo ven el botón de PDF, NO el de Excel
         if (btnExportarExcel) btnExportarExcel.style.display = 'none';
@@ -2629,10 +2631,10 @@ function renderTable(fletes) {
             <td style="font-size: 0.85rem; color: var(--text-muted); white-space: normal;" title="${f.razon_adicional_negociacion || ''}">${f.razon_adicional_negociacion || '-'}</td>
             <td class="price-cell">${moneyFormatter.format(f.valor_ruta || 0)}</td>
             <td class="price-cell">${moneyFormatter.format(f.precio)}</td>
-            ${role === 'admin' ? `
+            ${(role === 'admin' || (role === 'operario' && CURRENT_RAZON_SOCIAL === 'TYM')) ? `
             <td class="actions-cell">
                 <button class="btn-icon edit" onclick="editarFlete('${f.id}')" title="Editar Costos"><i class="ri-pencil-line"></i></button>
-                <button class="btn-icon delete" onclick="eliminarFlete('${f.id}')" title="Eliminar"><i class="ri-delete-bin-line"></i></button>
+                ${role === 'admin' ? `<button class="btn-icon delete" onclick="eliminarFlete('${f.id}')" title="Eliminar"><i class="ri-delete-bin-line"></i></button>` : ''}
             </td>` : ''}
         `;
         fragment.appendChild(tr);
@@ -2655,8 +2657,8 @@ window.editarFlete = async function (id) {
     // PERMISO: Verificar contra el perfil cargado que es más seguro
     const role = (CURRENT_SESSION?.profile?.rol || CURRENT_SESSION?.session?.user?.user_metadata?.rol || 'operario').toLowerCase();
 
-    if (role !== 'admin') {
-        return Swal.fire({ icon: 'error', title: 'Acceso Denegado', text: 'Solo administradores pueden editar.', background: '#1a1a1a', color: '#fff' });
+    if (role !== 'admin' && !(role === 'operario' && CURRENT_RAZON_SOCIAL === 'TYM')) {
+        return Swal.fire({ icon: 'error', title: 'Acceso Denegado', text: 'No tienes permisos para editar fletes.', background: '#1a1a1a', color: '#fff' });
     }
 
     // Mostrar loader mientras se obtienen los datos más frescos

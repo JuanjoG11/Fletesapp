@@ -1344,7 +1344,7 @@ const PRECIOS_POLAR = {
 const COSTO_ADICIONAL = 60000;
 const COSTO_POR_AUXILIAR = 30000; // Costo adicional por cada auxiliar
 
-const ZONAS_RISARALDA = ["M9453", "M9454", "M9455", "M9456", "M9457", "M9458", "M9459", "M9460", "P7004", "P7005", "P7006", "P7007", "P7005B", "M9450", "M9451", "E7001-RISARALDA", "DOBLE F"];
+const ZONAS_RISARALDA = ["M9453", "M9454", "M9455", "M9456", "M9457", "M9458", "M9459", "M9460", "M9461", "P7004", "P7005", "P7006", "P7007", "P7005B", "M9450", "M9451", "E7001-RISARALDA", "DOBLE F"];
 const POBLACIONES_RISARALDA = [
     "PEREIRA", "DOSQUEBRADAS", "SANTA ROSA", "SANTA ROSA DE C", "LA VIRGINIA",
     "BELEN DE UMBRIA", "BELEN", "MISTRATO", "GUATICA", "QUINCHIA", "APIA",
@@ -1925,7 +1925,7 @@ function actualizarZonasPorProveedor(prefix = "") {
         { value: "M9450", text: "M9450" }, { value: "M9451", text: "M9451" }, { value: "M9453", text: "M9453" },
         { value: "M9454", text: "M9454" }, { value: "M9455", text: "M9455" }, { value: "M9456", text: "M9456" },
         { value: "M9457", text: "M9457" }, { value: "M9458", text: "M9458" }, { value: "M9459", text: "M9459" },
-        { value: "M9460", text: "M9460" }, { value: "P7004", text: "P7004" }, { value: "P7005", text: "P7005" },
+        { value: "M9460", text: "M9460" }, { value: "M9461", text: "M9461" }, { value: "P7004", text: "P7004" }, { value: "P7005", text: "P7005" },
         { value: "P7005B", text: "P7005B" },
         { value: "P7006", text: "P7006" }, { value: "P7007", text: "P7007" },
         { value: "P7000", text: "P7000" }, { value: "P7001", text: "P7001" }, { value: "P7002", text: "P7002" },

@@ -206,6 +206,7 @@ const MAPA_PLACA_ZONA_SABADO = {
 };
 
 const LISTA_AUXILIARES_ALPINA = [
+    "NO APLICA",
     "JOHN EDWAR ZAPATA ACEVEDO", "ARNULFO STERLING PELAEZ", "RONALD ADOLFO ANGULO MACUASE",
     "JUAN ALEJANDRO FRANCO MARIN", "JUAN ESTEBAN ALZATE VAZQUEZ", "ADRIAN FELIPE MARTINEZ ORTEGON",
     "GABRIEL ALEJANDRO GAMEZ VALERO", "VICTOR ALFONSO PULGARIN MEJIA", "JUAN CAMILO COCOMA OROZCO",
@@ -2372,7 +2373,7 @@ async function crearFlete() {
     }
     const { db, ui } = formData;
 
-    if (!ui.placa || !db.contratista || !db.zona || db.precio <= 0 || !db.no_planilla || !db.auxiliares || db.no_auxiliares === 0) {
+    if (!ui.placa || !db.contratista || !db.zona || db.precio <= 0 || !db.no_planilla || !db.auxiliares || (db.no_auxiliares === 0 && db.auxiliares !== 'NO APLICA')) {
         Swal.fire({
             icon: 'warning', title: 'Faltan Datos', text: 'Verifique Placa, Conductor, Zona, Valor, Auxiliares y No. Planilla.',
             background: '#1a1a1a', color: '#fff'
@@ -2459,7 +2460,7 @@ async function guardarCambiosFlete() {
     if (!ui.placa) camposFaltantes.push("Placa");
     if (!db.contratista) camposFaltantes.push("Conductor/Contratista");
     if (!db.auxiliares) camposFaltantes.push("Nombres Auxiliares");
-    if (db.no_auxiliares === 0) camposFaltantes.push("Cant. Auxiliares");
+    if (db.no_auxiliares === 0 && db.auxiliares !== 'NO APLICA') camposFaltantes.push("Cant. Auxiliares");
     // if (!db.zona) camposFaltantes.push("Zona"); // Deshabilitado temporalmente para permitir correcciones
     if (db.precio <= 0) camposFaltantes.push("Precio/Población (Total)");
     // if (!db.no_planilla) camposFaltantes.push("Número de Planilla"); // Deshabilitado para permitir guardado de antiguos

@@ -1947,7 +1947,7 @@ function actualizarZonasPorProveedor(prefix = "") {
         { value: "FR09", text: "FR09" }, { value: "P70002", text: "P70002" },
         { value: "ANDY", text: "ANDY" }, { value: "LA 50", text: "LA 50" }, { value: "P ESPEJO", text: "P ESPEJO" },
         { value: "UNO A CENTRO", text: "UNO A CENTRO" }, { value: "MERCAPLAZA", text: "MERCAPLAZA" }, { value: "PUNTO MERCO", text: "PUNTO MERCO" },
-        { value: "FLEISCHMANN", text: "FLEISCHMANN" }, { value: "DOBLE F", text: "DOBLE F" }
+        { value: "FLEISCHMANN", text: "FLEISCHMANN" }, { value: "DOBLE F", text: "DOBLE F" }, { value: "TSS", text: "TSS" }
     ];
 
     // Usar la lista hardcoded en lugar de intentar leer el DOM vacío

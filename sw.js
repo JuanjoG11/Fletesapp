@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fletes-app-v4';
+const CACHE_NAME = 'fletes-app-v5';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -37,9 +37,25 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // Si es un asset estático (CSS, JS, Imágenes), usar Stale-While-Revalidate
+    // Si es app.js, usar Network-First siempre para evitar cache de precios
+    if (url.pathname.endsWith('app.js')) {
+        event.respondWith(
+            fetch(event.request).then((response) => {
+                const clonedResponse = response.clone();
+                caches.open(CACHE_NAME).then((cache) => {
+                    cache.put(event.request, clonedResponse);
+                });
+                return response;
+            }).catch(() => {
+                return caches.match(event.request);
+            })
+        );
+        return;
+    }
+
+    // Si es un asset estático (CSS, Imágenes, otras Libs), usar Stale-While-Revalidate
     const isStaticAsset = ASSETS_TO_CACHE.some(asset => event.request.url.includes(asset.replace('./', ''))) ||
-        url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|woff2)$/);
+        url.pathname.match(/\.(css|png|jpg|jpeg|svg|woff2)$/);
 
     if (isStaticAsset) {
         event.respondWith(

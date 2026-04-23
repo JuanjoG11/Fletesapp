@@ -275,6 +275,95 @@ function formatMoneyInput(input) {
     input.value = moneyFormatter.format(amount);
 }
 
+// MIGRACIÓN TEMPORAL: Corregir registros del 08 de Abril (Miercoles) mal creados como Martes
+async function fixIncorrectDates() {
+    try {
+        const { data: records, error: fetchError } = await SupabaseClient.supabase
+            .from('fletes')
+            .select('id')
+            .eq('fecha', '2026-04-08')
+            .eq('dia', 'Martes');
+        
+        if (fetchError) {
+            console.error("Error buscando fletes incorrectos:", fetchError);
+            return;
+        }
+
+        if (records && records.length > 0) {
+            console.log(`🔧 Corrigiendo ${records.length} registros del 08 de Abril...`);
+            
+            Swal.fire({
+                title: 'Corrigiendo fechas...',
+                text: `Se encontraron ${records.length} registros del 08 de Abril con día incorrecto.`,
+                icon: 'info',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading(),
+                background: '#1a1a1a', color: '#fff'
+            });
+
+            for (const r of records) {
+                await SupabaseClient.supabase.from('fletes').update({ dia: 'Miercoles' }).eq('id', r.id);
+            }
+
+            console.log("✅ Corrección de fechas completada.");
+            
+            Swal.fire({
+                title: '¡Corrección Exitosa!',
+                text: `Se actualizaron ${records.length} registros del 08 de Abril a 'Miercoles'.`,
+                icon: 'success',
+                timer: 3000,
+                background: '#1a1a1a', color: '#fff'
+            });
+
+            if (typeof listarFletes === 'function') listarFletes(true);
+        }
+    } catch (e) {
+        console.error("Error en migración de fechas:", e);
+    }
+}
+
+// MIGRACIÓN TEMPORAL: Agregar negociaciones del Lunes 06 de Abril que faltaban
+async function fixNegociacionesLunes06() {
+    const updates = [
+        { placa: 'TNH494', valor: 60000, razon: 'Extra ruta Anserma 7007' },
+        { placa: 'WFV015', valor: 60000, razon: 'Extra ruta Armenia 9602' },
+        { placa: 'SNP761', valor: 160000, razon: 'Flete Quimbaya + 50% flete Armenia, entrega en las dos poblaciones' },
+        { placa: 'WLS478', valor: 30000, razon: 'Entrega de pedidos extraruta de Fleischmann' },
+        { placa: 'EYX091', valor: 262500, razon: 'Flete Supia + 50% flete Riosucio' }
+    ];
+
+    try {
+        let hasChanges = false;
+        for (const item of updates) {
+            const { data } = await SupabaseClient.supabase
+                .from('fletes')
+                .select('id')
+                .eq('fecha', '2026-04-06')
+                .eq('placa', item.placa)
+                .or('razon_adicional_negociacion.is.null,razon_adicional_negociacion.eq.-');
+
+            if (data && data.length > 0) {
+                hasChanges = true;
+                for (const r of data) {
+                    await SupabaseClient.supabase.from('fletes')
+                        .update({ 
+                            valor_adicional_negociacion: item.valor, 
+                            razon_adicional_negociacion: item.razon 
+                        })
+                        .eq('id', r.id);
+                }
+            }
+        }
+        if (hasChanges && typeof listarFletes === 'function') listarFletes(true);
+    } catch (e) {
+        console.error("Error en migración de negociaciones:", e);
+    }
+}
+
+// ==========================================================
+// FUNCIÓN PARA CARGA MASIVA - ELIMINADA Y MIGRADA A SQL
+// ==========================================================
+
 // ==========================================================
 // 🔐 ROLES & PERMISOS
 // ==========================================================
@@ -1155,77 +1244,72 @@ const PRECIOS_TAT_UNIFICADO = {
     ...PRECIOS_TAT_FAMILIA
 };
 
-// Precios ESPECIFICOS para ALPINA y FLEISCHMANN (Actualizado 2025 + 2T)
+// Precios ESPECIFICOS para ALPINA y FLEISCHMANN (Actualizado 2026)
 const PRECIOS_ALPINA = {
-    "QUIMBAYA": 260000,
-    "MONTENEGRO": 280000,
-    "MONTENEGRO - P TAPAO": 305000,
-    "ALCALÁ ULLOA": 260000,
-    "CAICEDONIA": 336000,
-    "TEBAIDA": 310000,
-    "CORDOBA PIJAO BVISTA": 370000,
-    "GENOVA": 399000,
-    "CIRCASIA": 294000,
-    "SALENTO": 285000,
-    "FILANDIA": 350000,
-    "CALARCA": 312000,
+    "AGUADAS PACORA": 800000,
+    "ARANZAZU FILADELFIA": 460000,
+    "PACORA SALAMINA": 725000,
+    "NEIRA": 368000,
+    "CHINCHINA": 272000,
+    "RDA S JOSE BELALCAZAR": 346000,
+    "PALESTINA ARAUCA": 303000,
+    "IRRA LA FELISA VER RIOSUCIO": 530000,
+    "QUINCHIA": 470000,
+    "RIOSUCIO": 580000,
+    "MARMATO LA MERCED": 620000,
+    "MARMATO": 565000,
+    "SUPIA": 550000,
+    "MANIZALES VILLAMARIA": 330000,
+    "ALCALA ULLOA": 260000,
+    "MONTENEGRO": 282000,
+    "MONTENEGRO PTAPAO": 305000,
+    "QUIMBAYA": 265000,
     "CAIMO BARCELONA": 340000,
+    "FILANDIA": 285000,
+    "SALENTO": 285000,
+    "CIRCASIA": 294000,
+    "CORDOBA PIJAO BVISTA": 379000,
+    "CAICEDONIA": 385000,
+    "TEBAIDA": 340000,
+    "GENOVA": 430000,
     "ARMENIA": 320000,
-    "BALBOA LA CELIA": 305000,
-    "SANTUARIO APIA": 305000,
-    "SANTA CECILIA": 395000,
-    "PUEBLO RICO": 325000,
-    "LA VIRGINIA": 240000,
-    "ARGELIA EL CAIRO": 335000,
-    "EL AGUILA": 305000,
-    "EL AGUILA - VILLANUEVA": 330000,
-    "MARSELLA": 230000,
-    "ARABIA - ALTAGRACIA": 212000,
-    "ANSERMA": 350000,
-    "BELEN": 350000,
-    "MISTRATO": 385000,
-    "GUATICA": 390000,
+    "CALARCA": 338000,
+    "ANSERMA": 360000,
+    "BELEN DE UMBRIA": 360000,
+    "GUATICA": 398000,
     "VITERBO": 295000,
-    "CARTAGO": 250000,
-    "CARTAGO 2T": 280000, // 2 Toneladas
-    "ANSERMA NUEVO": 250000,
-    "ANSERMA NUEVO 2T": 280000, // 2 Toneladas
-    "SANTA ROSA": 230000,
-    "DOSQUEBRADAS": 200000,
-    "PEREIRA": 200000,
-    "PEREIRA-DOSQUEBRADAS": 230000,
-    "CUBA": 200000,
-    "SUPIA": 445000,
-    "RIOSUCIO": 485000,
-    "MARMATO": 499000,
-    "SUPIA-MARMATO": 590000,
-    "QUINCHIA": 439000,
-    "IRRA LA FELISA LA MERCED": 445000,
-    "AGUADAS": 690000,
-    "AGUADAS-PACORA": 740000,
-    "SALAMINA - PACORA": 740000,
-    "PACORA": 670000,
-    "ARANZAZU FILADELFIA": 425000,
-    "BELAL RDA SJOSE": 320000,
-    "CHINCHINA": 250000,
-    "PALESTINA ARAUCA LA PLATA": 280000,
-    "MANIZALES": 325000,
-    "VILLAMARIA": 325000,
-    "MANIZALES - VILLAMARIA": 325000,
-    "NEIRA": 340000,
-    "SAN JOSÉ-BELALCAZAR": 320000,
-    "CAIRO ARGELIA": 335000,
-    "PEREIRA CUBA PANORAMAS": 200000,
-    "PEREIRA VIA ARMENIA": 200000,
-    "PEREIRA CENTRO CUBA": 200000,
-    "PEREIRA CUBA GUAYACANES": 200000,
-    "PEREIRA CUBA MONTELIBANO": 200000,
-    "PEREIRA PROVIDENCIA": 200000,
-    "PEREIRA SAMARIA": 200000,
-    "PEREIRA PERLA DEL SUR": 200000,
-    "GALICIA CERRITOS": 200000,
-    "APIA LA VIRGINIA": 240000,
-    "MISTRATO BELEN": 385000
+    "MISTRATO": 390000,
+    "ANSERMA NUEVO 2T": 302000,
+    "ARGELIA EL CAIRO": 370000,
+    "EL AGUILA": 335000,
+    "EL AGUILA VILLA NUEVA": 360000,
+    "BALBOA LA CELIA": 325000,
+    "LA VIRGINIA": 255000,
+    "PUEBLO RICO": 370000,
+    "SANTA CECILIA": 450000,
+    "SANTUARIO": 330000,
+    "APIA": 330000,
+    "SANTA ROSA": 238000,
+    "ALCALÁ ULLOA": 260000,
+    "SANTUARIO APIA": 330000,
+    "SANTA ROSA DE C": 238000,
+    "BELEN": 360000,
+    "PEREIRA-DOSQUEBRADAS": 224000,
+    "PEREIRA": 224000,
+    "DOSQUEBRADAS": 224000,
+    "AGUADAS": 800000,
+    "PACORA": 725000,
+    "MANIZALES": 330000,
+    "VILLAMARIA": 330000,
+    "ANSERMA NUEVO": 302000,
+    "CARTAGO": 290000,
+    "CUBA": 224000,
+    "MARSELLA": 290000,
+    "ARABIA ALTAGRACIA": 235000,
+    "ARABIA - ALTAGRACIA": 235000,
+    "MONTENEGRO, PTAPAO": 305000,
+    "MONTENEGRO, PTAPAO ": 305000,
+    "IRRA, LA FELISA, VER RIOSUCIO": 530000
 };
 
 // Precios ESPECIFICOS para ZENU
@@ -1268,7 +1352,7 @@ const POBLACIONES_RISARALDA = [
     "PUEBLO RICO-SANTA CECILIA", "GUATICA-RISARALDA", "PEREIRA-DOSQUEBRADAS",
     "PEREIRA MM CARRO GRANDE", "MANIZALES", "CARTAGO", "CARTAGO 2T", "SAN JOSÉ-BELALCAZAR",
     "ANSERMA", "ANSERMA NUEVO", "ANSERMA NUEVO 2T", "ARGELIA EL CAIRO", "EL AGUILA", "EL AGUILA - VILLANUEVA",
-    "ARABIA - ALTAGRACIA", "VITERBO", "CUBA"
+    "ARABIA - ALTAGRACIA", "VITERBO", "CUBA", "ARABIA ALTAGRACIA"
 ];
 
 const ZONAS_CALDAS = ["M9552", "M9553", "M9554", "M9555", "M9556", "M9557", "M9560", "M9558", "M9559", "P7002", "M9550", "P7000", "P7001", "E7001-CALDAS", "DOBLE F"];
@@ -1276,14 +1360,14 @@ const POBLACIONES_CALDAS = [
     "MANIZALES", "VILLAMARIA", "MANIZALES - VILLAMARIA", "CHINCHINA", "NEIRA", "PALESTINA ARAUCA LA PLATA",
     "ARANZAZU FILADELFIA", "RIOSUCIO", "SUPIA", "MARMATO", "PACORA", "AGUADAS",
     "AGUADAS-PACORA", "SALAMINA - PACORA", "SUPIA-MARMATO", "IRRA LA FELISA LA MERCED", "ANSERMA",
-    "BELEN", "VITERBO", "ANSERMA NUEVO", "SAN JOSÉ-BELALCAZAR"
+    "BELEN", "VITERBO", "ANSERMA NUEVO", "SAN JOSÉ-BELALCAZAR", "IRRA, LA FELISA, VER RIOSUCIO"
 ];
 
 const ZONAS_QUINDIO = ["M9601", "M9602", "M9603", "M9604", "M9605", "M9606", "M9600", "P7008", "P7009", "P7010", "DOBLE F"];
 const POBLACIONES_QUINDIO = [
     "ARMENIA", "ARMENIA 2T", "QUIMBAYA", "MONTENEGRO", "MONTENEGRO - P TAPAO",
     "CALARCA", "CIRCASIA", "LA TEBAIDA", "TEBAIDA", "FILANDIA", "SALENTO",
-    "GENOVA", "PIJAO", "BUENAVISTA", "CORDOBA PIJAO BVISTA", "CAIMO BARCELONA", "CAICEDONIA", "ALCALÁ ULLOA"
+    "GENOVA", "PIJAO", "BUENAVISTA", "CORDOBA PIJAO BVISTA", "CAIMO BARCELONA", "CAICEDONIA", "ALCALÁ ULLOA", "MONTENEGRO, PTAPAO"
 ];
 
 // Master list storage
@@ -1348,17 +1432,17 @@ let ULTIMA_ZONA_SELECCIONADA = { "": null, "modal-": null };
 // Mapping Automático para Alpina / Fleischmann (Extraído de Rutero)
 const MAPA_ZONA_POBLACION_ALPINA = {
     "Lunes": {
-        "M9552": "VILLAMARIA",
-        "PRADERA": "VILLAMARIA",
-        "FC01": "MANIZALES",
-        "M9555": "VILLAMARIA",
-        "FC03": "VILLAMARIA",
-        "M9556": "VILLAMARIA",
-        "PARQUE": "VILLAMARIA",
-        "M9553": "MANIZALES",
-        "PALERMO": "MANIZALES",
-        "M9554": "MANIZALES",
-        "UNO A GALERIA": "MANIZALES",
+        "M9552": "MANIZALES VILLAMARIA",
+        "PRADERA": "MANIZALES VILLAMARIA",
+        "FC01": "MANIZALES VILLAMARIA",
+        "M9555": "MANIZALES VILLAMARIA",
+        "FC03": "MANIZALES VILLAMARIA",
+        "M9556": "MANIZALES VILLAMARIA",
+        "PARQUE": "MANIZALES VILLAMARIA",
+        "M9553": "MANIZALES VILLAMARIA",
+        "PALERMO": "MANIZALES VILLAMARIA",
+        "M9554": "MANIZALES VILLAMARIA",
+        "UNO A GALERIA": "MANIZALES VILLAMARIA",
         "M9558": "ARANZAZU FILADELFIA",
         "M9601": "QUIMBAYA",
         "CANASTA": "QUIMBAYA",
@@ -1424,14 +1508,14 @@ const MAPA_ZONA_POBLACION_ALPINA = {
         "M9460": "PEREIRA",
         "P7004": "MARSELLA",
         "P7005": "ARGELIA EL CAIRO",
-        "P7006": "SANTUARIO APIA",
-        "P7007": "BELEN",
-        "M9451": "BELEN"
+        "P7006": "SANTUARIO",
+        "P7007": "BELEN DE UMBRIA",
+        "M9451": "BELEN DE UMBRIA"
     },
     "Miercoles": {
         "M9557": "MARMATO",
-        "M9558": "AGUADAS",
-        "M9559": "PALESTINA ARAUCA LA PLATA",
+        "M9558": "AGUADAS PACORA",
+        "M9559": "PALESTINA ARAUCA",
         "M9552": "MANIZALES",
         "UNO": "MANIZALES",
         "FC01": "MANIZALES",
@@ -1466,7 +1550,7 @@ const MAPA_ZONA_POBLACION_ALPINA = {
         "M9450": "ANSERMA NUEVO",
         "P7004": "PEREIRA",
         "FC02": "MANIZALES",
-        "FLEISCHMANN": "PEREIRA-DOSQUEBRADAS",
+        "FLEISCHMANN": "PEREIRA - DOSQUEBRADAS",
         "P7006": "BALBOA LA CELIA",
         "P7007": "GUATICA",
         "M9451": "GUATICA"
@@ -1544,9 +1628,9 @@ const MAPA_ZONA_POBLACION_ALPINA = {
         "M9555": "VILLAMARIA",
         "M9556": "VILLAMARIA",
         "PUNTO MERCO": "MANIZALES",
-        "M9557": "IRRA LA FELISA LA MERCED",
-        "M9560": "IRRA LA FELISA LA MERCED",
-        "M9558": "SALAMINA - PACORA",
+        "M9557": "IRRA LA FELISA VER RIOSUCIO",
+        "M9560": "IRRA LA FELISA VER RIOSUCIO",
+        "M9558": "PACORA SALAMINA",
         "M9559": "CHINCHINA",
         "P70002": "CHINCHINA"
     },
@@ -1585,7 +1669,7 @@ const MAPA_ZONA_POBLACION_ALPINA = {
         "M9556": "MANIZALES",
         "FLORIDA": "MANIZALES",
         "M9557": "QUINCHIA",
-        "M9558": "SALAMINA - PACORA",
+        "M9558": "PACORA SALAMINA",
         "M9559": "CHINCHINA"
     }
 };
@@ -1980,7 +2064,6 @@ function actualizarZonasPorProveedor(prefix = "") {
 
 function calcularTotal(prefix = "") {
     const poblacionId = prefix + "poblacion";
-    const adicId = prefix + "is_adicionales";
     const noAuxId = prefix + "no_auxiliares";
     const totalId = prefix + "total_flete";
     const rutaId = prefix + "valor_ruta";
@@ -1989,7 +2072,6 @@ function calcularTotal(prefix = "") {
     const adicNegociadoId = prefix + "valor_adicional"; // NUEVO
 
     const poblacionEl = document.getElementById(poblacionId);
-    const adicionalesEl = document.getElementById(adicId);
     const noAuxEl = document.getElementById(noAuxId);
     const totalEl = document.getElementById(totalId);
     const rutaEl = document.getElementById(rutaId);
@@ -2021,9 +2103,8 @@ function calcularTotal(prefix = "") {
     // Calcular Valor Flete (total a pagar) basado en población
     let total = precioBase;
 
-    // Sumar costo de adicionales
-    const tieneAdicional = adicionalesEl?.value === "Si";
-    if (tieneAdicional) total += COSTO_ADICIONAL;
+
+
 
     // Sumar costo por auxiliares (DESACTIVADO por solicitud del usuario)
     // const numAuxiliares = parseInt(noAuxEl?.value || 0);
@@ -2040,7 +2121,7 @@ function calcularTotal(prefix = "") {
     if (rutaEl && porcEl) {
         const valorPedidos = parseMoney(rutaEl.value);
         if (total > 0 && valorPedidos > 0) {
-            const totalParaPorcentaje = tieneAdicional ? (total - COSTO_ADICIONAL - adicionalNegociado) : (total - adicionalNegociado);
+            const totalParaPorcentaje = total - adicionalNegociado;
             const porcentaje = (totalParaPorcentaje / valorPedidos) * 100;
             porcEl.value = porcentaje.toFixed(1) + "%";
 
@@ -2058,12 +2139,10 @@ function calcularTotal(prefix = "") {
 
 function setupCalculators(prefix = "") {
     const poblacionId = prefix + "poblacion";
-    const adicId = prefix + "is_adicionales";
     const noAuxId = prefix + "no_auxiliares";
     const rutaId = prefix + "valor_ruta";
 
     const selectPoblacion = document.getElementById(poblacionId);
-    const selectAdicional = document.getElementById(adicId);
     const selectNoAux = document.getElementById(noAuxId);
     const inputRuta = document.getElementById(rutaId);
 
@@ -2073,9 +2152,8 @@ function setupCalculators(prefix = "") {
         selectPoblacion.addEventListener("mousedown", () => actualizarPoblaciones(prefix));
         selectPoblacion.addEventListener("change", () => calcularTotal(prefix));
     }
-    if (selectAdicional) {
-        selectAdicional.addEventListener("change", () => calcularTotal(prefix));
-    }
+
+
     if (selectNoAux) {
         selectNoAux.addEventListener("change", () => calcularTotal(prefix));
     }
@@ -2181,7 +2259,8 @@ async function obtenerDatosFormulario(prefix = "") {
     }
     const noAux = val("no_auxiliares");
     const noPedidos = val("no_pedidos");
-    const adicionales = val("is_adicionales");
+    const adicionales = "No"; // Removido selector de UI, siempre es No por defecto para mantener compatibilidad DB
+
 
     // NUEVOS CAMPOS: Planilla y Facturas
     const noPlanilla = val("no_planilla");
@@ -2438,7 +2517,7 @@ function limpiarFormulario(prefix) {
     const fields = [
         "placa", "contratista", "proveedor", "zona", "dia", "poblacion",
         "auxiliares", "auxiliares_extra", "no_auxiliares", "no_pedidos",
-        "valor_ruta", "is_adicionales", "total_flete",
+        "valor_ruta", "total_flete",
         "porcentaje_ruta", "fecha", "no_planilla", "facturas_adicionales",
         // Campos de adicionales que faltaban
         "valor_adicional", "razon_adicional"
@@ -2511,7 +2590,7 @@ async function listarFletes(reset = true) {
         CURRENT_PAGE = 0;
         CACHED_FLETES = []; // Limpiar cache visual al resetear (búsqueda o refresh)
         if (btnCargarMas) btnCargarMas.style.display = 'none';
-        tbody.innerHTML = `<tr><td colspan="15" style="text-align:center"><i class="ri-loader-4-line rotate"></i> Cargando...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="14" style="text-align:center"><i class="ri-loader-4-line rotate"></i> Cargando...</td></tr>`;
     } else {
         // Si no es reset, es "Cargar Más", aumentamos página
         CURRENT_PAGE++;
@@ -2546,11 +2625,34 @@ async function listarFletes(reset = true) {
 
     if (res.success && res.data) {
         // Aplanar datos del vehículo para compatibilidad con el render
-        const newFletes = res.data.map(f => ({
-            ...f,
-            placa: f.vehiculo?.placa || f.placa || 'N/A',
-            conductor: f.vehiculo?.conductor || f.contratista || 'N/A'
-        }));
+        const newFletes = res.data.map(f => {
+            // PARCHE VISUAL: Forzar Miercoles para el 08 de Abril si dice Martes
+            let diaDisplay = f.dia;
+            if (f.fecha === '2026-04-08' && f.dia === 'Martes') {
+                diaDisplay = 'Miercoles';
+            }
+
+            // PARCHE VISUAL 06 ABRIL: Forzar negociaciones si no están en DB
+            let vNegoc = f.valor_adicional_negociacion || 0;
+            let rNegoc = f.razon_adicional_negociacion || '';
+
+            if (f.fecha === '2026-04-06') {
+                if (f.placa === 'TNH494' && !rNegoc) { vNegoc = 60000; rNegoc = 'Extra ruta Anserma 7007'; }
+                if (f.placa === 'WFV015' && !rNegoc) { vNegoc = 60000; rNegoc = 'Extra ruta Armenia 9602'; }
+                if (f.placa === 'WLS478' && !rNegoc) { vNegoc = 30000; rNegoc = 'Entrega de pedidos extraruta de Fleischmann'; }
+                if (f.placa === 'SNP761' && !rNegoc) { vNegoc = 160000; rNegoc = 'Flete Quimbaya + 50% flete Armenia'; }
+                if (f.placa === 'EYX091' && !rNegoc) { vNegoc = 262500; rNegoc = 'Flete Supia + 50% flete Riosucio'; }
+            }
+
+            return {
+                ...f,
+                dia: diaDisplay,
+                valor_adicional_negociacion: vNegoc,
+                razon_adicional_negociacion: rNegoc,
+                placa: f.vehiculo?.placa || f.placa || 'N/A',
+                conductor: f.vehiculo?.conductor || f.contratista || 'N/A'
+            };
+        });
 
         if (reset) {
             CACHED_FLETES = newFletes;
@@ -2602,7 +2704,7 @@ function renderTable(fletes) {
     const filtered = fletes; // El filtrado ahora viene del servidor
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="15" style="text-align:center">No se encontraron fletes</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="14" style="text-align:center">No se encontraron fletes</td></tr>`;
         return;
     }
 
@@ -2612,7 +2714,8 @@ function renderTable(fletes) {
     filtered.forEach(f => {
         const tr = document.createElement("tr");
         const opacity = (f.id && f.id.toString().startsWith('temp-')) ? 'opacity: 0.5;' : '';
-        const esAdicional = f.adicionales === 'Si';
+
+
 
         tr.style = opacity;
 
@@ -2626,7 +2729,6 @@ function renderTable(fletes) {
             <td>${f.zona || '-'}</td>
             <td>${f.poblacion || 'N/A'}</td>
             <td>${f.no_auxiliares || 0} (${f.auxiliares || '-'})</td>
-            <td><span class="badge" style="background: ${esAdicional ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.05)'}; color: ${esAdicional ? 'var(--secondary)' : 'inherit'}; border: ${esAdicional ? '1px solid var(--secondary)' : 'none'};">${f.adicionales || 'No'}</span></td>
             <td class="price-cell" style="color: var(--info);">${moneyFormatter.format(f.valor_adicional_negociacion || 0)}</td>
             <td style="font-size: 0.85rem; color: var(--text-muted); white-space: normal;" title="${f.razon_adicional_negociacion || ''}">${f.razon_adicional_negociacion || '-'}</td>
             <td class="price-cell">${moneyFormatter.format(f.valor_ruta || 0)}</td>
@@ -3092,31 +3194,54 @@ async function generarPDF() {
             <option value="ALPINA-FLEISCHMANN">TYM: ALPINA-FLEISCHMANN</option>
         `;
     } else if (esTAT) {
-        // Solo los de TAT (Unificados)
         opcionesProveedores = `
             <option value="UNILEVER-FAMILIA">UNILEVER-FAMILIA</option>
             <option value="POLAR">POLAR</option>
         `;
     } else {
-        // Proveedores de TYM (Excluyendo los de TAT)
         opcionesProveedores = `
             <option value="ZENU">ZENU</option>
             <option value="ALPINA-FLEISCHMANN">ALPINA-FLEISCHMANN</option>
         `;
     }
 
-    // Mostrar diálogo de filtros ANTES de generar
+    // Helper para el modal de PDF
+    window.toggleRangoFechasPDF = function () {
+        const tipo = document.getElementById('pdf-periodo-tipo')?.value;
+        const finContainer = document.getElementById('pdf-fin-container');
+        if (finContainer) {
+            finContainer.style.display = (tipo === 'rango') ? 'block' : 'none';
+        }
+    };
+
     const { value: formValues } = await Swal.fire({
         title: '📄 Configurar Reporte PDF',
         html: `
             <div style="max-width: 350px; margin: 0 auto; padding: 20px 0;">
                 <div style="margin-bottom: 22px;">
-                    <label for="pdf-fecha" style="display: block; text-align: center; margin-bottom: 10px; font-weight: 600; font-size: 13px;">
-                        Fecha del Reporte (Obligatorio):
+                    <label style="display: block; text-align: center; margin-bottom: 10px; font-weight: 600; font-size: 13px;">
+                        Tipo de Periodo:
                     </label>
-                    <input id="pdf-fecha" type="date" class="swal2-input" value="${new Date().toISOString().split('T')[0]}" required style="width: 100%; margin: 0;">
+                    <select id="pdf-periodo-tipo" class="swal2-input" onchange="toggleRangoFechasPDF()" style="width: 100%; margin: 0;">
+                        <option value="dia">Un Día</option>
+                        <option value="rango" selected>Rango de Fechas</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 22px;">
+                    <label id="label-inicio" style="display: block; text-align: center; margin-bottom: 10px; font-weight: 600; font-size: 13px;">
+                        Fecha Inicio:
+                    </label>
+                    <input id="pdf-fecha-inicio" type="date" class="swal2-input" value="${new Date().toISOString().split('T')[0]}" style="width: 100%; margin: 0;">
                 </div>
                 
+                <div id="pdf-fin-container" style="margin-bottom: 22px;">
+                    <label style="display: block; text-align: center; margin-bottom: 10px; font-weight: 600; font-size: 13px;">
+                        Fecha Fin:
+                    </label>
+                    <input id="pdf-fecha-fin" type="date" class="swal2-input" value="${new Date().toISOString().split('T')[0]}" style="width: 100%; margin: 0;">
+                </div>
+
                 <div style="margin-bottom: 22px;">
                     <label for="pdf-proveedor" style="display: block; text-align: center; margin-bottom: 10px; font-weight: 600; font-size: 13px;">
                         Proveedor:
@@ -3135,6 +3260,7 @@ async function generarPDF() {
                     <select id="pdf-tipo" class="swal2-input" style="width: 100%; margin: 0;">
                         <option value="fletes">Reporte de Fletes (Estándar)</option>
                         <option value="relacion">Relación de Planilla y Facturas</option>
+                        <option value="individual">Comprobantes Individuales (2 pág/flete)</option>
                     </select>
                 </div>
                 ` }
@@ -3146,31 +3272,50 @@ async function generarPDF() {
         background: '#1e293b',
         color: '#fff',
         width: '500px',
+        didOpen: () => {
+            window.toggleRangoFechasPDF();
+        },
         preConfirm: () => {
-            const fecha = document.getElementById('pdf-fecha').value;
+            const periodoTipo = document.getElementById('pdf-periodo-tipo').value;
+            const inicio = document.getElementById('pdf-fecha-inicio').value;
+            const fin = document.getElementById('pdf-fecha-fin').value;
             const proveedor = document.getElementById('pdf-proveedor').value;
-            // Para Caja, forzamos 'relacion', para otros tomamos el valor del select
             const tipoSelect = document.getElementById('pdf-tipo');
             const tipo = tipoSelect ? tipoSelect.value : 'relacion';
 
-            if (!fecha) {
-                Swal.showValidationMessage('Por favor selecciona una fecha');
+            if (!inicio || (periodoTipo === 'rango' && !fin)) {
+                Swal.showValidationMessage('Por favor selecciona las fechas');
                 return false;
             }
 
-            return { fecha, proveedor, tipo };
+            return { periodoTipo, inicio, fin, proveedor, tipo };
         }
     });
 
-    if (!formValues) return; // Usuario canceló
+    if (!formValues) return;
 
-    const { fecha, proveedor, tipo } = formValues;
+    const { periodoTipo, inicio, fin, proveedor, tipo } = formValues;
+    const esRango = (periodoTipo === 'rango');
+
+    Swal.fire({
+        title: 'Generando PDF...',
+        text: esRango ? `${inicio} hasta ${fin}` : inicio,
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+        background: '#1e293b',
+        color: '#fff'
+    });
 
     // Filtrar datos desde la base de datos directamente
     let query = SupabaseClient.supabase
         .from('fletes')
-        .select('*, vehiculo:vehiculos(placa, conductor)')
-        .eq('fecha', fecha);
+        .select('*, vehiculo:vehiculos(placa, conductor)');
+
+    if (esRango) {
+        query = query.gte('fecha', inicio).lte('fecha', fin);
+    } else {
+        query = query.eq('fecha', inicio);
+    }
 
     if (proveedor) {
         if (proveedor === 'UNILEVER-FAMILIA') {
@@ -3181,16 +3326,14 @@ async function generarPDF() {
             query = query.eq('proveedor', proveedor);
         }
     } else {
-        // Filtro "Todos los Proveedores" respeta el contexto de la empresa
         if (esTAT) {
             query = query.in('proveedor', ['UNILEVER', 'FAMILIA', 'POLAR', 'UNILEVER-FAMILIA']);
         } else if (role !== 'caja') {
-            // Contexto TYM (excluyendo caja que ve todo)
             query = query.in('proveedor', ['ALPINA', 'FLEISCHMANN', 'ZENU', 'ALPINA-FLEISCHMANN']);
         }
     }
 
-    const { data: fletes, error } = await query;
+    const { data: fletes, error } = await query.order('fecha', { ascending: true });
 
     if (error || !fletes || fletes.length === 0) {
         return Swal.fire({
@@ -3204,7 +3347,7 @@ async function generarPDF() {
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({
-        orientation: 'l',
+        orientation: tipo === 'individual' ? 'p' : 'l',
         unit: 'mm',
         format: 'a4'
     });
@@ -3235,16 +3378,143 @@ async function generarPDF() {
 
     const fechaImpresion = new Date().toLocaleString('es-CO');
 
-    // --- Lógica Multi-Tabla por Proveedor ---
-    // Mapeo especial para agrupar UNILEVER y FAMILIA
+    // ==========================================================
+    // MODO INDIVIDUAL: 2 PÁGINAS POR FLETE (ORIGINAL Y COPIA)
+    // ==========================================================
+    if (tipo === 'individual') {
+        fletes.forEach((f, idx) => {
+            const numFlete = String(f.id).padStart(6, '0');
+            const esTAT = ['UNILEVER', 'FAMILIA', 'POLAR'].includes(f.proveedor);
+            const logoData = esTAT ? logos.TAT : logos.TYM;
+            const empresaNombre = esTAT ? "DISTRIBUCIONES DEL EJE CAFETERO SA" : "TIENDAS Y MARCAS EJE CAFETERO";
+            const nitEmpresa = esTAT ? "NIT 901568117-1" : "NIT 900973929";
+
+            const dibujarPagina = (etiqueta) => {
+                // Margen y recuadro exterior
+                doc.setDrawColor(200);
+                doc.rect(10, 10, 190, 277);
+
+                // Logo
+                if (logoData) {
+                    doc.addImage(logoData, esTAT ? 'JPEG' : 'PNG', 15, 15, 25, 25);
+                }
+
+                // Header
+                doc.setFontSize(14);
+                doc.setFont(undefined, 'bold');
+                doc.text(empresaNombre, 45, 22);
+                doc.setFontSize(10);
+                doc.text(nitEmpresa, 45, 28);
+                doc.setFontSize(16);
+                doc.setTextColor(231, 76, 60); // Rojo suave
+                doc.text(`COMPROBANTE DE FLETE #${numFlete}`, 195, 22, { align: 'right' });
+                doc.setTextColor(0);
+                doc.setFontSize(9);
+                doc.text(etiqueta, 195, 28, { align: 'right' });
+
+                // Datos Principales
+                doc.setFont(undefined, 'bold');
+                doc.setFillColor(245, 245, 245);
+                doc.rect(15, 45, 180, 8, 'F');
+                doc.setFontSize(10);
+                doc.text("INFORMACIÓN GENERAL", 20, 51);
+
+                doc.setFont(undefined, 'normal');
+                doc.setFontSize(9);
+                let currentY = 60;
+                
+                const drawRow = (label1, val1, label2, val2) => {
+                    doc.setFont(undefined, 'bold');
+                    doc.text(label1, 20, currentY);
+                    doc.setFont(undefined, 'normal');
+                    doc.text(String(val1), 55, currentY);
+
+                    doc.setFont(undefined, 'bold');
+                    doc.text(label2, 110, currentY);
+                    doc.setFont(undefined, 'normal');
+                    doc.text(String(val2), 145, currentY);
+                    currentY += 8;
+                };
+
+                drawRow("FECHA:", f.fecha, "DÍA:", f.dia || 'N/A');
+                drawRow("PLACA:", f.vehiculo?.placa || f.placa, "PROVEEDOR:", f.proveedor);
+                drawRow("CONDUCTOR:", f.vehiculo?.conductor || f.contratista, "POBLACIÓN:", f.poblacion);
+                drawRow("PLANILLA:", f.no_planilla || 'N/A', "FACTURAS:", f.no_pedidos || '0');
+                
+                currentY += 5;
+                doc.setFont(undefined, 'bold');
+                doc.rect(15, currentY, 180, 8, 'F');
+                doc.text("VALORES DEL FLETE", 20, currentY + 6);
+                currentY += 15;
+
+                const moneyFormatterLarge = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+
+                drawRow("VALOR RUTA:", moneyFormatterLarge.format(f.valor_ruta || 0), "VALOR FLETE:", moneyFormatterLarge.format(f.precio || 0));
+                
+                if ((f.valor_adicional_negociacion || 0) > 0 || (f.razon_adicional_negociacion && f.razon_adicional_negociacion.trim() !== '' && f.razon_adicional_negociacion !== '-')) {
+                    drawRow("ADICIONAL:", moneyFormatterLarge.format(f.valor_adicional_negociacion || 0), "MOTIVO:", "");
+                    doc.setFontSize(8);
+                    doc.text(f.razon_adicional_negociacion || 'Sin motivo especificado', 20, currentY);
+                    currentY += 10;
+                }
+
+                currentY += 10;
+                doc.setFontSize(14);
+                doc.setFont(undefined, 'bold');
+                doc.text("TOTAL A PAGAR:", 110, currentY);
+                doc.text(moneyFormatterLarge.format(f.precio || 0), 195, currentY, { align: 'right' });
+                
+                // Firmas
+                currentY = 240;
+                doc.line(20, currentY, 90, currentY);
+                doc.line(120, currentY, 190, currentY);
+                doc.setFontSize(8);
+                doc.text("ENTREGADO POR (CAJA/ADM)", 55, currentY + 5, { align: 'center' });
+                doc.text("RECIBIDO POR (CONDUCTOR)", 155, currentY + 5, { align: 'center' });
+                
+                doc.setFontSize(7);
+                doc.setTextColor(150);
+                doc.text(`Impreso el ${fechaImpresion} - FletesApp Logistics`, 105, 285, { align: 'center' });
+                doc.setTextColor(0);
+            };
+
+            // Página 1: ORIGINAL
+            dibujarPagina("ORIGINAL");
+            
+            // Página 2: COPIA
+            doc.addPage();
+            dibujarPagina("COPIA");
+
+            // Si no es el último flete, añadir página para el siguiente
+            if (idx < fletes.length - 1) {
+                doc.addPage();
+            }
+        });
+
+        const nombreArchivo = `Comprobantes_Fletes_${inicio}${esRango ? '_al_' + fin : ''}.pdf`;
+        doc.save(nombreArchivo);
+
+        Swal.fire({
+            icon: 'success',
+            title: 'PDF Generado',
+            text: `Se han generado los comprobantes para ${fletes.length} fletes.`,
+            background: '#1e293b',
+            color: '#fff'
+        });
+        return;
+    }
+
+    // ==========================================================
+    // LÓGICA REPORTE TABULAR: AGRUPADO POR DÍA → PROVEEDOR
+    // ==========================================================
+
+    // Mapear y agrupar
     const fletesMapeados = fletes.map(f => {
-        // Flatten vehicle data
         const flatFlete = {
             ...f,
-            placa: f.vehiculo?.placa || f.placa || 'N/A', // Try joined vehicle first, then fallback
+            placa: f.vehiculo?.placa || f.placa || 'N/A',
             contratista: f.vehiculo?.conductor || f.contratista || 'N/A'
         };
-
         const prov = flatFlete.proveedor || 'SIN PROVEEDOR';
         if (['UNILEVER', 'FAMILIA', 'UNILEVER-FAMILIA'].includes(prov)) {
             return { ...flatFlete, _provAgrupado: 'UNILEVER-FAMILIA' };
@@ -3255,33 +3525,48 @@ async function generarPDF() {
         return { ...flatFlete, _provAgrupado: prov };
     });
 
-    const proveedoresTodos = [...new Set(fletesMapeados.map(f => f._provAgrupado))].sort();
-    let finalY = 20;
+    // Obtener días únicos en orden
+    const diasUnicos = [...new Set(fletesMapeados.map(f => f.fecha))].sort();
+    let esPrimerPagina = true;
 
-    for (let i = 0; i < proveedoresTodos.length; i++) {
-        const provActual = proveedoresTodos[i];
-        const fletesProv = fletesMapeados.filter(f => f._provAgrupado === provActual);
-        if (fletesProv.length === 0) continue;
+    for (const diaActual of diasUnicos) {
+        const fletesDia = fletesMapeados.filter(f => f.fecha === diaActual);
+        if (fletesDia.length === 0) continue;
 
-        // Helper para dibujar el encabezado en cada página
-        const dibujarHeader = (docInstance) => {
-            const esTAT = provActual === 'UNILEVER-FAMILIA';
-            const logoData = esTAT ? logos.TAT : logos.TYM;
-            const logoFormat = esTAT ? 'JPEG' : 'PNG';
-            const headerText = esTAT
-                ? `PLANILLA FLETES TAT DISTRIBUCIONES DEL EJE CAFETERO SA`.toUpperCase()
-                : `PLANILLA FLETES TIENDAS Y MARCAS EJE CAFETERO`.toUpperCase();
-            const nitText = esTAT
-                ? `NIT 901568117-1`
-                : `NIT 900973929`;
-            const subtituloText = esTAT
-                ? `TAT - DISTRIBUCIONES DEL EJE CAFETERO SA NIT 901568117-1`
-                : `TIENDAS Y MARCAS EJE CAFETERO NIT 900973929`;
+        // Obtener proveedores del día
+        const proveedoresDia = [...new Set(fletesDia.map(f => f._provAgrupado))].sort();
 
-            // Dibujar Logo
+        // Acumuladores del día para el gran total
+        let grandTotalRuta = 0, grandTotalFlete = 0, grandTotalPedidos = 0;
+        let grandTotalFacturas = 0, grandTotalValorRuta2 = 0; // para 'relacion'
+
+        // Formatear la fecha para mostrar en el header (yyyy-mm-dd → dd/mm/yyyy)
+        const partesFecha = diaActual.split('-');
+        const fechaFormateada = partesFecha.length === 3
+            ? `${partesFecha[2]}/${partesFecha[1]}/${partesFecha[0]}`
+            : diaActual;
+
+        // Obtener el nombre del día si está disponible
+        const primerFleteDia = fletesDia[0];
+        const diaNombre = primerFleteDia.dia || '';
+        const tituloFecha = diaNombre ? `${diaNombre} ${fechaFormateada}` : fechaFormateada;
+
+        // Helper: dibujar encabezado para un proveedor en una fecha dada
+        const dibujarHeaderDia = (docInstance, provActual) => {
+            const esProvTAT = provActual === 'UNILEVER-FAMILIA';
+            const logoData = esProvTAT ? logos.TAT : logos.TYM;
+            const logoFormat = esProvTAT ? 'JPEG' : 'PNG';
+            const headerText = esProvTAT
+                ? 'PLANILLA FLETES TAT DISTRIBUCIONES DEL EJE CAFETERO SA'
+                : 'PLANILLA FLETES TIENDAS Y MARCAS EJE CAFETERO';
+            const nitText = esProvTAT ? 'NIT 901568117-1' : 'NIT 900973929';
+            const subtituloText = esProvTAT
+                ? 'TAT - DISTRIBUCIONES DEL EJE CAFETERO SA NIT 901568117-1'
+                : 'TIENDAS Y MARCAS EJE CAFETERO NIT 900973929';
+
             if (logoData) {
                 try {
-                    docInstance.addImage(logoData, logoFormat, 10, esTAT ? 2 : 5, esTAT ? 25 : 20, esTAT ? 25 : 20);
+                    docInstance.addImage(logoData, logoFormat, 10, esProvTAT ? 2 : 5, esProvTAT ? 25 : 20, esProvTAT ? 25 : 20);
                 } catch (e) { }
             }
 
@@ -3289,188 +3574,190 @@ async function generarPDF() {
             docInstance.setFont(undefined, 'bold');
 
             if (tipo === 'relacion') {
-                docInstance.text("RELACION DE PLANILLA Y FACTURAS", 148, 12, { align: 'center' });
+                docInstance.text('RELACION DE PLANILLA Y FACTURAS', 148, 10, { align: 'center' });
                 docInstance.setFontSize(9);
-                docInstance.text(subtituloText, 148, 18, { align: 'center' });
+                docInstance.text(subtituloText, 148, 16, { align: 'center' });
             } else {
-                docInstance.text(headerText, 148, 12, { align: 'center' });
+                docInstance.text(headerText, 148, 10, { align: 'center' });
                 docInstance.setFontSize(10);
-                docInstance.text(nitText, 148, 17, { align: 'center' });
+                docInstance.text(nitText, 148, 16, { align: 'center' });
             }
 
             docInstance.setFont(undefined, 'normal');
             docInstance.setFontSize(8);
-            docInstance.text(`Generado: ${fechaImpresion} - Fecha Reporte: ${fecha}`, 280, 22, { align: 'right' });
+            docInstance.text(`Generado: ${fechaImpresion}`, 287, 10, { align: 'right' });
+            docInstance.text(`Fecha Reporte: ${tituloFecha}`, 287, 16, { align: 'right' });
             docInstance.text(`Proveedor: ${provActual}`, 14, 28);
         };
 
-        // Nueva página por proveedor si no es el primero
-        if (i > 0) doc.addPage();
-        finalY = 20;
+        // Iterar proveedores del día
+        for (let pi = 0; pi < proveedoresDia.length; pi++) {
+            const provActual = proveedoresDia[pi];
+            const fletesProv = fletesDia.filter(f => f._provAgrupado === provActual);
+            if (fletesProv.length === 0) continue;
 
-        // Dibujar el primer encabezado de la tabla para este proveedor
-        dibujarHeader(doc);
+            // Nueva página: al inicio o entre tablas
+            if (!esPrimerPagina) {
+                doc.addPage();
+            }
+            esPrimerPagina = false;
 
-        let bodyData = [];
-        let head = [];
-        let columnStyles = {};
+            dibujarHeaderDia(doc, provActual);
 
-        if (tipo === 'relacion') {
-            // ZONA | N. DE PLANILLA | FACTURAS ADICIONALES | CONDUCTOR | AUXILIAR | N. FACTURAS | VALOR RUTA
-            head = [['ZONA', 'N. DE PLANILLA', 'FACTURAS ADICIONALES', 'CONDUCTOR', 'AUXILIAR', 'N. FACTURAS', 'VALOR RUTA']];
-            let totalFacturas = 0, totalValorRuta = 0;
+            let bodyData = [];
+            let head = [];
+            let columnStyles = {};
 
-            bodyData = fletesProv.map(f => {
-                const nFact = f.no_pedidos || 0;
-                const vRuta = f.valor_ruta || 0;
-                totalFacturas += nFact;
-                totalValorRuta += vRuta;
+            if (tipo === 'relacion') {
+                head = [['ZONA', 'N. DE PLANILLA', 'FACTURAS ADICIONALES', 'CONDUCTOR', 'AUXILIAR', 'N. FACTURAS', 'VALOR RUTA']];
+                let totalFacturas = 0, totalValorRuta = 0;
 
-                return [
-                    f.zona || '',
-                    f.no_planilla || '',
-                    f.facturas_adicionales || '',
-                    f.contratista || '',
-                    f.auxiliares || '',
-                    nFact,
-                    moneyFormatter.format(vRuta)
-                ];
+                bodyData = fletesProv.map(f => {
+                    const nFact = f.no_pedidos || 0;
+                    const vRuta = f.valor_ruta || 0;
+                    totalFacturas += nFact;
+                    totalValorRuta += vRuta;
+                    return [f.zona || '', f.no_planilla || '', f.facturas_adicionales || '',
+                        f.contratista || '', f.auxiliares || '', nFact, moneyFormatter.format(vRuta)];
+                });
+
+                grandTotalFacturas += totalFacturas;
+                grandTotalValorRuta2 += totalValorRuta;
+
+                bodyData.push([
+                    { content: `SUBTOTAL ${provActual}`, colSpan: 5, styles: { fontStyle: 'bold', fillColor: [230, 240, 255], halign: 'right' } },
+                    { content: totalFacturas, styles: { fontStyle: 'bold', fillColor: [230, 240, 255], halign: 'center' } },
+                    { content: moneyFormatter.format(totalValorRuta), styles: { fontStyle: 'bold', fillColor: [230, 240, 255], halign: 'right' } }
+                ]);
+
+                columnStyles = {
+                    0: { cellWidth: 25 }, 1: { cellWidth: 35 }, 2: { cellWidth: 50 },
+                    3: { cellWidth: 50 }, 4: { cellWidth: 45 },
+                    5: { cellWidth: 25, halign: 'center' }, 6: { cellWidth: 47, halign: 'right' }
+                };
+            } else {
+                head = [['RUTA', 'PLACA', 'CONDUCTOR', 'AUXILIAR', '# PEDIDO', 'VR. PEDIDO', 'POBLACIÓN', 'VALOR FLETE', 'PARTICIPACIÓN', 'FIRMA CONDUCTOR']];
+                let totalRuta = 0, totalFlete = 0, totalPedidos = 0;
+
+                bodyData = fletesProv.map(f => {
+                    const vRuta = f.valor_ruta || 0;
+                    const vFlete = f.precio || 0;
+                    const numPed = f.no_pedidos || 0;
+                    totalRuta += vRuta; totalFlete += vFlete; totalPedidos += numPed;
+                    const part = vRuta > 0 ? ((vFlete / vRuta) * 100).toFixed(1) + '%' : '0%';
+                    return [f.zona || '', f.placa, f.contratista, f.auxiliares || '', numPed,
+                        moneyFormatter.format(vRuta), f.poblacion || '', moneyFormatter.format(vFlete), part, ''];
+                });
+
+                grandTotalRuta += totalRuta;
+                grandTotalFlete += totalFlete;
+                grandTotalPedidos += totalPedidos;
+
+                const pSub = totalRuta > 0 ? (totalFlete / totalRuta * 100).toFixed(1) + '%' : '0%';
+                bodyData.push([
+                    { content: `SUBTOTAL ${provActual}`, colSpan: 4, styles: { fontStyle: 'bold', fillColor: [230, 240, 255], halign: 'right' } },
+                    { content: totalPedidos, styles: { fontStyle: 'bold', fillColor: [230, 240, 255] } },
+                    { content: moneyFormatter.format(totalRuta), styles: { fontStyle: 'bold', fillColor: [230, 240, 255] } },
+                    { content: '', styles: { fillColor: [230, 240, 255] } },
+                    { content: moneyFormatter.format(totalFlete), styles: { fontStyle: 'bold', fillColor: [230, 240, 255] } },
+                    { content: pSub, styles: { fontStyle: 'bold', fillColor: [230, 240, 255] } },
+                    { content: '', styles: { fillColor: [230, 240, 255] } }
+                ]);
+
+                columnStyles = {
+                    0: { cellWidth: 25 }, 1: { cellWidth: 18 }, 2: { cellWidth: 50 },
+                    3: { cellWidth: 35 }, 4: { cellWidth: 16, halign: 'center' },
+                    5: { cellWidth: 28, halign: 'right' }, 6: { cellWidth: 30 },
+                    7: { cellWidth: 28, halign: 'right' }, 8: { cellWidth: 22, halign: 'center' },
+                    9: { cellWidth: 25 }
+                };
+            }
+
+            doc.autoTable({
+                startY: 33,
+                head: head,
+                body: bodyData,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: provActual === 'UNILEVER-FAMILIA' ? [249, 115, 22] : [41, 128, 185],
+                    fontSize: 7,
+                    halign: 'center'
+                },
+                bodyStyles: { fontSize: 6.5, overflow: 'linebreak', cellPadding: 1.5 },
+                columnStyles: columnStyles,
+                margin: { left: 10, right: 10, top: 33 },
+                rowPageBreak: 'avoid',
+                didDrawPage: (data) => {
+                    if (data.pageNumber > 1) {
+                        dibujarHeaderDia(doc, provActual);
+                    }
+                }
             });
-
-            // Fila de Totales
-            bodyData.push([
-                { content: 'TOTALES', colSpan: 5, styles: { fontStyle: 'bold', fillColor: [240, 240, 240], halign: 'right' } },
-                { content: totalFacturas, styles: { fontStyle: 'bold', fillColor: [240, 240, 240], halign: 'center' } },
-                { content: moneyFormatter.format(totalValorRuta), styles: { fontStyle: 'bold', fillColor: [240, 240, 240], halign: 'right' } }
-            ]);
-
-            columnStyles = {
-                0: { cellWidth: 25 }, // ZONA
-                1: { cellWidth: 35 }, // PLANILLA
-                2: { cellWidth: 50 }, // FACTURAS ADIC
-                3: { cellWidth: 50 }, // CONDUCTOR
-                4: { cellWidth: 45 }, // AUXILIAR
-                5: { cellWidth: 25, halign: 'center' }, // N. FACT
-                6: { cellWidth: 47, halign: 'right' }   // VALOR RUTA (Ajustado para llenar 277mm)
-            };
-        } else {
-            // Reporte Estándar de Fletes
-            head = [['RUTA', 'PLACA', 'CONDUCTOR', 'AUXILIAR', '# PEDIDO', 'VR. PEDIDO', 'POBLACIÓN', 'VALOR FLETE', 'PARTICIPACIÓN', 'FIRMA CONDUCTOR']];
-            let totalRutaProv = 0, totalFleteProv = 0, totalPedidosProv = 0;
-
-            bodyData = fletesProv.map(f => {
-                const vRuta = f.valor_ruta || 0;
-                const vFlete = f.precio || 0;
-                const numPed = f.no_pedidos || 0;
-                totalRutaProv += vRuta; totalFleteProv += vFlete; totalPedidosProv += numPed;
-                const participacion = vRuta > 0 ? ((vFlete / vRuta) * 100).toFixed(1) + '%' : '0%';
-
-                return [
-                    f.zona || '', f.placa, f.contratista, f.auxiliares || '', numPed,
-                    moneyFormatter.format(vRuta), f.poblacion || '', moneyFormatter.format(vFlete),
-                    participacion, ''
-                ];
-            });
-
-            const pTotal = totalRutaProv > 0 ? (totalFleteProv / totalRutaProv * 100).toFixed(1) + '%' : '0%';
-            bodyData.push([
-                { content: 'TOTALES', colSpan: 4, styles: { fontStyle: 'bold', fillColor: [240, 240, 240], halign: 'right' } },
-                { content: totalPedidosProv, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-                { content: moneyFormatter.format(totalRutaProv), styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-                { content: '', styles: { fillColor: [240, 240, 240] } },
-                { content: moneyFormatter.format(totalFleteProv), styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-                { content: pTotal, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-                { content: '', styles: { fillColor: [240, 240, 240] } }
-            ]);
-
-            columnStyles = {
-                0: { cellWidth: 25 }, // RUTA
-                1: { cellWidth: 18 }, // PLACA
-                2: { cellWidth: 50 }, // CONDUCTOR
-                3: { cellWidth: 35 }, // AUXILIAR
-                4: { cellWidth: 16, halign: 'center' }, // # PEDIDO
-                5: { cellWidth: 28, halign: 'right' },  // VR. PEDIDO
-                6: { cellWidth: 30 }, // POBLACIÓN
-                7: { cellWidth: 28, halign: 'right' },  // VALOR FLETE
-                8: { cellWidth: 22, halign: 'center' }, // PARTICIPACIÓN
-                9: { cellWidth: 25 }  // FIRMA (Ajustado para evitar overflow)
-            };
         }
 
-        doc.autoTable({
-            startY: 33,
-            head: head,
-            body: bodyData,
-            theme: 'grid',
-            headStyles: {
-                fillColor: provActual === 'UNILEVER-FAMILIA' ? [249, 115, 22] : [41, 128, 185],
-                fontSize: 7,
-                halign: 'center'
-            },
-            bodyStyles: { fontSize: 6.5, overflow: 'linebreak', cellPadding: 1.5 },
-            columnStyles: columnStyles,
-            margin: { left: 10, right: 10, top: 33 }, // 'top' asegura que el salto de página no pegue la tabla al borde
-            rowPageBreak: 'avoid',
-            didDrawPage: (data) => {
-                // Si la tabla continúa en una nueva página, redibujar el encabezado
-                if (data.pageNumber > 1) {
-                    dibujarHeader(doc);
-                }
-            }
-        });
-
-        finalY = doc.lastAutoTable.finalY;
-
-    }
-
-    // --- SECCIÓN: NOTAS DE NEGOCIACIÓN ---
-    const negociaciones = fletes.filter(f => (f.valor_adicional_negociacion || 0) > 0);
-
-    if (tipo === 'fletes' && negociaciones.length > 0) {
-        // Verificar espacio o nueva página
-        if (finalY > 230) {
+        // --- GRAN TOTAL DEL DÍA ---
+        let finalY = doc.lastAutoTable.finalY + 5;
+        if (finalY > 248) {
             doc.addPage();
             finalY = 20;
-        } else {
-            finalY += 15;
         }
 
-        doc.setFontSize(10);
+        doc.setFontSize(9);
         doc.setFont(undefined, 'bold');
-        doc.text("NOTAS DE NEGOCIACIÓN:", 14, finalY);
-        finalY += 6;
 
-        doc.setFont(undefined, 'normal');
-        doc.setFontSize(8.5);
+        if (tipo === 'relacion') {
+            doc.text(
+                `TOTAL DÍA ${tituloFecha}:  Facturas: ${grandTotalFacturas}   Total: ${moneyFormatter.format(grandTotalValorRuta2)}`,
+                14, finalY
+            );
+        } else {
+            const pGrand = grandTotalRuta > 0 ? (grandTotalFlete / grandTotalRuta * 100).toFixed(1) + '%' : '0%';
+            doc.text(
+                `TOTAL DÍA ${tituloFecha}:  VR. Ruta: ${moneyFormatter.format(grandTotalRuta)}   VR. Flete: ${moneyFormatter.format(grandTotalFlete)}   Participación: ${pGrand}`,
+                14, finalY
+            );
+        }
 
-        negociaciones.forEach(neg => {
-            const placa = neg.vehiculo?.placa || neg.placa || 'N/A';
-            const motivo = neg.razon_adicional_negociacion || 'Sin motivo especificado';
-            const valor = moneyFormatter.format(neg.valor_adicional_negociacion);
+        // --- NOTAS DE NEGOCIACIÓN DEL DÍA ---
+        const negoDia = fletesDia.filter(f => 
+            (f.valor_adicional_negociacion || 0) > 0 || 
+            (f.razon_adicional_negociacion && f.razon_adicional_negociacion.trim() !== '' && f.razon_adicional_negociacion !== '-')
+        );
+        if (tipo === 'fletes' && negoDia.length > 0) {
+            finalY += 8;
+            doc.setFontSize(8);
+            doc.setFont(undefined, 'bold');
+            doc.text('Negociaciones:', 14, finalY);
+            doc.setFont(undefined, 'normal');
+            finalY += 5;
 
-            const texto = `• PLACA: ${placa} - MOTIVO: ${motivo} - VALOR: ${valor}`;
-
-            // Dividir texto si es muy largo para el ancho de la página
-            const splitText = doc.splitTextToSize(texto, 270);
-
-            // Verificar si cabe en la página
-            if (finalY + (splitText.length * 4) > 280) {
-                doc.addPage();
-                finalY = 20;
-            }
-
-            doc.text(splitText, 14, finalY);
-            finalY += (splitText.length * 4) + 1;
-        });
+            negoDia.forEach(neg => {
+                const pk = neg.vehiculo?.placa || neg.placa || 'N/A';
+                const mot = neg.razon_adicional_negociacion || 'Sin motivo';
+                const val = (neg.valor_adicional_negociacion || 0) > 0 
+                            ? ` - ${moneyFormatter.format(neg.valor_adicional_negociacion)}` 
+                            : '';
+                const line = `• ${pk} - ${mot}${val}`;
+                const parts = doc.splitTextToSize(line, 270);
+                if (finalY + (parts.length * 4) > 200) {
+                    doc.addPage();
+                    finalY = 20;
+                }
+                doc.text(parts, 14, finalY);
+                finalY += (parts.length * 4) + 1;
+            });
+        }
     }
 
-    doc.save(`Reporte_Fletes_${fecha}.pdf`);
+    // Nombre del archivo con rango de fechas
+    const nombreRango = esRango ? `${inicio}_al_${fin}` : inicio;
+    doc.save(`Reporte_Fletes_${nombreRango}.pdf`);
 
     Swal.fire({
         icon: 'success',
         title: '¡PDF Generado!',
-        text: `Se descargó el reporte de ${fecha}`,
-        timer: 2000,
+        text: `Reporte del ${esRango ? inicio + ' al ' + fin : inicio} descargado.`,
+        timer: 2500,
         showConfirmButton: false,
         background: '#1e293b',
         color: '#fff'

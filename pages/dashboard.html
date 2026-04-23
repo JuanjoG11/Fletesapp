@@ -36,7 +36,7 @@
         let deferredPrompt;
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js')
+                navigator.serviceWorker.register('../sw.js?v=5')
                     .then(reg => console.log('Service Worker registrado', reg))
                     .catch(err => console.error('Error al registrar Service Worker', err));
             });
@@ -61,7 +61,7 @@
     </script>
 
     <script src="../js/supabase-client.js"></script>
-    <script src="../js/app.js" defer></script>
+    <script src="../js/app.js?v=5" defer></script>
 </head>
 
 <body>
@@ -435,13 +435,8 @@
                             <input id="valor_ruta" type="text" placeholder="$ 0" class="money-input">
                         </div>
 
-                        <div class="input-group">
-                            <label>¿Adicionales?</label>
-                            <select id="is_adicionales">
-                                <option value="No">No</option>
-                                <option value="Si">Si (+ $60.000)</option>
-                            </select>
-                        </div>
+                        <!-- Adicionales SI/NO removidos por solicitud del usuario -->
+
 
                         <!-- NUEVOS CAMPOS: PLANILLA Y FACTURAS -->
                         <div class="input-group">
@@ -739,7 +734,7 @@
                             <option>FR08</option>
                             <option>FR09</option>
                         </select>
-                        <input type="date" id="filtroFecha" onchange="buscarFletes()">
+                        <input type="date" id="filtroFecha" onchange="buscarFletes()" class="input-modern" style="width: 140px;">
                     </div>
                 </div>
 
@@ -756,7 +751,6 @@
                                 <th>Zona</th>
                                 <th>Población</th>
                                 <th>Auxiliares</th>
-                                <th>¿Adic?</th>
                                 <th>$ Negoc.</th>
                                 <th>Motivo</th>
                                 <th>Valor Ruta</th>
@@ -885,13 +879,8 @@
                     </div>
 
                     <div class="modal-section-title"><i class="ri-coins-line"></i> Extras y Totales</div>
-                    <div class="input-group">
-                        <label>¿Servicios Adicionales?</label>
-                        <select id="modal-is_adicionales">
-                            <option value="No">No</option>
-                            <option value="Si">Si</option>
-                        </select>
-                    </div>
+                    <!-- Adicionales SI/NO removidos por solicitud del usuario -->
+
 
                     <div class="input-group"> <label>Adicional Negociado</label> <input id="modal-valor_adicional"
                             type="text" class="money-input" placeholder="$ 0"> </div>

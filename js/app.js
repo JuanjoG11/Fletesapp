@@ -287,7 +287,7 @@ async function fixIncorrectDates() {
             .select('id')
             .eq('fecha', '2026-04-08')
             .eq('dia', 'Martes');
-        
+
         if (fetchError) {
             console.error("Error buscando fletes incorrectos:", fetchError);
             return;
@@ -295,7 +295,7 @@ async function fixIncorrectDates() {
 
         if (records && records.length > 0) {
             console.log(`🔧 Corrigiendo ${records.length} registros del 08 de Abril...`);
-            
+
             Swal.fire({
                 title: 'Corrigiendo fechas...',
                 text: `Se encontraron ${records.length} registros del 08 de Abril con día incorrecto.`,
@@ -310,7 +310,7 @@ async function fixIncorrectDates() {
             }
 
             console.log("✅ Corrección de fechas completada.");
-            
+
             Swal.fire({
                 title: '¡Corrección Exitosa!',
                 text: `Se actualizaron ${records.length} registros del 08 de Abril a 'Miercoles'.`,
@@ -350,9 +350,9 @@ async function fixNegociacionesLunes06() {
                 hasChanges = true;
                 for (const r of data) {
                     await SupabaseClient.supabase.from('fletes')
-                        .update({ 
-                            valor_adicional_negociacion: item.valor, 
-                            razon_adicional_negociacion: item.razon 
+                        .update({
+                            valor_adicional_negociacion: item.valor,
+                            razon_adicional_negociacion: item.razon
                         })
                         .eq('id', r.id);
                 }
@@ -568,7 +568,7 @@ function autoFillConductorOperario(placa) {
     if (!placa) return;
     const cleanPlaca = placa.toUpperCase().replace(/[\s-]/g, '');
     const vehiculo = FLOTA_VEHICULOS.find(v => v.placa.toUpperCase().replace(/[\s-]/g, '') === cleanPlaca);
-    
+
     if (vehiculo) {
         const conductorInput = document.getElementById("op_conductor");
         if (conductorInput) conductorInput.value = vehiculo.conductor;
@@ -1294,22 +1294,17 @@ const PRECIOS_ALPINA = {
     "SANTUARIO": 330000,
     "APIA": 330000,
     "SANTA ROSA": 238000,
-    "SANTUARIO APIA": 330000,
     "PEREIRA-DOSQUEBRADAS": 224000,
-    "PEREIRA": 224000,
-    "DOSQUEBRADAS": 224000,
-    "AGUADAS": 800000,
-    "PACORA": 725000,
-    "MANIZALES": 330000,
-    "VILLAMARIA": 330000,
-    "ANSERMA NUEVO": 302000,
     "CARTAGO": 290000,
-    "CUBA": 224000,
     "MARSELLA": 290000,
     "ARABIA ALTAGRACIA": 235000,
     "ARMENIA FLEISCHMANN": 350000,
-    "PEREIRA FLEISCHMANN": 230000,
-    "SANTA ROSA FLEISCHMANN": 300000
+    "SANTA ROSA FLEISCHMANN": 300000,
+    "CHINCHINA SUPERMERCADO": 320000,
+    "RIOSUCIO-SUPIA SUPERMERCADO": 625000,
+    "ARMENIA SUPERMERCADO": 350000,
+    "CALARCA SUPERMERCADO": 370000,
+    "MANIZALES SUPERMERCADO": 365000
 };
 
 // Precios ESPECIFICOS para ZENU
@@ -1360,14 +1355,16 @@ const POBLACIONES_CALDAS = [
     "MANIZALES", "VILLAMARIA", "MANIZALES - VILLAMARIA", "CHINCHINA", "NEIRA", "PALESTINA ARAUCA LA PLATA",
     "ARANZAZU FILADELFIA", "RIOSUCIO", "SUPIA", "MARMATO", "PACORA", "AGUADAS",
     "AGUADAS-PACORA", "SALAMINA - PACORA", "SUPIA-MARMATO", "IRRA LA FELISA LA MERCED", "ANSERMA",
-    "BELEN", "VITERBO", "ANSERMA NUEVO", "SAN JOSÉ-BELALCAZAR", "IRRA, LA FELISA, VER RIOSUCIO"
+    "BELEN", "VITERBO", "ANSERMA NUEVO", "SAN JOSÉ-BELALCAZAR", "IRRA, LA FELISA, VER RIOSUCIO",
+    "CHINCHINA SUPERMERCADO", "RIOSUCIO-SUPIA SUPERMERCADO", "MANIZALES SUPERMERCADO"
 ];
 
 const ZONAS_QUINDIO = ["M9601", "M9602", "M9603", "M9604", "M9605", "M9606", "M9600", "P7008", "P7009", "P7010", "DOBLE F"];
 const POBLACIONES_QUINDIO = [
     "ARMENIA", "ARMENIA 2T", "QUIMBAYA", "MONTENEGRO", "MONTENEGRO - P TAPAO",
     "CALARCA", "CIRCASIA", "LA TEBAIDA", "TEBAIDA", "FILANDIA", "SALENTO",
-    "GENOVA", "PIJAO", "BUENAVISTA", "CORDOBA PIJAO BVISTA", "CAIMO BARCELONA", "CAICEDONIA", "ALCALÁ ULLOA", "MONTENEGRO, PTAPAO"
+    "GENOVA", "PIJAO", "BUENAVISTA", "CORDOBA PIJAO BVISTA", "CAIMO BARCELONA", "CAICEDONIA", "ALCALÁ ULLOA", "MONTENEGRO, PTAPAO",
+    "ARMENIA SUPERMERCADO", "CALARCA SUPERMERCADO"
 ];
 
 // Master list storage
@@ -3422,7 +3419,7 @@ async function generarPDF() {
                 doc.setFont(undefined, 'normal');
                 doc.setFontSize(9);
                 let currentY = 60;
-                
+
                 const drawRow = (label1, val1, label2, val2) => {
                     doc.setFont(undefined, 'bold');
                     doc.text(label1, 20, currentY);
@@ -3440,7 +3437,7 @@ async function generarPDF() {
                 drawRow("PLACA:", f.vehiculo?.placa || f.placa, "PROVEEDOR:", f.proveedor);
                 drawRow("CONDUCTOR:", f.vehiculo?.conductor || f.contratista, "POBLACIÓN:", f.poblacion);
                 drawRow("PLANILLA:", f.no_planilla || 'N/A', "FACTURAS:", f.no_pedidos || '0');
-                
+
                 currentY += 5;
                 doc.setFont(undefined, 'bold');
                 doc.rect(15, currentY, 180, 8, 'F');
@@ -3450,7 +3447,7 @@ async function generarPDF() {
                 const moneyFormatterLarge = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
 
                 drawRow("VALOR RUTA:", moneyFormatterLarge.format(f.valor_ruta || 0), "VALOR FLETE:", moneyFormatterLarge.format(f.precio || 0));
-                
+
                 if ((f.valor_adicional_negociacion || 0) > 0 || (f.razon_adicional_negociacion && f.razon_adicional_negociacion.trim() !== '' && f.razon_adicional_negociacion !== '-')) {
                     drawRow("ADICIONAL:", moneyFormatterLarge.format(f.valor_adicional_negociacion || 0), "MOTIVO:", "");
                     doc.setFontSize(8);
@@ -3463,7 +3460,7 @@ async function generarPDF() {
                 doc.setFont(undefined, 'bold');
                 doc.text("TOTAL A PAGAR:", 110, currentY);
                 doc.text(moneyFormatterLarge.format(f.precio || 0), 195, currentY, { align: 'right' });
-                
+
                 // Firmas
                 currentY = 240;
                 doc.line(20, currentY, 90, currentY);
@@ -3471,7 +3468,7 @@ async function generarPDF() {
                 doc.setFontSize(8);
                 doc.text("ENTREGADO POR (CAJA/ADM)", 55, currentY + 5, { align: 'center' });
                 doc.text("RECIBIDO POR (CONDUCTOR)", 155, currentY + 5, { align: 'center' });
-                
+
                 doc.setFontSize(7);
                 doc.setTextColor(150);
                 doc.text(`Impreso el ${fechaImpresion} - FletesApp Logistics`, 105, 285, { align: 'center' });
@@ -3480,7 +3477,7 @@ async function generarPDF() {
 
             // Página 1: ORIGINAL
             dibujarPagina("ORIGINAL");
-            
+
             // Página 2: COPIA
             doc.addPage();
             dibujarPagina("COPIA");
@@ -3618,7 +3615,7 @@ async function generarPDF() {
                     totalFacturas += nFact;
                     totalValorRuta += vRuta;
                     return [f.zona || '', f.no_planilla || '', f.facturas_adicionales || '',
-                        f.contratista || '', f.auxiliares || '', nFact, moneyFormatter.format(vRuta)];
+                    f.contratista || '', f.auxiliares || '', nFact, moneyFormatter.format(vRuta)];
                 });
 
                 grandTotalFacturas += totalFacturas;
@@ -3646,7 +3643,7 @@ async function generarPDF() {
                     totalRuta += vRuta; totalFlete += vFlete; totalPedidos += numPed;
                     const part = vRuta > 0 ? ((vFlete / vRuta) * 100).toFixed(1) + '%' : '0%';
                     return [f.zona || '', f.placa, f.contratista, f.auxiliares || '', numPed,
-                        moneyFormatter.format(vRuta), f.poblacion || '', moneyFormatter.format(vFlete), part, ''];
+                    moneyFormatter.format(vRuta), f.poblacion || '', moneyFormatter.format(vFlete), part, ''];
                 });
 
                 grandTotalRuta += totalRuta;
@@ -3719,8 +3716,8 @@ async function generarPDF() {
         }
 
         // --- NOTAS DE NEGOCIACIÓN DEL DÍA ---
-        const negoDia = fletesDia.filter(f => 
-            (f.valor_adicional_negociacion || 0) > 0 || 
+        const negoDia = fletesDia.filter(f =>
+            (f.valor_adicional_negociacion || 0) > 0 ||
             (f.razon_adicional_negociacion && f.razon_adicional_negociacion.trim() !== '' && f.razon_adicional_negociacion !== '-')
         );
         if (tipo === 'fletes' && negoDia.length > 0) {
@@ -3734,9 +3731,9 @@ async function generarPDF() {
             negoDia.forEach(neg => {
                 const pk = neg.vehiculo?.placa || neg.placa || 'N/A';
                 const mot = neg.razon_adicional_negociacion || 'Sin motivo';
-                const val = (neg.valor_adicional_negociacion || 0) > 0 
-                            ? ` - ${moneyFormatter.format(neg.valor_adicional_negociacion)}` 
-                            : '';
+                const val = (neg.valor_adicional_negociacion || 0) > 0
+                    ? ` - ${moneyFormatter.format(neg.valor_adicional_negociacion)}`
+                    : '';
                 const line = `• ${pk} - ${mot}${val}`;
                 const parts = doc.splitTextToSize(line, 270);
                 if (finalY + (parts.length * 4) > 200) {

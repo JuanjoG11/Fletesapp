@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FletesApp - Presentación Interactiva de Marcas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-base: #060913;
+            --bg-surface: #0b0f19;
+            --bg-card: rgba(17, 24, 39, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.15);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            
+            --brand-alpina: #0077ff;
+            --brand-zenu: #ff1e27;
+            --brand-fleischmann: #f4b400;
+            
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Ambient glowing lights in background */
+        .glow-ambient-1 {
+            position: absolute;
+            top: -10%;
+            left: -10%;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+            filter: blur(80px);
+            z-index: 1;
+            pointer-events: none;
+            animation: pulseGlow 12s infinite alternate ease-in-out;
+        }
+
+        .glow-ambient-2 {
+            position: absolute;
+            bottom: -10%;
+            right: -10%;
+            width: 700px;
+            height: 700px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.07) 0%, transparent 70%);
+            filter: blur(100px);
+            z-index: 1;
+            pointer-events: none;
+            animation: pulseGlow 18s infinite alternate-reverse ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.15) translate(80px, 50px); }
+        }
+
+        /* Top Navbar */
+        .navbar {
+            height: 75px;
+            padding: 0 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(6, 9, 19, 0.85);
+            backdrop-filter: blur(20px);
+            z-index: 10;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-logo-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--brand-alpina), var(--success));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: #fff;
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25);
+            font-size: 1.2rem;
+        }
+
+        .nav-logo-text {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 50%, var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-logo-tag {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            padding: 0.25rem 0.75rem;
+            border-radius: 99px;
+            color: var(--text-secondary);
+        }
+
+        /* Top progress bar */
+        .progress-bar-container {
+            position: absolute;
+            top: 74px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.02);
+            z-index: 11;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--brand-alpina), var(--success));
+            box-shadow: 0 0 12px var(--brand-alpina);
+            transition: width 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        /* Slides Container */
+        .viewport-wrapper {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+            z-index: 5;
+        }
+
+        .slides-horizontal-lane {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.85s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .slide-frame {
+            min-width: 100%;
+            width: 100%;
+            height: 100%;
+            padding: 3rem 6rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5rem;
+            align-items: center;
+            opacity: 0;
+            transform: scale(0.96) translateY(10px);
+            transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .slide-frame.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+
+        .slide-full {
+            grid-template-columns: 1fr;
+            text-align: center;
+            justify-items: center;
+        }
+
+        /* Texts & Accents */
+        .tagline {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--primary);
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 1.5rem;
+            background: rgba(59, 130, 246, 0.08);
+            padding: 0.4rem 1rem;
+            border-radius: 99px;
+            border: 1px solid rgba(59, 130, 246, 0.15);
+            align-self: flex-start;
+        }
+
+        .slide-full .tagline {
+            align-self: center;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -1.5px;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 span {
+            background: linear-gradient(135deg, var(--brand-alpina), var(--success));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.description {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .slide-full p.description {
+            max-width: 750px;
+        }
+
+        /* Glass Cards */
+        .glass-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(16px);
+            width: 100%;
+            height: 90%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 30px 60px -10px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Interactive feature block */
+        .interactive-feature {
+            display: flex;
+            gap: 1.25rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            padding: 1.25rem;
+            border-radius: 16px;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .interactive-feature:hover, .interactive-feature.active {
+            background: rgba(59, 130, 246, 0.06);
+            border-color: rgba(59, 130, 246, 0.3);
+            transform: translateX(10px);
+        }
+
+        .interactive-feature.active {
+            border-left: 4px solid var(--primary);
+        }
+
+        .feature-num-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.04);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 1.1rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .interactive-feature:hover .feature-num-icon, .interactive-feature.active .feature-num-icon {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .feature-details h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            color: #fff;
+        }
+
+        .feature-details p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Slide 1 - Portada Grid */
+        .brands-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            width: 100%;
+            margin-top: 2rem;
+        }
+
+        .brand-item-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.25rem;
+            transition: all 0.4s ease;
+        }
+
+        .brand-item-card:hover {
+            transform: translateY(-8px);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .brand-item-card.alpina { border-top: 4px solid var(--brand-alpina); }
+        .brand-item-card.zenu { border-top: 4px solid var(--brand-zenu); }
+        .brand-item-card.fleischmann { border-top: 4px solid var(--brand-fleischmann); }
+
+        .brand-circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #fff;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .brand-circle.alpina { background: linear-gradient(135deg, #0056b3, var(--brand-alpina)); }
+        .brand-circle.zenu { background: linear-gradient(135deg, #a80006, var(--brand-zenu)); }
+        .brand-circle.fleischmann { background: linear-gradient(135deg, #b88600, var(--brand-fleischmann)); color: #000; }
+
+        .brand-item-card h2 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin: 0;
+        }
+
+        .brand-item-card p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Slide 3 - Operational Pipeline */
+        .pipeline {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .pipeline-step {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            background: rgba(0,0,0,0.15);
+            border: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            border-radius: 14px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .pipeline-step::after {
+            content: '';
+            position: absolute;
+            bottom: -16px;
+            left: 36px;
+            width: 2px;
+            height: 16px;
+            background: var(--border-color);
+            z-index: 1;
+        }
+
+        .pipeline-step:last-child::after {
+            display: none;
+        }
+
+        .pipeline-step.active {
+            background: rgba(16, 185, 129, 0.06);
+            border-color: rgba(16, 185, 129, 0.25);
+            transform: scale(1.02);
+        }
+
+        .pipeline-step.active::after {
+            background: var(--success);
+        }
+
+        .step-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        .pipeline-step.active .step-badge {
+            background: var(--success);
+            color: #fff;
+            border-color: var(--success);
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .step-body h4 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.15rem;
+        }
+
+        .step-body p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Slide 4 - Brands Panel Tabs */
+        .brand-switcher-wrapper {
+            display: flex;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            padding: 0.35rem;
+            border-radius: 14px;
+            margin-bottom: 2rem;
+            width: 100%;
+        }
+
+        .brand-switch-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 700;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .brand-switch-btn.active.alpina { background: var(--brand-alpina); color: #fff; }
+        .brand-switch-btn.active.zenu { background: var(--brand-zenu); color: #fff; }
+        .brand-switch-btn.active.fleischmann { background: var(--brand-fleischmann); color: #000; }
+
+        .brand-pane {
+            display: none;
+            animation: tabFadeIn 0.4s ease;
+        }
+
+        .brand-pane.active {
+            display: block;
+        }
+
+        @keyframes tabFadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .brand-layout-grid {
+            display: grid;
+            grid-template-columns: 1fr 150px;
+            gap: 1.5rem;
+            background: rgba(255,255,255,0.01);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 16px;
+        }
+
+        .brand-highlights-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .bullet-point {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .bullet-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.04);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .brand-pane.alpina .bullet-dot { color: var(--brand-alpina); }
+        .brand-pane.zenu .bullet-dot { color: var(--brand-zenu); }
+        .brand-pane.fleischmann .bullet-dot { color: var(--brand-fleischmann); }
+
+        .bullet-content h5 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.15rem;
+        }
+
+        .bullet-content p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.35;
+        }
+
+        .brand-mini-badge {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .brand-mini-badge i {
+            margin-bottom: 0.5rem;
+        }
+
+        .brand-pane.alpina .brand-mini-badge i { color: var(--brand-alpina); }
+        .brand-pane.zenu .brand-mini-badge i { color: var(--brand-zenu); }
+        .brand-pane.fleischmann .brand-mini-badge i { color: var(--brand-fleischmann); }
+
+        .brand-mini-badge span {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .brand-mini-badge h4 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #fff;
+            margin-top: 0.25rem;
+        }
+
+        /* Slide 5 - Simulator */
+        .deck-sim-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        .deck-form {
+            background: rgba(0,0,0,0.25);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .form-row label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-select, .form-input {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.65rem 0.85rem;
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.85rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-select:focus, .form-input:focus {
+            border-color: var(--primary);
+            background: rgba(255,255,255,0.06);
+        }
+
+        .form-select option {
+            background: #0f172a;
+            color: #fff;
+        }
+
+        .form-btn {
+            background: linear-gradient(135deg, var(--primary), var(--success));
+            border: none;
+            color: #fff;
+            font-family: inherit;
+            font-weight: 700;
+            padding: 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(59, 130, 246, 0.35);
+        }
+
+        .receipt-card {
+            background: linear-gradient(135deg, rgba(10, 15, 30, 0.9) 0%, rgba(15, 23, 42, 0.98) 100%);
+            border: 1px dashed rgba(255,255,255,0.12);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+
+        .receipt-top {
+            border-bottom: 1px dashed rgba(255,255,255,0.08);
+            padding-bottom: 0.75rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .receipt-badge-status {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--success);
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .receipt-body {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .receipt-item-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+        }
+
+        .receipt-item-row.total {
+            border-top: 1px dashed rgba(255,255,255,0.08);
+            padding-top: 0.75rem;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        /* Slide 6 - Business Metrics */
+        .deck-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .deck-metric-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            backdrop-filter: blur(12px);
+            transition: all 0.4s ease;
+        }
+
+        .deck-metric-box:hover {
+            transform: translateY(-8px);
+            border-color: rgba(59, 130, 246, 0.25);
+            background: rgba(59, 130, 246, 0.02);
+        }
+
+        .deck-metric-num {
+            font-size: 3.25rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 0.75rem;
+            letter-spacing: -1.5px;
+            background: linear-gradient(135deg, var(--brand-alpina), var(--success));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .deck-metric-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #fff;
+        }
+
+        .deck-metric-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Bottom Navbar Controls */
+        .bottom-navbar {
+            height: 90px;
+            padding: 0 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+            background: rgba(6, 9, 19, 0.9);
+            backdrop-filter: blur(20px);
+            z-index: 10;
+        }
+
+        .counter-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .control-btns {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .circle-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            outline: none;
+        }
+
+        .circle-btn:hover:not(:disabled) {
+            background: #fff;
+            color: var(--bg-base);
+            transform: scale(1.1);
+        }
+
+        .circle-btn:disabled {
+            opacity: 0.15;
+            cursor: not-allowed;
+        }
+
+        /* Responsive Layouts */
+        @media (max-width: 1200px) {
+            .slide-frame {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+                padding: 2rem 3rem;
+                overflow-y: auto;
+            }
+            h1 { font-size: 2.5rem; }
+            .navbar, .bottom-navbar { padding: 0 2rem; }
+            .brands-grid, .deck-metrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="glow-ambient-1"></div>
+    <div class="glow-ambient-2"></div>
+
+    <!-- Header Navigation -->
+    <nav class="navbar">
+        <div class="nav-logo">
+            <div class="nav-logo-icon">F</div>
+            <span class="nav-logo-text">FletesApp</span>
+            <span class="nav-logo-tag">Módulos Corporativos</span>
+        </div>
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--success); display: flex; align-items: center; gap: 0.4rem;">
+            <span style="display:inline-block; width:8px; height:8px; background:var(--success); border-radius:50%; box-shadow: 0 0 8px var(--success)"></span>
+            SISTEMA DE CONTROL ONLINE
+        </div>
+    </nav>
+
+    <!-- Top progress line -->
+    <div class="progress-bar-container">
+        <div class="progress-bar-fill" id="slideProgress"></div>
+    </div>
+
+    <!-- Main Viewport for Slides -->
+    <main class="viewport-wrapper">
+        <div class="slides-horizontal-lane" id="slidesLane">
+
+            <!-- SLIDE 1: PORTADA EJECUTIVA -->
+            <section class="slide-frame slide-full active">
+                <div class="slide-left" style="align-items: center; text-align: center; max-width: 900px;">
+                    <div class="tagline">
+                        <i data-lucide="sparkles"></i> Presentación Ejecutiva FletesApp
+                    </div>
+                    <h1>El Motor de Control para<br><span>Alpina, Zenú y Fleischmann</span></h1>
+                    <p class="description">
+                        Descubra cómo FletesApp unifica y optimiza la liquidación diaria de fletes de transporte, eliminando el error humano de digitación y garantizando el blindaje total de las tarifas de la compañía.
+                    </p>
+                    
+                    <div class="brands-grid">
+                        <div class="brand-item-card alpina">
+                            <div class="brand-circle alpina">A</div>
+                            <h2>ALPINA</h2>
+                            <p>Logística de refrigerados y altos volúmenes de carga diaria.</p>
+                        </div>
+                        <div class="brand-item-card zenu">
+                            <div class="brand-circle zenu">Z</div>
+                            <h2>ZENÚ</h2>
+                            <p>Distribución en red TAT con control estricto de rutas urbanas.</p>
+                        </div>
+                        <div class="brand-item-card fleischmann">
+                            <div class="brand-circle fleischmann">F</div>
+                            <h2>FLEISCHMANN</h2>
+                            <p>Despacho de levaduras e insumos industriales con tarifas exactas.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 2: ¿QUÉ ES Y PARA QUÉ SIRVE? -->
+            <section class="slide-frame">
+                <div class="slide-left">
+                    <div class="tagline">
+                        <i data-lucide="help-circle"></i> Propósito del Sistema
+                    </div>
+                    <h2>¿Para qué sirve <span>FletesApp</span>?</h2>
+                    <p class="description" style="font-size: 1.1rem; margin-bottom: 1.5rem;">
+                        Es un escudo administrativo y operativo que automatiza la relación de pagos del transporte. Centraliza la información del transportador y el generador de carga.
+                    </p>
+
+                    <div class="interactive-feature active" onclick="activateFeature(0)">
+                        <div class="feature-num-icon">1</div>
+                        <div class="feature-details">
+                            <h3>Cálculo Automático de Tarifas</h3>
+                            <p>Cruza origen, destino, tipo de vehículo y proveedor para liquidar el flete exacto de forma nativa.</p>
+                        </div>
+                    </div>
+
+                    <div class="interactive-feature" onclick="activateFeature(1)">
+                        <div class="feature-num-icon">2</div>
+                        <div class="feature-details">
+                            <h3>Auditoría de Placas y Conductores</h3>
+                            <p>Impide el despacho de vehículos inactivos o con licencias vencidas en el sistema central.</p>
+                        </div>
+                    </div>
+
+                    <div class="interactive-feature" onclick="activateFeature(2)">
+                        <div class="feature-num-icon">3</div>
+                        <div class="feature-details">
+                            <h3>Generación de Soportes Oficiales</h3>
+                            <p>Produce instantáneamente planillas PDF de conciliación de fletes listas para el área contable.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="slide-right">
+                    <div class="glass-card" id="purposeCardPanel">
+                        <div style="text-align: center; padding: 1.5rem;">
+                            <i data-lucide="shield-check" style="width: 70px; height: 70px; color: var(--success); margin-bottom: 1.5rem;"></i>
+                            <h3 style="font-size: 1.3rem; margin-bottom: 1rem; color: #fff;">Blindaje Contra Pérdidas</h3>
+                            <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5;">
+                                Al bloquear el ingreso de cobros y tarifas manuales ad-hoc, FletesApp garantiza que no existan cobros fantasmas por parte de transportistas terceros.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 3: ¿CÓMO FUNCIONA? -->
+            <section class="slide-frame">
+                <div class="slide-left">
+                    <div class="tagline">
+                        <i data-lucide="sliders"></i> Flujo Digital
+                    </div>
+                    <h2>¿Cómo funciona? <span>Paso a Paso</span></h2>
+                    <p class="description">
+                        FletesApp simplifica la operación en un circuito cerrado y ultra seguro alimentado por base de datos en tiempo real.
+                    </p>
+
+                    <div class="pipeline">
+                        <div class="pipeline-step active" id="pipe1">
+                            <div class="step-badge">1</div>
+                            <div class="step-body">
+                                <h4>Registro del Despacho</h4>
+                                <p>El despachador ingresa la placa del vehículo y la ruta a cubrir en la interfaz web rápida.</p>
+                            </div>
+                        </div>
+                        <div class="pipeline-step" id="pipe2">
+                            <div class="step-badge">2</div>
+                            <div class="step-body">
+                                <h4>Procesamiento del Motor de Tarifas</h4>
+                                <p>El motor inteligente identifica las tarifas pre-negociadas del proveedor (Alpina, Zenú o Fleischmann).</p>
+                            </div>
+                        </div>
+                        <div class="pipeline-step" id="pipe3">
+                            <div class="step-badge">3</div>
+                            <div class="step-body">
+                                <h4>Control Dinámico de Rentabilidad</h4>
+                                <p>La app valida que el costo del flete esté dentro de los márgenes permitidos vs. el valor total de la carga.</p>
+                            </div>
+                        </div>
+                        <div class="pipeline-step" id="pipe4">
+                            <div class="step-badge">4</div>
+                            <div class="step-body">
+                                <h4>Emisión de Relación de Pago</h4>
+                                <p>Se consolida la planilla de liquidación oficial en formato digital PDF con trazabilidad total.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="slide-right">
+                    <div class="glass-card" style="justify-content: flex-start; gap: 1rem;">
+                        <h4 style="font-size: 1.05rem; font-weight: 700; display:flex; align-items:center; gap:0.5rem;">
+                            <i data-lucide="terminal" style="color:var(--success)"></i> Log de Ejecución FletesApp
+                        </h4>
+                        <div id="logConsoleOutput" style="background: rgba(0,0,0,0.4); border-radius: 12px; padding: 1.25rem; font-family: monospace; font-size: 0.75rem; line-height: 1.5; color: var(--success); flex: 1; overflow-y: auto;">
+                            <div>&gt; Sistema inicializado. Esperando eventos...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 4: ADAPTACIÓN A LAS 3 MARCAS -->
+            <section class="slide-frame">
+                <div class="slide-left" style="justify-content: flex-start;">
+                    <div class="tagline">
+                        <i data-lucide="share-2"></i> Adaptación Corporativa
+                    </div>
+                    <h2>Adaptado a los <span>3 Proveedores</span></h2>
+                    <p class="description" style="margin-bottom: 1.5rem; font-size: 1.1rem;">
+                        Cada marca tiene dinámicas logísticas especiales. El sistema unifica sus tarifarios de manera aislada y robusta.
+                    </p>
+
+                    <div class="brand-switcher-wrapper">
+                        <button class="brand-switch-btn active alpina" onclick="switchBrandPane('alpina')">Alpina</button>
+                        <button class="brand-switch-btn zenu" onclick="switchBrandPane('zenu')">Zenú</button>
+                        <button class="brand-switch-btn fleischmann" onclick="switchBrandPane('fleischmann')">Fleischmann</button>
+                    </div>
+
+                    <!-- ALPINA TAB PANE -->
+                    <div id="pane-alpina" class="brand-pane active alpina">
+                        <div class="brand-layout-grid">
+                            <div class="brand-highlights-list">
+                                <div class="bullet-point">
+                                    <div class="bullet-dot">1</div>
+                                    <div class="bullet-content">
+                                        <h5>Control de Cadena de Frío</h5>
+                                        <p>Liquidaciones volumétricas asociadas al peso total cargado en vehículos térmicos.</p>
+                                    </div>
+                                </div>
+                                <div class="bullet-point">
+                                    <div class="bullet-dot">2</div>
+                                    <div class="bullet-content">
+                                        <h5>Gestión de Auxiliares de Reparto</h5>
+                                        <p>Tarifación automática de recargos por el número de ayudantes autorizados para zonas de alta montaña.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="brand-mini-badge">
+                                <i data-lucide="snowflake" style="width: 24px; height: 24px;"></i>
+                                <span>Rutas</span>
+                                <h4>Frías</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ZENÚ TAB PANE -->
+                    <div id="pane-zenu" class="brand-pane zenu">
+                        <div class="brand-layout-grid">
+                            <div class="brand-highlights-list">
+                                <div class="bullet-point">
+                                    <div class="bullet-dot">1</div>
+                                    <div class="bullet-content">
+                                        <h5>Distribución Red Tienda a Tienda (TAT)</h5>
+                                        <p>Tarifas urbanas calculadas sobre planillas rápidas con múltiples paradas por viaje.</p>
+                                    </div>
+                                </div>
+                                <div class="bullet-point">
+                                    <div class="bullet-dot">2</div>
+                                    <div class="bullet-content">
+                                        <h5>Validación de Consignaciones Bancarias</h5>
+                                        <p>Integración contable para auditar que el flete pagado corresponda exactamente a lo recaudado.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="brand-mini-badge">
+                                <i data-lucide="store" style="width: 24px; height: 24px;"></i>
+                                <span>Canal</span>
+                                <h4>TAT</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FLEISCHMANN TAB PANE -->
+                    <div id="pane-fleischmann" class="brand-pane fleischmann">
+                        <div class="brand-layout-grid">
+                            <div class="brand-highlights-list">
+                                <div class="bullet-point">
+                                    <div class="bullet-dot">1</div>
+                                    <div class="bullet-content">
+                                        <h5>Levaduras e Insumos Industriales</h5>
+                                        <p>Fletes intermunicipales controlados mediante el cruce exacto del tarifario de ruta Quindío.</p>
+                                    </div>
+                                </div>
+                                <div class="bullet-point">
+                                    <div class="bullet-dot">2</div>
+                                    <div class="bullet-content">
+                                        <h5>Control de Peso Volumétrico</h5>
+                                        <p>Evita sobrecostos aplicando descuentos automáticos por cargas que no cumplen el volumen pactado.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="brand-mini-badge">
+                                <i data-lucide="package" style="width: 24px; height: 24px;"></i>
+                                <span>Insumos</span>
+                                <h4>Quindío</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="slide-right">
+                    <div class="glass-card" style="padding: 1.75rem; text-align: center;">
+                        <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem;" id="brandCardTitle">Operación Alpina</h4>
+                        <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; text-align: left;" id="brandCardContent">
+                            <div style="display:flex; justify-content:space-between; margin-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem;">
+                                <span style="color:var(--text-secondary); font-size:0.8rem;">Tipo de Negociación</span>
+                                <span style="color:var(--brand-alpina); font-weight:700; font-size:0.8rem;" id="brandCardBadge">Tarifa Plana</span>
+                            </div>
+                            <p style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary);">
+                                FletesApp aplica las tarifas autorizadas de Alpina para distribución masiva departamental de lácteos, gestionando recargos dominicales automáticos sin intervención manual del auxiliar.
+                            </p>
+                        </div>
+                        <div style="margin-top: 1.5rem; font-size: 0.75rem; color: var(--text-muted); display:flex; align-items:center; justify-content:center; gap:0.5rem;">
+                            <i data-lucide="lock" style="width:12px; height:12px"></i>
+                            Seguridad a nivel de registros (RLS) en PostgreSQL
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 5: SIMULADOR OPERATIVO EN VIVO -->
+            <section class="slide-frame">
+                <div class="slide-left">
+                    <div class="tagline">
+                        <i data-lucide="play"></i> Demostración Operativa
+                    </div>
+                    <h2>¡Pruebe el <span>Motor en Vivo</span>!</h2>
+                    <p class="description" style="font-size: 1.05rem; margin-bottom: 1.5rem;">
+                        Ingrese los datos de despacho de prueba en el formulario y verifique la velocidad de procesamiento del motor financiero de la app.
+                    </p>
+
+                    <div class="deck-form">
+                        <div class="form-row">
+                            <label>Proveedor</label>
+                            <select class="form-select" id="providerSelect" onchange="syncSimulatorData()">
+                                <option value="alpina">Alpina (Refrigerados)</option>
+                                <option value="zenu">Zenú (TAT Cárnicos)</option>
+                                <option value="fleischmann">Fleischmann (Levaduras)</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <label>Población Destino</label>
+                            <select class="form-select" id="routeSelect">
+                                <option value="armenia">Armenia (Urbano)</option>
+                                <option value="calarca">Calarcá (Cercano)</option>
+                                <option value="tebaida">La Tebaida (Industrial)</option>
+                                <option value="montenegro">Montenegro (Turística)</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <label>Auxiliares Asignados</label>
+                            <select class="form-select" id="helpersSelect">
+                                <option value="0">Sin Auxiliares</option>
+                                <option value="1" selected>1 Auxiliar de Reparto</option>
+                                <option value="2">2 Auxiliares de Reparto</option>
+                            </select>
+                        </div>
+                        <button class="form-btn" onclick="executeEngineSimulation()">
+                            <i data-lucide="cpu"></i> Liquidar Flete de Prueba
+                        </button>
+                    </div>
+                </div>
+                <div class="slide-right">
+                    <div class="receipt-card" style="width: 100%; height: 90%;">
+                        <div>
+                            <div class="receipt-top">
+                                <div>
+                                    <h4 style="font-size:0.9rem; font-weight:800; letter-spacing:0.5px;">FLETESAPP ENGINE v2.5</h4>
+                                    <span style="font-size:0.65rem; color:var(--text-muted);" id="receiptTimestamp">Operación en espera...</span>
+                                </div>
+                                <span class="receipt-badge-status" id="receiptStatusLabel">Standby</span>
+                            </div>
+
+                            <div class="receipt-body">
+                                <div class="receipt-item-row">
+                                    <span class="receipt-label" style="color:var(--text-secondary)">Marca / Proveedor:</span>
+                                    <span class="receipt-val" style="font-weight:700; color:var(--brand-alpina)" id="resProvider">Alpina</span>
+                                </div>
+                                <div class="receipt-item-row">
+                                    <span class="receipt-label" style="color:var(--text-secondary)">Destino / Ruta:</span>
+                                    <span class="receipt-val" id="resRoute" style="font-weight:600;">Armenia (Urbano)</span>
+                                </div>
+                                <div class="receipt-item-row">
+                                    <span class="receipt-label" style="color:var(--text-secondary)">Tarifa Base Pactada:</span>
+                                    <span class="receipt-val" id="resBase">$245,000 COP</span>
+                                </div>
+                                <div class="receipt-item-row">
+                                    <span class="receipt-label" style="color:var(--text-secondary)">Valor por Auxiliares:</span>
+                                    <span class="receipt-val" id="resHelpers">$45,000 COP</span>
+                                </div>
+                                <div class="receipt-item-row">
+                                    <span class="receipt-label" style="color:var(--text-secondary)">Retenciones (ICA/RteFte):</span>
+                                    <span class="receipt-val" style="color:var(--danger)" id="resRet">- $11,600 COP</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="receipt-item-row total">
+                            <div>
+                                <h3 style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary);">NETO A PAGAR:</h3>
+                                <p style="font-size: 0.6rem; color: var(--text-muted);">Autorizado para facturación</p>
+                            </div>
+                            <span style="font-size: 1.6rem; font-weight: 800; color: var(--success)" id="resNeto">$278,400</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 6: BENEFICIOS Y CONCLUSIONES -->
+            <section class="slide-frame slide-full">
+                <div class="slide-left" style="align-items: center; text-align: center; max-width: 950px;">
+                    <div class="tagline">
+                        <i data-lucide="check-circle2"></i> Retorno de Inversión
+                    </div>
+                    <h1>Control Total de la Logística</h1>
+                    <p class="description">
+                        FletesApp no es un software administrativo genérico, es la herramienta especializada diseñada para dar visibilidad total y control de costos a la operación real.
+                    </p>
+
+                    <div class="deck-metrics-grid">
+                        <div class="deck-metric-box">
+                            <div class="deck-metric-num">0%</div>
+                            <h3 class="deck-metric-title">Error de Liquidación</h3>
+                            <p class="deck-metric-desc">Al cruzar de forma automatizada las planillas con el maestro de precios.</p>
+                        </div>
+                        <div class="deck-metric-box">
+                            <div class="deck-metric-num">-85%</div>
+                            <h3 class="deck-metric-title">Tiempo en Oficina</h3>
+                            <p class="deck-metric-desc">El operario liquida y exporta planillas en segundos, sin revisar Excel.</p>
+                        </div>
+                        <div class="deck-metric-box">
+                            <div class="deck-metric-num">100%</div>
+                            <h3 class="deck-metric-title">Datos en la Nube</h3>
+                            <p class="deck-metric-desc">Información consolidada de forma segura e independiente por proveedor.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Bottom Navigation Controls -->
+    <footer class="bottom-navbar">
+        <span class="counter-label" id="slideCounterLabel">Diapositiva 1 de 6</span>
+        <div class="control-btns">
+            <button class="circle-btn" id="prevSlideBtn" onclick="stepSlide(-1)">
+                <i data-lucide="arrow-left"></i>
+            </button>
+            <button class="circle-btn" id="nextSlideBtn" onclick="stepSlide(1)">
+                <i data-lucide="arrow-right"></i>
+            </button>
+        </div>
+    </footer>
+
+    <script>
+        // Start Lucide Icons
+        lucide.createIcons();
+
+        // Slides handling logic
+        let slideIndex = 0;
+        const totalSlidesCount = document.querySelectorAll('.slide-frame').length;
+        const slidesLane = document.getElementById('slidesLane');
+        const slideProgress = document.getElementById('slideProgress');
+        const slideCounterLabel = document.getElementById('slideCounterLabel');
+        const prevSlideBtn = document.getElementById('prevSlideBtn');
+        const nextSlideBtn = document.getElementById('nextSlideBtn');
+        const slideFrames = document.querySelectorAll('.slide-frame');
+
+        function updateSlideUI() {
+            slidesLane.style.transform = `translateX(-${slideIndex * 100}%)`;
+            
+            // Set active class
+            slideFrames.forEach((frame, idx) => {
+                if (idx === slideIndex) {
+                    frame.classList.add('active');
+                } else {
+                    frame.classList.remove('active');
+                }
+            });
+
+            // Slide progress bar update
+            const progressPct = ((slideIndex + 1) / totalSlidesCount) * 100;
+            slideProgress.style.width = `${progressPct}%`;
+
+            // Counter label update
+            slideCounterLabel.textContent = `Diapositiva ${slideIndex + 1} de ${totalSlidesCount}`;
+
+            // Buttons state
+            prevSlideBtn.disabled = slideIndex === 0;
+            nextSlideBtn.disabled = slideIndex === totalSlidesCount - 1;
+
+            // Trigger log console simulation when entering Slide 3
+            if (slideIndex === 2) {
+                runLogConsoleSimulation();
+            }
+        }
+
+        function stepSlide(dir) {
+            slideIndex += dir;
+            if (slideIndex < 0) slideIndex = 0;
+            if (slideIndex >= totalSlidesCount) slideIndex = totalSlidesCount - 1;
+            updateSlideUI();
+        }
+
+        // Key listeners
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                if (slideIndex < totalSlidesCount - 1) stepSlide(1);
+            } else if (e.key === 'ArrowLeft') {
+                if (slideIndex > 0) stepSlide(-1);
+            }
+        });
+
+        // Slide 2: Feature description cards
+        const featuresTextData = [
+            {
+                title: "Cálculo Automático de Tarifas",
+                desc: "Cada marca (Alpina, Zenú, Fleischmann) posee una base de datos de precios vinculada directamente. Cuando el auxiliar registra una planilla, el sistema bloquea cualquier modificación manual de las tarifas base pactadas, impidiendo cobros por encima de lo estipulado por parte de conductores terceros."
+            },
+            {
+                title: "Auditoría de Placas y Conductores",
+                desc: "A través del motor de base de datos Supabase, se valida instantáneamente si las placas y los conductores poseen seguros al día, si corresponden al proveedor asignado y si están activos para rodar. Evita despachos con vehículos bloqueados o no autorizados."
+            },
+            {
+                title: "Generación de Soportes Oficiales",
+                desc: "Automatiza y consolida el flete diario. Permite imprimir informes contables en formato PDF con la firma del despachador y del conductor. Contabilidad recibe planillas limpias, reduciendo los tiempos de aprobación y pago de días a solo minutos."
+            }
+        ];
+
+        function activateFeature(idx) {
+            const features = document.querySelectorAll('.interactive-feature');
+            features.forEach((feat, index) => {
+                if (index === idx) {
+                    feat.classList.add('active');
+                } else {
+                    feat.classList.remove('active');
+                }
+            });
+
+            const panel = document.getElementById('purposeCardPanel');
+            const data = featuresTextData[idx];
+
+            panel.style.opacity = 0;
+            setTimeout(() => {
+                panel.innerHTML = `
+                    <div style="text-align: left; padding: 0.5rem; animation: tabFadeIn 0.3s ease;">
+                        <span style="color:var(--primary); font-weight:800; font-size:0.75rem; text-transform:uppercase; display:block; margin-bottom:0.75rem;">Detalle del Módulo</span>
+                        <h3 style="font-size: 1.35rem; margin-bottom: 1rem; color:#fff;">${data.title}</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5; margin-bottom:1.5rem;">${data.desc}</p>
+                        <div style="background:rgba(255,255,255,0.02); padding:0.8rem; border-radius:10px; border:1px solid var(--border-color)">
+                            <code style="font-size:0.75rem; color:var(--success); display:block;">// FletesApp Core Module Validations<br>execute_policy_validation(client_id);<br>Verification: PASSED - Secured Tariffs Applied</code>
+                        </div>
+                    </div>
+                `;
+                panel.style.opacity = 1;
+            }, 200);
+        }
+
+        // Slide 3: Console simulation logs
+        let logTimer;
+        function runLogConsoleSimulation() {
+            const consoleEl = document.getElementById('logConsoleOutput');
+            consoleEl.innerHTML = '';
+            
+            const logSteps = [
+                "🔄 Inicializando módulo de fletes...",
+                "📥 [AUXILIAR] Solicitud de carga: Placa SMX123, Ruta: La Tebaida",
+                "🔍 Ejecutando verificación de flota en Supabase...",
+                "✅ Vehículo AUTORIZADO (Placa activa, conductor habilitado)",
+                "⚙️ Detectando proveedor asignado...",
+                "🎯 Proveedor identificado: ZENÚ",
+                "💵 Consultando tarifario pre-negociado para: La Tebaida...",
+                "📊 Tarifa base cargada: $285,000 COP",
+                "⚡ Liquidando recargo de ayudantes (1 Auxiliar): +$50,000 COP",
+                "⚖️ Aplicando retención fiscal automatizada: -$13,400 COP",
+                "💰 Neto del flete calculado: $321,600 COP",
+                "📈 Evaluando viabilidad vs margen de carga...",
+                "🟢 ACEPTADO: Costo flete 7.2% del valor de carga ($4.5M)",
+                "📁 Guardando planilla contable oficial digital...",
+                "💾 Insertado en base de datos. ID: txn_zenu_88412x",
+                "✨ Proceso Terminado. Operación exitosa."
+            ];
+
+            let index = 0;
+            clearInterval(logTimer);
+
+            logTimer = setInterval(() => {
+                if (index < logSteps.length) {
+                    const row = document.createElement('div');
+                    row.textContent = logSteps[index];
+                    row.style.marginBottom = '4px';
+                    row.style.opacity = 0;
+                    row.style.transform = 'translateY(5px)';
+                    row.style.transition = 'all 0.3s ease';
+                    
+                    consoleEl.appendChild(row);
+                    consoleEl.scrollTop = consoleEl.scrollHeight;
+
+                    // Fade in effect
+                    setTimeout(() => {
+                        row.style.opacity = 1;
+                        row.style.transform = 'none';
+                    }, 50);
+
+                    // Sync the pipeline step dots
+                    if (index === 1) {
+                        syncPipeStepActive(0);
+                    } else if (index === 5) {
+                        syncPipeStepActive(1);
+                    } else if (index === 10) {
+                        syncPipeStepActive(2);
+                    } else if (index === 13) {
+                        syncPipeStepActive(3);
+                    }
+
+                    index++;
+                } else {
+                    clearInterval(logTimer);
+                }
+            }, 850);
+        }
+
+        function syncPipeStepActive(pipeIdx) {
+            const steps = document.querySelectorAll('.pipeline-step');
+            steps.forEach((step, idx) => {
+                if (idx === pipeIdx) {
+                    step.classList.add('active');
+                } else {
+                    step.classList.remove('active');
+                }
+            });
+        }
+
+        // Slide 4: Brand tabs
+        const brandPaneData = {
+            alpina: {
+                title: "Operación Alpina",
+                desc: "FletesApp aplica las tarifas autorizadas de Alpina para distribución masiva departamental de lácteos, gestionando recargos dominicales automáticos y liquidación de viáticos sin intervención manual del auxiliar.",
+                badge: "Tarifa Plana",
+                color: "var(--brand-alpina)"
+            },
+            zenu: {
+                title: "Operación Zenú",
+                desc: "Adaptado para la logística masiva de carnes frías (TAT). El sistema controla los fletes calculando variables de paradas realizadas y garantizando el flujo constante del producto alimenticio estrella de la marca.",
+                badge: "Logística TAT",
+                color: "var(--brand-zenu)"
+            },
+            fleischmann: {
+                title: "Operación Fleischmann",
+                desc: "Diseñado para controlar la logística de levaduras e insumos. Ajusta los precios de fletes por peso volumétrico y gestiona de manera transparente las tarifas diferenciadas para entregas intermunicipales rápidas.",
+                badge: "Control Quindío",
+                color: "var(--brand-fleischmann)"
+            }
+        };
+
+        function switchBrandPane(brand) {
+            // Tab buttons
+            const buttons = document.querySelectorAll('.brand-switch-btn');
+            buttons.forEach(btn => {
+                if (btn.classList.contains(brand)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Tab panes
+            const panes = document.querySelectorAll('.brand-pane');
+            panes.forEach(pane => {
+                if (pane.classList.contains(brand)) {
+                    pane.classList.add('active');
+                } else {
+                    pane.classList.remove('active');
+                }
+            });
+
+            // Update content panel
+            const data = brandPaneData[brand];
+            const title = document.getElementById('brandCardTitle');
+            const content = document.getElementById('brandCardContent');
+
+            title.textContent = data.title;
+            content.innerHTML = `
+                <div style="display:flex; justify-content:space-between; margin-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; animation: tabFadeIn 0.3s ease;">
+                    <span style="color:var(--text-secondary); font-size:0.8rem;">Tipo de Negociación</span>
+                    <span style="color:${data.color}; font-weight:700; font-size:0.8rem;">${data.badge}</span>
+                </div>
+                <p style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); animation: tabFadeIn 0.3s ease;">
+                    ${data.desc}
+                </p>
+            `;
+        }
+
+        // Slide 5: Simulator logic
+        const engineData = {
+            alpina: {
+                name: "Alpina Lácteos",
+                color: "var(--brand-alpina)",
+                prices: { armenia: 245000, calarca: 275000, tebaida: 290000, montenegro: 280000 },
+                helper: 45000,
+                retention: 0.04
+            },
+            zenu: {
+                name: "Zenú Cárnicos",
+                color: "var(--brand-zenu)",
+                prices: { armenia: 220000, calarca: 260000, tebaida: 285000, montenegro: 270000 },
+                helper: 50000,
+                retention: 0.04
+            },
+            fleischmann: {
+                name: "Fleischmann Levadura",
+                color: "var(--brand-fleischmann)",
+                prices: { armenia: 260000, calarca: 290000, tebaida: 310000, montenegro: 300000 },
+                helper: 40000,
+                retention: 0.035
+            }
+        };
+
+        function syncSimulatorData() {
+            const provider = document.getElementById('providerSelect').value;
+            const data = engineData[provider];
+            
+            const resProvider = document.getElementById('resProvider');
+            resProvider.textContent = data.name;
+            resProvider.style.color = data.color;
+        }
+
+        function executeEngineSimulation() {
+            const provider = document.getElementById('providerSelect').value;
+            const route = document.getElementById('routeSelect').value;
+            const helpers = parseInt(document.getElementById('helpersSelect').value);
+
+            const data = engineData[provider];
+            const basePrice = data.prices[route];
+            const helperCost = data.helper * helpers;
+            const subtotal = basePrice + helperCost;
+            const retentions = Math.round(subtotal * data.retention);
+            const totalNeto = subtotal - retentions;
+
+            // Trigger animation in card
+            const receipt = document.querySelector('.receipt-card');
+            receipt.style.transform = 'scale(0.97)';
+            receipt.style.opacity = '0.65';
+
+            setTimeout(() => {
+                document.getElementById('resProvider').textContent = data.name;
+                document.getElementById('resProvider').style.color = data.color;
+                
+                const routeSelect = document.getElementById('routeSelect');
+                const routeName = routeSelect.options[routeSelect.selectedIndex].text;
+                document.getElementById('resRoute').textContent = routeName;
+                
+                document.getElementById('resBase').textContent = `$${basePrice.toLocaleString()} COP`;
+                document.getElementById('resHelpers').textContent = `$${helperCost.toLocaleString()} COP`;
+                document.getElementById('resRet').textContent = `- $${retentions.toLocaleString()} COP`;
+                document.getElementById('resNeto').textContent = `$${totalNeto.toLocaleString()}`;
+
+                const timestamp = new Date();
+                document.getElementById('receiptTimestamp').textContent = `Flete liquidado a las ${timestamp.toLocaleTimeString()}`;
+
+                const statusLabel = document.getElementById('receiptStatusLabel');
+                statusLabel.textContent = "Aprobado";
+                statusLabel.style.background = "rgba(16, 185, 129, 0.15)";
+                statusLabel.style.color = "var(--success)";
+                
+                receipt.style.transform = 'scale(1)';
+                receipt.style.opacity = '1';
+                
+                lucide.createIcons();
+            }, 300);
+        }
+
+        // Initialize presentation
+        updateSlideUI();
+    </script>
+</body>
+
+</html>

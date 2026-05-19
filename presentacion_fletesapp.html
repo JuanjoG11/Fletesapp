@@ -4,21 +4,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FletesApp - Inteligencia Logística Elite</title>
+    <title>Presentación FletesApp - Inteligencia Logística</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
-            --bg-deep: #020617;
-            --blue-accent: #3b82f6;
-            --emerald-accent: #10b981;
+            --bg-deep: #080c14;
+            --bg-darker: #0c1220;
+            --brand-primary: #3b82f6;
+            --brand-success: #10b981;
+            --brand-warning: #f59e0b;
+            --brand-danger: #ef4444;
+            
+            /* Colores de Proveedores */
+            --color-alpina: #0056b3;
+            --color-zenu: #e60000;
+            --color-fleischmann: #f2a900;
+            
             --text-main: #f8fafc;
             --text-dim: #94a3b8;
-            --card-glass: rgba(15, 23, 42, 0.4);
-            --border-glass: rgba(255, 255, 255, 0.1);
+            --text-muted: #64748b;
+            --card-glass: rgba(15, 23, 42, 0.55);
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --shadow-premium: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
         }
 
         * {
@@ -28,847 +38,1579 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        html,
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg-deep);
             color: var(--text-main);
             overflow: hidden;
-            width: 100%;
-            height: 100%;
-            position: fixed;
-            top: 0;
-            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
         }
 
-        /* Animated Background Particles */
-        .bg-dots {
-            position: fixed;
+        /* Background Effects */
+        .bg-pattern {
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-            background-size: 30px 30px;
-            z-index: -1;
+            background-image: radial-gradient(rgba(59, 130, 246, 0.03) 1.5px, transparent 1.5px);
+            background-size: 32px 32px;
+            z-index: 1;
+            pointer-events: none;
         }
 
-        .glow-sphere {
-            position: fixed;
+        .glow-orb {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
+            filter: blur(80px);
+            z-index: 2;
+            pointer-events: none;
+            animation: moveOrb 20s infinite alternate ease-in-out;
+        }
+
+        .glow-orb-2 {
+            position: absolute;
+            right: -100px;
+            bottom: -100px;
             width: 600px;
             height: 600px;
-            background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
             border-radius: 50%;
-            filter: blur(80px);
-            z-index: -1;
-            animation: floating 15s infinite ease-in-out;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
+            filter: blur(100px);
+            z-index: 2;
+            pointer-events: none;
         }
 
-        @keyframes floating {
-
-            0%,
-            100% {
-                transform: translate(0, 0);
-            }
-
-            33% {
-                transform: translate(100px, 150px);
-            }
-
-            66% {
-                transform: translate(-50px, 200px);
-            }
+        @keyframes moveOrb {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(150px, 100px) scale(1.1); }
         }
 
-        /* Progress Bar */
-        .progress-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.05);
-            z-index: 1001;
-        }
-
-        #progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, var(--blue-accent), var(--emerald-accent));
-            width: 0%;
-            transition: width 0.6s cubic-bezier(0.19, 1, 0.22, 1);
-            box-shadow: 0 0 20px var(--blue-accent);
-        }
-
-        /* Main Container */
-        .slides-wrapper {
-            display: flex;
-            transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1);
-            height: 100%;
-        }
-
-        .slide {
-            flex: 0 0 100%;
-            /* Evita que las diapositivas se encojan o descuadren */
-            width: 100%;
-            height: 100vh;
-            height: 100dvh;
-            display: grid;
-            grid-template-columns: 0.8fr 1.5fr;
-            padding: 4% 6%;
-            gap: 4rem;
-            align-items: center;
-        }
-
-        .slide-full {
-            grid-template-columns: 1fr;
-            text-align: center;
-            justify-items: center;
-        }
-
-        .slide.active .slide-content {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        h1 {
-            font-size: 3rem;
-            font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 2rem;
-            letter-spacing: -0.02em;
-            color: #fff;
-        }
-
-        h1 b {
-            background: linear-gradient(135deg, var(--blue-accent) 0%, var(--emerald-accent) 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        h1 span {
-            opacity: 0.4;
-            font-weight: 700;
-        }
-
-        .accent-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: rgba(59, 130, 246, 0.1);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            color: var(--blue-accent);
-            padding: 0.5rem 1rem;
-            border-radius: 99px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-bottom: 2rem;
-        }
-
-        p.lead {
-            font-size: 1.4rem;
-            color: var(--text-dim);
-            line-height: 1.5;
-            margin-bottom: 2.5rem;
-            max-width: 600px;
-            text-align: left;
-        }
-
-        .slide-full p.lead {
-            text-align: center;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* Feature List */
-        .feature-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-            padding: 1.2rem;
-            background: var(--card-glass);
-            border: 1px solid var(--border-glass);
-            border-radius: 16px;
-            transition: all 0.3s ease;
-        }
-
-        .feature-item:hover {
-            transform: scale(1.02) translateX(10px);
-            border-color: var(--blue-accent);
-            background: rgba(59, 130, 246, 0.05);
-        }
-
-        .icon-box {
-            background: linear-gradient(135deg, var(--blue-accent), #1e40af);
-            padding: 0.8rem;
-            border-radius: 12px;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-            flex-shrink: 0;
-        }
-
-        .feature-text h3 {
-            font-size: 1.1rem;
-            font-weight: 700;
-            margin-bottom: 0.2rem;
-        }
-
-        .feature-text p {
-            font-size: 0.95rem;
-            color: var(--text-dim);
-        }
-
-        /* Visual Panel */
-        .visual-panel {
-            height: 75vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: visible;
-        }
-
-        .visual-panel img {
-            max-width: 110%;
-            max-height: 100%;
-            width: auto;
-            height: auto;
-            object-fit: contain;
-            border-radius: 16px;
-            box-shadow: 0 35px 70px -15px rgba(0, 0, 0, 0.8);
-            transition: transform 1.2s cubic-bezier(0.19, 1, 0.22, 1);
-        }
-
-        .slide.active .visual-panel img {
-            transform: scale(1.05);
-        }
-
-        .placeholder-box {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 1.5rem;
-            opacity: 0.3;
-        }
-
-        .slide-impact {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-        }
-
-        .title-huge {
-            font-size: 4.5rem !important;
-            font-weight: 900;
-            margin-bottom: 1.5rem;
-            letter-spacing: -0.04em;
-        }
-
-        .impact-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 2rem;
-            margin-top: 3.5rem;
-            width: 100%;
-            max-width: 1100px;
-        }
-
-        .impact-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            padding: 2.5rem;
-            border-radius: 24px;
-            text-align: left;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            position: relative;
-            backdrop-filter: blur(10px);
-        }
-
-        .impact-card:hover {
-            transform: translateY(-10px) scale(1.02);
-            background: rgba(59, 130, 246, 0.05);
-        }
-
-        .impact-card.c1 {
-            border-left: 5px solid #3b82f6;
-        }
-
-        .impact-card.c2 {
-            border-left: 5px solid #10b981;
-        }
-
-        .impact-card.c3 {
-            border-left: 5px solid #a855f7;
-        }
-
-        .impact-card.c4 {
-            border-left: 5px solid #f59e0b;
-        }
-
-        .impact-card i {
-            margin-bottom: 1.5rem;
-            display: block;
-            opacity: 0.8;
-        }
-
-        .impact-card h3 {
-            font-size: 1.4rem;
-            font-weight: 800;
-            margin-bottom: 0.8rem;
-        }
-
-        .impact-card p {
-            font-size: 1.05rem;
-            color: var(--text-dim);
-            line-height: 1.5;
-        }
-
-        /* Footer Navigation (ZENTRA STYLE) */
-        .footer-nav {
-            position: fixed;
-            bottom: 2rem;
-            left: 0;
-            width: 100%;
+        /* Top Bar */
+        .top-navbar {
+            height: 70px;
             padding: 0 4rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 2000;
+            border-bottom: 1px solid var(--border-glass);
+            background: rgba(8, 12, 20, 0.8);
+            backdrop-filter: blur(12px);
+            z-index: 10;
         }
 
-        .footer-text {
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.2);
-            letter-spacing: 0.1em;
-            font-weight: 600;
-        }
-
-        .nav-controls {
+        .brand-logo-area {
             display: flex;
-            gap: 0.8rem;
+            align-items: center;
+            gap: 0.75rem;
         }
 
-        .btn-circle {
+        .logo-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-success));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: #fff;
+            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
+        }
+
+        .brand-name {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 60%, var(--text-dim));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-badge {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            color: var(--brand-primary);
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Progress indicator */
+        .slide-progress-container {
+            position: absolute;
+            top: 69px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.03);
+            z-index: 11;
+        }
+
+        .slide-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--brand-primary), var(--brand-success));
+            box-shadow: 0 0 10px var(--brand-primary);
+            transition: width 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        /* Main Container & Slides Wrapper */
+        .presentation-container {
+            flex: 1;
+            position: relative;
+            z-index: 5;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .slides-wrapper {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .slide {
+            min-width: 100%;
+            width: 100%;
+            height: 100%;
+            padding: 3rem 6rem;
+            display: grid;
+            grid-template-columns: 1fr 1.1fr;
+            gap: 4rem;
+            align-items: center;
+            opacity: 0.1;
+            transform: scale(0.96);
+            transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .slide-full-width {
+            grid-template-columns: 1fr;
+            text-align: center;
+        }
+
+        /* Content Styles */
+        .slide-left {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .slide-right {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            position: relative;
+        }
+
+        .slide-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--brand-primary);
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1.25rem;
+        }
+
+        .slide-tag i {
+            width: 16px;
+            height: 16px;
+        }
+
+        h2 {
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -1px;
+            margin-bottom: 1.5rem;
+        }
+
+        h2 span {
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-success));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .lead-text {
+            font-size: 1.25rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        /* Interactive Elements */
+        .feature-card {
+            background: var(--card-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 1.25rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+
+        .feature-card:hover, .feature-card.selected {
+            border-color: rgba(59, 130, 246, 0.4);
+            background: rgba(59, 130, 246, 0.05);
+            transform: translateX(8px);
+        }
+
+        .feature-card.selected {
+            border-left: 4px solid var(--brand-primary);
+        }
+
+        .feature-icon-wrapper {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-glass);
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--brand-primary);
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover .feature-icon-wrapper, .feature-card.selected .feature-icon-wrapper {
+            background: var(--brand-primary);
+            color: #fff;
+            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
+        }
+
+        .feature-info h4 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+
+        .feature-info p {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            line-height: 1.4;
+        }
+
+        /* Visual Showcase panels */
+        .showcase-frame {
+            background: linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.05) 100%);
+            border: 1px solid var(--border-glass);
+            border-radius: 24px;
+            width: 100%;
+            height: 90%;
+            padding: 2.5rem;
+            box-shadow: var(--shadow-premium);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(15px);
+        }
+
+        /* Slide 1 - Portada Custom Visual */
+        .portada-visual {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        .provider-logo-card {
+            background: var(--card-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: 20px;
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            text-align: center;
+            transition: all 0.4s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .provider-logo-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        }
+
+        .provider-logo-card.alpina { border-top: 4px solid var(--brand-primary); }
+        .provider-logo-card.zenu { border-top: 4px solid var(--brand-danger); }
+        .provider-logo-card.fleischmann { border-top: 4px solid var(--brand-warning); }
+
+        .logo-placeholder {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #fff;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+
+        .logo-placeholder.alpina { background: linear-gradient(135deg, #0056b3, #3b82f6); }
+        .logo-placeholder.zenu { background: linear-gradient(135deg, #e60000, #ff4d4d); }
+        .logo-placeholder.fleischmann { background: linear-gradient(135deg, #f2a900, #ffcc00); color: #000; }
+
+        .provider-logo-card h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+
+        .provider-logo-card p {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        /* Slide 3 - Interactive Flow Diagram */
+        .flow-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .flow-step {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .flow-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 33px;
+            width: 2px;
+            height: 15px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .flow-step.active {
+            background: rgba(59, 130, 246, 0.08);
+            border-color: rgba(59, 130, 246, 0.3);
+            transform: scale(1.02);
+        }
+
+        .flow-step.active::after {
+            background: var(--brand-primary);
+        }
+
+        .flow-num {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            border: 1px solid var(--border-glass);
+            transition: all 0.3s ease;
+        }
+
+        .flow-step.active .flow-num {
+            background: var(--brand-primary);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+        }
+
+        .flow-details h4 {
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        .flow-details p {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        /* Slide 4 - Brands showcase tabs */
+        .tabs-header {
+            display: flex;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 0.3rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            padding: 0.8rem 1rem;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.95rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn.active.alpina { background: var(--brand-primary); color: #fff; }
+        .tab-btn.active.zenu { background: var(--brand-danger); color: #fff; }
+        .tab-btn.active.fleischmann { background: var(--brand-warning); color: #000; }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .brand-detail-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 2rem;
+            background: rgba(255,255,255,0.01);
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            padding: 2rem;
+        }
+
+        .brand-highlights {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .highlight-item {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .highlight-bullet {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.04);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--brand-primary);
+            flex-shrink: 0;
+        }
+
+        .tab-pane.alpina .highlight-bullet { color: var(--brand-primary); }
+        .tab-pane.zenu .highlight-bullet { color: var(--brand-danger); }
+        .tab-pane.fleischmann .highlight-bullet { color: var(--brand-warning); }
+
+        .highlight-info h5 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .highlight-info p {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            line-height: 1.4;
+        }
+
+        .brand-metric-card {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 0.5rem;
+        }
+
+        .brand-metric-card h4 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .tab-pane.alpina .brand-metric-card h4 { color: var(--brand-primary); }
+        .tab-pane.zenu .brand-metric-card h4 { color: var(--brand-danger); }
+        .tab-pane.fleischmann .brand-metric-card h4 { color: var(--brand-warning); }
+
+        /* Slide 5 - Simulator (Surprising interactive feature!) */
+        .simulator-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            width: 100%;
+            height: 100%;
+        }
+
+        .sim-form {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .sim-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .sim-group label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sim-select, .sim-input {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-glass);
+            border-radius: 8px;
+            padding: 0.7rem 1rem;
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .sim-select:focus, .sim-input:focus {
+            border-color: var(--brand-primary);
+            background: rgba(255,255,255,0.06);
+        }
+
+        .sim-select option {
+            background: var(--bg-darker);
+            color: #fff;
+        }
+
+        .sim-btn {
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-success));
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            padding: 0.9rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .sim-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .sim-receipt {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%);
+            border: 1px dashed rgba(255,255,255,0.15);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            position: relative;
+        }
+
+        .receipt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px dashed rgba(255,255,255,0.1);
+            padding-bottom: 0.75rem;
+        }
+
+        .receipt-title {
+            font-weight: 800;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .receipt-badge {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--brand-success);
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 0.1rem 0.5rem;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .receipt-badge.danger {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--brand-danger);
+        }
+
+        .receipt-line {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+        }
+
+        .receipt-label { color: var(--text-dim); }
+        .receipt-val { font-weight: 600; }
+        .receipt-val.bold { font-weight: 800; color: #fff; }
+
+        .receipt-total {
+            border-top: 1px dashed rgba(255,255,255,0.1);
+            padding-top: 0.75rem;
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .receipt-total-val {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--brand-success);
+        }
+
+        /* Slide 6 - Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            width: 100%;
+        }
+
+        .metric-card-interactive {
+            background: var(--card-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: 20px;
+            padding: 2.25rem;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(12px);
+        }
+
+        .metric-card-interactive:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: rgba(59, 130, 246, 0.3);
+            background: rgba(59, 130, 246, 0.03);
+        }
+
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.03);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: var(--brand-primary);
+        }
+
+        .metric-card-interactive:nth-child(2) .metric-icon { color: var(--brand-success); }
+        .metric-card-interactive:nth-child(3) .metric-icon { color: var(--brand-warning); }
+        .metric-card-interactive:nth-child(4) .metric-icon { color: var(--brand-danger); }
+
+        .metric-number {
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            letter-spacing: -1px;
+        }
+
+        .metric-card-interactive:nth-child(1) .metric-number { color: var(--brand-primary); }
+        .metric-card-interactive:nth-child(2) .metric-number { color: var(--brand-success); }
+        .metric-card-interactive:nth-child(3) .metric-number { color: var(--brand-warning); }
+        .metric-card-interactive:nth-child(4) .metric-number { color: var(--brand-danger); }
+
+        .metric-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-desc {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            line-height: 1.4;
+        }
+
+        /* Footer Controls */
+        .bottom-nav {
+            height: 90px;
+            padding: 0 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-glass);
+            background: rgba(8, 12, 20, 0.85);
+            backdrop-filter: blur(12px);
+            z-index: 10;
+        }
+
+        .slide-counter {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-nav {
             width: 48px;
             height: 48px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-glass);
+            color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .btn-circle:hover:not(:disabled) {
-            background: white;
-            color: black;
+        .btn-nav:hover:not(:disabled) {
+            background: #fff;
+            color: var(--bg-deep);
             transform: scale(1.1);
         }
 
-        .btn-circle:disabled {
-            opacity: 0.2;
+        .btn-nav:disabled {
+            opacity: 0.15;
             cursor: not-allowed;
         }
 
-        .badge-live {
-            position: absolute;
-            top: 1.5rem;
-            right: 1.5rem;
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--emerald-accent);
-            padding: 0.4rem 0.8rem;
-            border-radius: 8px;
-            font-size: 0.7rem;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .badge-live::before {
-            content: '';
-            width: 8px;
-            height: 8px;
-            background: var(--emerald-accent);
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% {
-                opacity: 1;
-                transform: scale(1);
-            }
-
-            50% {
-                opacity: 0.4;
-                transform: scale(1.5);
-            }
-
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        /* Responsive Design */
+        /* Responsive */
         @media (max-width: 1200px) {
             .slide {
                 grid-template-columns: 1fr;
                 gap: 2rem;
-                padding: 6rem 4rem;
-                align-items: center;
+                padding: 2rem 3rem;
                 overflow-y: auto;
             }
-
-            .slide-full {
-                padding-top: 4rem;
+            .slide-right {
+                height: 450px;
             }
-
-            .visual-panel {
-                height: 40vh;
-                display: flex;
+            h2 {
+                font-size: 2.25rem;
             }
-
-            .impact-grid {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-                margin-top: 2rem;
-            }
-
-            h1 {
-                font-size: 2.5rem;
-            }
-
-            .title-huge {
-                font-size: 3rem !important;
-            }
-
-            p.lead {
-                font-size: 1.2rem;
-            }
-
-            .badge-live {
-                top: -10px;
-                right: 0;
-            }
-        }
-
-        @media (max-width: 768px) {
-            body {
-                font-size: 14px;
-            }
-
-            .slide {
-                padding: 4rem 1.5rem 6rem 1.5rem;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                gap: 1.5rem;
-                overflow-y: auto;
-            }
-
-            h1 {
-                font-size: 2rem;
-                margin-bottom: 1rem;
-            }
-
-            .title-huge {
-                font-size: 2.2rem !important;
-            }
-
-            p.lead {
-                font-size: 1rem;
-                margin-bottom: 1.5rem;
-                text-align: left;
-            }
-
-            .slide-full p.lead {
-                text-align: center;
-            }
-
-            .slide-content {
-                transform: none !important;
-                opacity: 1 !important;
-                flex-shrink: 0;
-            }
-
-            .visual-panel {
-                height: 28vh;
-                width: 100%;
-                margin-top: 0;
-                align-items: flex-start;
-            }
-
-            .visual-panel img {
-                transform: none !important;
-                width: 100%;
-                height: 100%;
-                object-fit: contain;
-            }
-
-            .feature-item {
-                padding: 1rem;
-                gap: 1rem;
-                margin-bottom: 1rem;
-            }
-
-            .icon-box {
-                padding: 0.6rem;
-                width: 45px;
-                height: 45px;
-            }
-
-            .feature-text h3 {
-                font-size: 1.05rem;
-                margin-bottom: 0.2rem;
-            }
-
-            .feature-text p {
-                font-size: 0.9rem;
-            }
-
-            .impact-card {
-                padding: 1.5rem;
-            }
-
-            .impact-card h3 {
-                font-size: 1.2rem;
-            }
-
-            .impact-card p {
-                font-size: 0.95rem;
-            }
-
-            .footer-nav {
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                width: 100%;
-                padding: 1rem 1.5rem;
-                background: rgba(2, 6, 23, 0.98);
-                /* Fondo ultra oscuro para asegurar contraste */
-                backdrop-filter: blur(15px);
-                border-top: 1px solid rgba(255, 255, 255, 0.1);
-                z-index: 9999 !important;
-                /* Capa máxima de visibilidad */
-            }
-
-            .footer-text {
-                font-size: 0.65rem;
-                max-width: 55%;
-                line-height: 1.4;
-                display: -webkit-box;
-                -webkit-line-clamp: 2;
-                line-clamp: 2;
-                -webkit-box-orient: vertical;
-                overflow: hidden;
-            }
-
-            .btn-circle {
-                width: 48px;
-                height: 48px;
-                background: rgba(59, 130, 246, 0.2);
-                border: 1px solid rgba(59, 130, 246, 0.5);
-            }
-
-            .btn-circle i {
-                color: white !important;
-                width: 24px;
-                height: 24px;
-            }
-
-            .nav-controls {
-                gap: 1rem;
-            }
-
-            .accent-chip {
-                font-size: 0.75rem;
-                margin-bottom: 1rem;
-                padding: 0.4rem 0.8rem;
+            .top-navbar, .bottom-nav {
+                padding: 0 2rem;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="bg-dots"></div>
-    <div class="glow-sphere"></div>
-    <div class="progress-container">
-        <div id="progress-bar"></div>
-    </div>
+    <div class="bg-pattern"></div>
+    <div class="glow-orb"></div>
+    <div class="glow-orb-2"></div>
 
-    <div class="slides-wrapper" id="slides-slider">
-        <!-- 1. PORTADA -->
-        <section class="slide slide-full slide-first">
-            <div class="slide-content">
-                <div style="margin-bottom: 3rem;">
-                    <div style="width: 110px; height: 110px; margin: 0 auto; border-radius: 50%; overflow: hidden; box-shadow: 0 15px 35px rgba(59, 130, 246, 0.4); display: flex; align-items: center; justify-content: center; background: transparent;">
-                        <img src="assets/img/pwa_logo.png" alt="FletesApp Logo" style="width: 112%; height: 112%; object-fit: cover;">
-                    </div>
-                </div>
-                <span class="accent-chip">Optimización Logística</span>
-                <h1>FletesApp: Dominio Total de su Operación</h1>
-                <p class="lead">Menos caos, más rentabilidad. Toda su operación centralizada, validada y bajo control
-                    total.</p>
-            </div>
-        </section>
-
-        <!-- 2. EL PROBLEMA RESUELTO -->
-        <section class="slide">
-            <div class="slide-content">
-                <span class="accent-chip">Transformación Digital</span>
-                <h1>El Fin del Caos Operativo</h1>
-                <p class="lead">Deje de perder tiempo en cálculos manuales y planillas infinitas. FletesApp lo hace por
-                    usted.</p>
-                <div class="feature-item">
-                    <div class="icon-box"><i data-lucide="target"></i></div>
-                    <div class="feature-text">
-                        <h3>Enfoque en lo que importa</h3>
-                        <p>Elimine el 100% de los errores de digitación de su equipo.</p>
-                    </div>
-                </div>
-                <div class="feature-item">
-                    <div class="icon-box"><i data-lucide="shield-alert"></i></div>
-                    <div class="feature-text">
-                        <h3>Evite Fugas de Capital</h3>
-                        <p>Detecte inconsistencias antes de que se conviertan en gastos.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="visual-panel">
-                <div class="badge-live">SISTEMA ACTIVO</div>
-                <div class="placeholder-box"><i data-lucide="layout" style="width: 64px; height: 64px;"></i><span>Vista
-                        de la App</span></div>
-                <img src="slides/slide1.png" style="display:none;"
-                    onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
-            </div>
-        </section>
-
-        <!-- 3. MOVILIDAD -->
-        <section class="slide">
-            <div class="slide-content">
-                <span class="accent-chip">Movilidad Gerencial</span>
-                <h1>Poder y Control en Tiempo Real</h1>
-                <p class="lead">¿Fuera de la oficina? Controle todo desde su celular o cualquier dispositivo.</p>
-                <div class="feature-item">
-                    <div class="icon-box"><i data-lucide="smartphone"></i></div>
-                    <div class="feature-text">
-                        <h3>Control Móvil</h3>
-                        <p>Aprobar, revisar y gestionar fletes desde cualquier lugar del mundo.</p>
-                    </div>
-                </div>
-                <div class="feature-item">
-                    <div class="icon-box"><i data-lucide="refresh-cw"></i></div>
-                    <div class="feature-text">
-                        <h3>Dato al Instante</h3>
-                        <p>Lo que pasa en la calle, se ve en su pantalla en un segundo.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="visual-panel">
-                <div class="placeholder-box"><i data-lucide="smartphone"
-                        style="width: 64px; height: 64px;"></i><span>Versión Móvil</span></div>
-                <img src="slides/slide2.png" style="display:none;"
-                    onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
-            </div>
-        </section>
-
-        <!-- 4. PRECIOS -->
-        <section class="slide">
-            <div class="slide-content">
-                <span class="accent-chip">Rentabilidad Segura</span>
-                <h1>El Escudo de su Capital Organizacional</h1>
-                <p class="lead">El sistema conoce cada tarifa. Nadie podrá cobrarle un peso más de lo pactado.</p>
-                <div class="feature-item">
-                    <div class="icon-box"><i data-lucide="dollar-sign"></i></div>
-                    <div class="feature-text">
-                        <h3>Precios Blindados</h3>
-                        <p>Tarifas automáticas por zona y proveedor. Imposible equivocarse.</p>
-                    </div>
-                </div>
-                <div class="feature-item">
-                    <div class="icon-box"><i data-lucide="alert-triangle"></i></div>
-                    <div class="feature-text">
-                        <h3>Alertas de Margen</h3>
-                        <p>Si un flete no es rentable, la app le avisa antes de despachar.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="visual-panel">
-                <div class="placeholder-box"><i data-lucide="tag" style="width: 64px; height: 64px;"></i><span>Módulo de
-                        Tarifas</span></div>
-                <img src="slides/slide3.png" style="display:none;"
-                    onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
-            </div>
-        </section>
-
-        <!-- 5. FLOTA -->
-        <section class="slide">
-            <div class="slide-content">
-                <span class="accent-chip">Gestión de Activos</span>
-                <h1>Auditoría Vehicular Absoluta</h1>
-                <p class="lead">Validación estricta de vehículos y conductores. Seguridad total para su mercancía.</p>
-                <div class="feature-item">
-                    <div class="icon-box"><i data-lucide="truck"></i></div>
-                    <div class="feature-text">
-                        <h3>Filtro de Seguridad</h3>
-                        <p>Solo placas y conductores autorizados pueden registrar fletes.</p>
-                    </div>
-                </div>
-                <div class="feature-item">
-                    <div class="icon-box"><i data-lucide="user-check"></i></div>
-                    <div class="feature-text">
-                        <h3>Historial Operativo</h3>
-                        <p>Historial exacto de cada viaje realizado por cada vehículo.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="visual-panel">
-                <div class="placeholder-box"><i data-lucide="shield-check"
-                        style="width: 64px; height: 64px;"></i><span>Gestión de Flota</span></div>
-                <img src="slides/slide4.png" style="display:none;"
-                    onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
-            </div>
-        </section>
-
-        <!-- 6. DASHBOARD -->
-        <section class="slide">
-            <div class="slide-content">
-                <span class="accent-chip">Inteligencia Financiera</span>
-                <h1>El Pulso Exacto del Gasto Logístico</h1>
-                <p class="lead">Gráficas claras, sin rellenos. Entienda su negocio con solo mirar la pantalla.</p>
-                <div class="feature-item">
-                    <div class="icon-box"><i data-lucide="bar-chart-3"></i></div>
-                    <div class="feature-text">
-                        <h3>Estado Real del Gasto</h3>
-                        <p>Vea cuánto ha gastado este mes frente a su meta de ahorro.</p>
-                    </div>
-                </div>
-                <div class="feature-item">
-                    <div class="icon-box"><i data-lucide="pie-chart"></i></div>
-                    <div class="feature-text">
-                        <h3>Zonas Críticas</h3>
-                        <p>Identifique de inmediato qué rutas están costando más.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="visual-panel">
-                <div class="placeholder-box"><i data-lucide="trending-up"
-                        style="width: 64px; height: 64px;"></i><span>Panel Gerencial</span></div>
-                <img src="slides/slide5.png" style="display:none;"
-                    onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
-            </div>
-        </section>
-
-        <!-- 7. REPORTES -->
-        <section class="slide">
-            <div class="slide-content">
-                <span class="accent-chip">Eficiencia Administrativa</span>
-                <h1>Resultados Contables al Instante</h1>
-                <p class="lead">Olvide las horas redactando informes. Genere archivos oficiales listos para pagar.</p>
-                <div class="feature-item">
-                    <div class="icon-box"><i data-lucide="file-check"></i></div>
-                    <div class="feature-text">
-                        <h3>PDFs Profesionales</h3>
-                        <p>Planillas con firmas digitales y toda la información contable.</p>
-                    </div>
-                </div>
-                <div class="feature-item">
-                    <div class="icon-box"><i data-lucide="mail"></i></div>
-                    <div class="feature-text">
-                        <h3>Envío Inmediato</h3>
-                        <p>Comparta los resultados con contabilidad al instante.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="visual-panel">
-                <div class="placeholder-box"><i data-lucide="file-text"
-                        style="width: 64px; height: 64px;"></i><span>Planillas PDF</span></div>
-                <img src="slides/slide6.png" style="display:none;"
-                    onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
-            </div>
-        </section>
-
-        <!-- 8. IMPACTO FINAL -->
-        <section class="slide slide-full slide-impact">
-            <div class="slide-content">
-                <div class="category-tag">Resumen de Valor</div>
-                <h1 class="title-huge">Lo que <b>FletesApp</b><br><span>genera para ti</span></h1>
-                <p class="lead">Una solución diseñada para transformar datos logísticos en resultados reales.</p>
-
-                <div class="impact-grid">
-                    <div class="impact-card c1">
-                        <i data-lucide="zap" style="color: #3b82f6;"></i>
-                        <h3>Decisiones en Segundos</h3>
-                        <p>Toda la auditoría de la operación en la palma de su mano, sin esperas.</p>
-                    </div>
-                    <div class="impact-card c2">
-                        <i data-lucide="target" style="color: #10b981;"></i>
-                        <h3>Error Humano: 0%</h3>
-                        <p>El sistema valida automáticamente cada tarifa y conductor en tiempo real.</p>
-                    </div>
-                    <div class="impact-card c3">
-                        <i data-lucide="clock" style="color: #a855f7;"></i>
-                        <h3>Ahorro de Tiempo</h3>
-                        <p>Libere a su equipo de horas de cálculos manuales y planillas interminables.</p>
-                    </div>
-                    <div class="impact-card c4">
-                        <i data-lucide="rocket" style="color: #f59e0b;"></i>
-                        <h3>Crecimiento Ágil</h3>
-                        <p>Escale su empresa sin miedo al desorden o fugas de capital operativo.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </div>
-
-    <div class="footer-nav">
-        <div class="footer-text">FLETESAPP · INTELIGENCIA LOGÍSTICA ELITE</div>
-        <div class="nav-controls">
-            <button class="btn-circle" id="prev"><i data-lucide="arrow-left"></i></button>
-            <button class="btn-circle" id="next"><i data-lucide="arrow-right"></i></button>
+    <!-- Top Navigation Bar -->
+    <header class="top-navbar">
+        <div class="brand-logo-area">
+            <div class="logo-circle">F</div>
+            <span class="brand-name">FletesApp</span>
+            <span class="brand-badge">Operación Multi-Proveedor</span>
         </div>
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-dim); display: flex; align-items: center; gap: 0.5rem;">
+            <span style="display:inline-block; width:8px; height:8px; background:var(--brand-success); border-radius:50%;"></span>
+            ESTABILIDAD CLOUD ACTIVA
+        </div>
+    </header>
+
+    <!-- Slide progress line indicator -->
+    <div class="slide-progress-container">
+        <div class="slide-progress-bar" id="progressBar"></div>
     </div>
+
+    <!-- Presentation Content Window -->
+    <main class="presentation-container">
+        <div class="slides-wrapper" id="slidesWrapper">
+
+            <!-- SLIDE 1: PORTADA -->
+            <section class="slide slide-full-width active">
+                <div class="slide-left" style="align-items: center; text-align: center; max-width: 900px; margin: 0 auto;">
+                    <div class="slide-tag">
+                        <i data-lucide="sparkles"></i> Inteligencia Logística Multi-Tenancy
+                    </div>
+                    <h2>Revolución en Liquidación de Fletes:<br><span>Una App, Tres Gigantes Alimenticios</span></h2>
+                    <p class="lead-text" style="max-width: 700px; margin-left: auto; margin-right: auto;">
+                        FletesApp centraliza, valida y automatiza las complejas liquidaciones diarias de fletes para <b>Alpina</b>, <b>Zenú</b> y <b>Fleischmann</b>. Diseñado para eliminar el 100% de los errores de digitación y evitar la fuga silenciosa de capital.
+                    </p>
+                    
+                    <div class="portada-visual" style="margin-top: 1.5rem;">
+                        <div class="provider-logo-card alpina">
+                            <div class="logo-placeholder alpina">A</div>
+                            <h3>ALPINA</h3>
+                            <p>Lácteos & Cadena Fría</p>
+                        </div>
+                        <div class="provider-logo-card zenu">
+                            <div class="logo-placeholder zenu">Z</div>
+                            <h3>ZENÚ</h3>
+                            <p>Cárnicos & Distribución TAT</p>
+                        </div>
+                        <div class="provider-logo-card fleischmann">
+                            <div class="logo-placeholder fleischmann">F</div>
+                            <h3>FLEISCHMANN</h3>
+                            <p>Ingredientes & Levaduras</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 2: PROPÓSITO -->
+            <section class="slide">
+                <div class="slide-left">
+                    <div class="slide-tag">
+                        <i data-lucide="target"></i> ¿Para qué sirve?
+                    </div>
+                    <h2>¿Qué es y para qué sirve <span>FletesApp</span>?</h2>
+                    <p class="lead-text">
+                        En logística, un cálculo manual erróneo de tarifa o un ayudante mal asignado cuesta millones al mes. FletesApp es un <b>escudo financiero y de control</b> operativo.
+                    </p>
+
+                    <div class="feature-card selected" onclick="selectFeature(0)">
+                        <div class="feature-icon-wrapper"><i data-lucide="dollar-sign"></i></div>
+                        <div class="feature-info">
+                            <h4>Control Estricto de Tarifas</h4>
+                            <p>Nadie cobra un peso por encima de lo pactado. El sistema liquida tarifas automáticamente.</p>
+                        </div>
+                    </div>
+
+                    <div class="feature-card" onclick="selectFeature(1)">
+                        <div class="feature-icon-wrapper"><i data-lucide="shield-check"></i></div>
+                        <div class="feature-info">
+                            <h4>Auditoría de Activos Operativos</h4>
+                            <p>Valida en milisegundos si la placa y el conductor están habilitados en el sistema.</p>
+                        </div>
+                    </div>
+
+                    <div class="feature-card" onclick="selectFeature(2)">
+                        <div class="feature-icon-wrapper"><i data-lucide="file-text"></i></div>
+                        <div class="feature-info">
+                            <h4>Conciliación Contable Instantánea</h4>
+                            <p>Exporta planillas oficiales PDF listas para pago con firmas y soportes consolidados.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="slide-right">
+                    <div class="showcase-frame" id="purposeShowcase">
+                        <div style="text-align: center; padding: 2rem;">
+                            <i data-lucide="shield" style="width: 80px; height: 80px; color: var(--brand-primary); margin-bottom: 1.5rem; animation: pulse 2s infinite;"></i>
+                            <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">Blindaje del Gasto Operativo</h3>
+                            <p style="color: var(--text-dim); font-size: 0.95rem; line-height: 1.5;">
+                                El sistema automatiza las reglas del negocio de manera que sea imposible procesar cobros inválidos o registrar vehículos no autorizados.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 3: CÓMO FUNCIONA -->
+            <section class="slide">
+                <div class="slide-left">
+                    <div class="slide-tag">
+                        <i data-lucide="activity"></i> Flujo Operativo
+                    </div>
+                    <h2>¿Cómo funciona? <span>Paso a Paso</span></h2>
+                    <p class="lead-text">
+                        Simplificamos un proceso caótico de múltiples llamadas y planillas de Excel en un flujo digital directo y limpio en tiempo real.
+                    </p>
+
+                    <div class="flow-container">
+                        <div class="flow-step active" id="step1">
+                            <div class="flow-num">1</div>
+                            <div class="flow-details">
+                                <h4>Ingreso de Planilla Diaria</h4>
+                                <p>El operario ingresa la placa del vehículo, el conductor asignado y la ruta.</p>
+                            </div>
+                        </div>
+                        <div class="flow-step" id="step2">
+                            <div class="flow-num">2</div>
+                            <div class="flow-details">
+                                <h4>Validación del Motor de Precios</h4>
+                                <p>El sistema detecta el proveedor (Alpina, Zenú, Fleischmann) e invoca la tarifa base.</p>
+                            </div>
+                        </div>
+                        <div class="flow-step" id="step3">
+                            <div class="flow-num">3</div>
+                            <div class="flow-details">
+                                <h4>Auditoría de Rentabilidad Directa</h4>
+                                <p>Se calcula la rentabilidad vs. valor de la carga. Alertas en rojo si el flete no es rentable.</p>
+                            </div>
+                        </div>
+                        <div class="flow-step" id="step4">
+                            <div class="flow-num">4</div>
+                            <div class="flow-details">
+                                <h4>Generación de Soporte de Pago</h4>
+                                <p>Se crea el reporte PDF firmado, listo para contabilidad.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="slide-right">
+                    <div class="showcase-frame" style="justify-content: flex-start; gap: 1rem;">
+                        <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i data-lucide="terminal" style="color:var(--brand-primary)"></i> Consola de Procesamiento
+                        </h4>
+                        <div id="flowConsole" style="background: rgba(0,0,0,0.3); border-radius: 12px; padding: 1.2rem; font-family: monospace; font-size: 0.8rem; line-height: 1.5; color: var(--brand-success); flex: 1; overflow-y: auto;">
+                            <div>&gt; Esperando inicio del ciclo operativo...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 4: LOS 3 PROVEEDORES -->
+            <section class="slide">
+                <div class="slide-left" style="justify-content: flex-start;">
+                    <div class="slide-tag">
+                        <i data-lucide="users"></i> Adaptación Multi-Marca
+                    </div>
+                    <h2>Tres marcas, <span>un solo sistema</span></h2>
+                    <p class="lead-text" style="margin-bottom: 1.5rem;">
+                        Cada marca tiene exigencias y dinámicas diferentes. FletesApp unifica estas marcas sin mezclar sus datos y aplicando sus reglas específicas.
+                    </p>
+
+                    <div class="tabs-header">
+                        <button class="tab-btn active alpina" onclick="switchBrandTab('alpina')">Alpina</button>
+                        <button class="tab-btn zenu" onclick="switchBrandTab('zenu')">Zenú</button>
+                        <button class="tab-btn fleischmann" onclick="switchBrandTab('fleischmann')">Fleischmann</button>
+                    </div>
+
+                    <!-- TAB PANES -->
+                    <div id="tab-alpina" class="tab-pane active alpina">
+                        <div class="brand-detail-grid">
+                            <div class="brand-highlights">
+                                <div class="highlight-item">
+                                    <div class="highlight-bullet">1</div>
+                                    <div class="highlight-info">
+                                        <h5>Volúmenes Críticos de Carga</h5>
+                                        <p>Rutas con refrigeración y control de temperatura estricto.</p>
+                                    </div>
+                                </div>
+                                <div class="highlight-item">
+                                    <div class="highlight-bullet">2</div>
+                                    <div class="highlight-info">
+                                        <h5>Esquema de Auxiliares de Reparto</h5>
+                                        <p>Cálculo de cobro de flete con variables por número de ayudantes asignados.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="brand-metric-card">
+                                <h4>+35</h4>
+                                <p style="font-size: 0.8rem; color: var(--text-dim)">Vehículos Diarios</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="tab-zenu" class="tab-pane zenu">
+                        <div class="brand-detail-grid">
+                            <div class="brand-highlights">
+                                <div class="highlight-item">
+                                    <div class="highlight-bullet">1</div>
+                                    <div class="highlight-info">
+                                        <h5>Distribución en Red TAT</h5>
+                                        <p>Múltiples paradas y micro-entregas. Liquidación de fletes urbanos optimizada.</p>
+                                    </div>
+                                </div>
+                                <div class="highlight-item">
+                                    <div class="highlight-bullet">2</div>
+                                    <div class="highlight-info">
+                                        <h5>Consignaciones Integradas</h5>
+                                        <p>Validación automática cruzada con los reportes de cajera de la distribuidora.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="brand-metric-card">
+                                <h4>TAT</h4>
+                                <p style="font-size: 0.8rem; color: var(--text-dim)">Seguridad de Ruta</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="tab-fleischmann" class="tab-pane fleischmann">
+                        <div class="brand-detail-grid">
+                            <div class="brand-highlights">
+                                <div class="highlight-item">
+                                    <div class="highlight-bullet">1</div>
+                                    <div class="highlight-info">
+                                        <h5>Insumos Críticos de Panadería</h5>
+                                        <p>Liquidaciones por peso y volumen con reglas de ruta intermunicipal específicas.</p>
+                                    </div>
+                                </div>
+                                <div class="highlight-item">
+                                    <div class="highlight-bullet">2</div>
+                                    <div class="highlight-info">
+                                        <h5>Precios de Zona Quindío</h5>
+                                        <p>Tarifación diferenciada para rutas nacionales y rutas regionales consolidadas.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="brand-metric-card">
+                                <h4>100%</h4>
+                                <p style="font-size: 0.8rem; color: var(--text-dim)">Control de Margen</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="slide-right">
+                    <div class="showcase-frame" style="padding: 1.5rem; text-align: center;">
+                        <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 1.5rem;" id="brandShowcaseTitle">Focalizado en Alpina</h4>
+                        <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-glass); border-radius: 12px; padding: 1.5rem; text-align: left;" id="brandShowcaseContent">
+                            <div style="display:flex; justify-content:space-between; margin-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem;">
+                                <span style="color:var(--text-dim); font-size:0.8rem;">Negociación Activa</span>
+                                <span style="color:var(--brand-primary); font-weight:700; font-size:0.8rem;">Tarifa Plana Regional</span>
+                            </div>
+                            <p style="font-size: 0.85rem; line-height: 1.5; color: var(--text-dim);">
+                                Automatización total de las negociaciones de flete de Alpina para distribución de lácteos en todo el departamento, incluyendo variables de recargos nocturnos o dominicales.
+                            </p>
+                        </div>
+                        <div style="margin-top: 1.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                            La base de datos central de Supabase aísla los registros con seguridad RLS.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 5: SIMULADOR INTERACTIVO -->
+            <section class="slide">
+                <div class="slide-left">
+                    <div class="slide-tag">
+                        <i data-lucide="play-circle"></i> Demostración en Vivo
+                    </div>
+                    <h2>¡Pruebe el <span>Simulador Inteligente</span>!</h2>
+                    <p class="lead-text">
+                        Compruebe usted mismo la velocidad y la potencia del motor de fletes. Ingrese los datos de prueba y vea cómo responde la aplicación.
+                    </p>
+                    
+                    <div class="sim-form">
+                        <div class="sim-group">
+                            <label>Proveedor</label>
+                            <select class="sim-select" id="simProvider" onchange="updateSimData()">
+                                <option value="alpina">Alpina (Lácteos)</option>
+                                <option value="zenu">Zenú (Cárnicos)</option>
+                                <option value="fleischmann">Fleischmann (Levadura)</option>
+                            </select>
+                        </div>
+                        <div class="sim-group">
+                            <label>Población / Ruta</label>
+                            <select class="sim-select" id="simRoute">
+                                <option value="armenia">Armenia (Urbano)</option>
+                                <option value="calarca">Calarcá (Regional)</option>
+                                <option value="tebaida">La Tebaida (Industrial)</option>
+                                <option value="montenegro">Montenegro (Turística)</option>
+                            </select>
+                        </div>
+                        <div class="sim-group">
+                            <label>Auxiliares Requeridos</label>
+                            <select class="sim-select" id="simHelpers">
+                                <option value="0">0 Auxiliares</option>
+                                <option value="1" selected>1 Auxiliar</option>
+                                <option value="2">2 Auxiliares</option>
+                            </select>
+                        </div>
+                        <button class="sim-btn" onclick="runSimulation()">
+                            <i data-lucide="calculator"></i> Calcular Liquidación
+                        </button>
+                    </div>
+                </div>
+                <div class="slide-right">
+                    <div class="sim-receipt" style="width: 100%; height: 90%;">
+                        <div class="receipt-header">
+                            <div>
+                                <div class="receipt-title">FletesApp Engine v2.1</div>
+                                <div style="font-size:0.65rem; color:var(--text-muted);" id="receiptDate">Fecha: Hoy</div>
+                            </div>
+                            <div class="receipt-badge" id="receiptStatus">
+                                <i data-lucide="check-circle" style="width:12px; height:12px"></i> Listo para procesar
+                            </div>
+                        </div>
+
+                        <div style="display:flex; flex-direction:column; gap:0.6rem; margin-top: 1rem;">
+                            <div class="receipt-line">
+                                <span class="receipt-label">Proveedor Seleccionado:</span>
+                                <span class="receipt-val bold" id="receiptProviderVal" style="color: var(--brand-primary);">Alpina</span>
+                            </div>
+                            <div class="receipt-line">
+                                <span class="receipt-label">Ruta / Destino:</span>
+                                <span class="receipt-val" id="receiptRouteVal">Armenia (Urbano)</span>
+                            </div>
+                            <div class="receipt-line">
+                                <span class="receipt-label">Tarifa Base Establecida:</span>
+                                <span class="receipt-val" id="receiptBaseVal">$245,000 COP</span>
+                            </div>
+                            <div class="receipt-line">
+                                <span class="receipt-label">Adicional Auxiliares:</span>
+                                <span class="receipt-val" id="receiptHelperVal">$45,000 COP</span>
+                            </div>
+                            <div class="receipt-line">
+                                <span class="receipt-label">Retenciones Aplicadas:</span>
+                                <span class="receipt-val" style="color:var(--brand-danger)" id="receiptRetVal">-$11,600 COP</span>
+                            </div>
+                        </div>
+
+                        <div class="receipt-total">
+                            <div>
+                                <div style="font-size:0.75rem; font-weight:700; color:var(--text-dim)">VALOR NETO FLETE</div>
+                                <div style="font-size:0.6rem; color:var(--text-muted)">Liquidado automáticamente</div>
+                            </div>
+                            <div class="receipt-total-val" id="receiptTotalVal">$278,400</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 6: MÉTRICAS Y CIERRE -->
+            <section class="slide slide-full-width">
+                <div class="slide-left" style="align-items: center; text-align: center; max-width: 1000px; margin: 0 auto;">
+                    <div class="slide-tag">
+                        <i data-lucide="award"></i> Impacto Directo
+                    </div>
+                    <h2>La Diferencia entre <span>Administrar y Crecer</span></h2>
+                    <p class="lead-text" style="max-width: 700px; margin-left: auto; margin-right: auto; margin-bottom: 2rem;">
+                        La digitalización no es un lujo, es una necesidad de supervivencia y eficiencia financiera. FletesApp brinda resultados medibles desde la primera semana de uso.
+                    </p>
+
+                    <div class="metrics-grid">
+                        <div class="metric-card-interactive">
+                            <div class="metric-icon"><i data-lucide="zap"></i></div>
+                            <div class="metric-number">0%</div>
+                            <div class="metric-title">Error en Liquidación</div>
+                            <div class="metric-desc">Al cruzar automáticamente placas, zonas y tarifas oficiales.</div>
+                        </div>
+                        <div class="metric-card-interactive">
+                            <div class="metric-icon"><i data-lucide="clock"></i></div>
+                            <div class="metric-number">-85%</div>
+                            <div class="metric-title">Tiempo Administrativo</div>
+                            <div class="metric-desc">Se eliminan los cálculos manuales diarios del personal de logística.</div>
+                        </div>
+                        <div class="metric-card-interactive">
+                            <div class="metric-icon"><i data-lucide="shield-alert"></i></div>
+                            <div class="metric-number">100%</div>
+                            <div class="metric-title">Margen Protegido</div>
+                            <div class="metric-desc">Alertas instantáneas si el flete excede el margen estipulado de ganancia.</div>
+                        </div>
+                        <div class="metric-card-interactive">
+                            <div class="metric-icon"><i data-lucide="database"></i></div>
+                            <div class="metric-number">Cloud</div>
+                            <div class="metric-title">Dato Único y Seguro</div>
+                            <div class="metric-desc">Toda la información resguardada y disponible para gerencia en cualquier parte del mundo.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Bottom Controls -->
+    <footer class="bottom-nav">
+        <div class="slide-counter" id="slideCounter">Diapositiva 1 de 6</div>
+        <div class="nav-buttons">
+            <button class="btn-nav" id="prevBtn" onclick="navigateSlide(-1)">
+                <i data-lucide="chevron-left"></i>
+            </button>
+            <button class="btn-nav" id="nextBtn" onclick="navigateSlide(1)">
+                <i data-lucide="chevron-right"></i>
+            </button>
+        </div>
+    </footer>
 
     <script>
+        // Init Lucide Icons
         lucide.createIcons();
 
-        let currentIdx = 0;
+        // Slide Navigation Logic
+        let currentSlide = 0;
         const slides = document.querySelectorAll('.slide');
-        const count = slides.length;
-        const slider = document.getElementById('slides-slider');
-        const bar = document.getElementById('progress-bar');
-        const prevBtn = document.getElementById('prev');
-        const nextBtn = document.getElementById('next');
+        const totalSlides = slides.length;
+        const slidesWrapper = document.getElementById('slidesWrapper');
+        const progressBar = document.getElementById('progressBar');
+        const slideCounter = document.getElementById('slideCounter');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
 
-        function update() {
-            slider.style.transform = `translateX(-${currentIdx * 100}%)`;
-            bar.style.width = `${((currentIdx + 1) / count) * 100}%`;
-            slides.forEach((s, i) => s.classList.toggle('active', i === currentIdx));
-            prevBtn.disabled = currentIdx === 0;
-            nextBtn.disabled = currentIdx === count - 1;
+        function updateSlidePosition() {
+            slidesWrapper.style.transform = `translateX(-${currentSlide * 100}%)`;
+            
+            // Toggle active class for scaling animations
+            slides.forEach((slide, index) => {
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+
+            // Update Progress Bar
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            progressBar.style.width = `${progress}%`;
+
+            // Update Counter
+            slideCounter.textContent = `Diapositiva ${currentSlide + 1} de ${totalSlides}`;
+
+            // Buttons state
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === totalSlides - 1;
+
+            // Trigger animations or console prints based on slide
+            if (currentSlide === 2) {
+                runFlowConsoleDemo();
+            }
         }
 
-        prevBtn.onclick = () => { if (currentIdx > 0) { currentIdx--; update(); } };
-        nextBtn.onclick = () => { if (currentIdx < count - 1) { currentIdx++; update(); } };
-        document.onkeydown = (e) => {
-            if (e.key === 'ArrowRight' || e.key === ' ') { if (currentIdx < count - 1) { currentIdx++; update(); } }
-            if (e.key === 'ArrowLeft') { if (currentIdx > 0) { currentIdx--; update(); } }
+        function navigateSlide(direction) {
+            currentSlide += direction;
+            if (currentSlide < 0) currentSlide = 0;
+            if (currentSlide >= totalSlides) currentSlide = totalSlides - 1;
+            updateSlidePosition();
+        }
+
+        // Keyboard Support
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                if (currentSlide < totalSlides - 1) navigateSlide(1);
+            } else if (e.key === 'ArrowLeft') {
+                if (currentSlide > 0) navigateSlide(-1);
+            }
+        });
+
+        // Slide 2: Feature card selector
+        const purposeContent = [
+            {
+                title: "Control Estricto de Tarifas",
+                desc: "Cada proveedor (Alpina, Zenú, Fleischmann) posee una base de datos de precios vinculada directamente. Cuando el auxiliar registra una planilla, el sistema bloquea cualquier modificación manual de las tarifas base pactadas, impidiendo cobros por encima de lo estipulado por parte de conductores terceros."
+            },
+            {
+                title: "Auditoría de Activos Operativos",
+                desc: "A través del motor de base de datos Supabase, se valida instantáneamente si las placas y los conductores poseen seguros al día, si corresponden al proveedor asignado y si están activos para rodar. Evita despachos con vehículos bloqueados o no autorizados."
+            },
+            {
+                title: "Conciliación Contable Instantánea",
+                desc: "Automatiza y consolida el flete diario. Permite imprimir informes contables en formato PDF con la firma del despachador y del conductor. Contabilidad recibe planillas limpias, reduciendo los tiempos de aprobación y pago de días a solo minutos."
+            }
+        ];
+
+        function selectFeature(index) {
+            const cards = document.querySelectorAll('.feature-card');
+            cards.forEach((card, idx) => {
+                if (idx === index) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            });
+
+            const showcase = document.getElementById('purposeShowcase');
+            const data = purposeContent[index];
+            
+            showcase.style.opacity = 0;
+            setTimeout(() => {
+                showcase.innerHTML = `
+                    <div style="text-align: left; padding: 1rem; animation: fadeIn 0.4s ease;">
+                        <span style="color:var(--brand-primary); font-weight:800; font-size:0.75rem; text-transform:uppercase; display:block; margin-bottom:0.75rem;">Detalle Técnico / Funcional</span>
+                        <h3 style="font-size: 1.4rem; margin-bottom: 1rem; color:#fff;">${data.title}</h3>
+                        <p style="color: var(--text-dim); font-size: 0.95rem; line-height: 1.6; margin-bottom:1.5rem;">${data.desc}</p>
+                        <div style="background:rgba(255,255,255,0.02); padding:1rem; border-radius:10px; border:1px solid var(--border-glass)">
+                            <code style="font-size:0.75rem; color:var(--brand-success); display:block;">// Módulo FletesApp Core<br>execute_secure_validation(transaction_id);<br>Status: OK - Regla verificada</code>
+                        </div>
+                    </div>
+                `;
+                showcase.style.opacity = 1;
+            }, 250);
+        }
+
+        // Slide 3: Interactive Flow console demo
+        let consoleInterval;
+        function runFlowConsoleDemo() {
+            const consoleEl = document.getElementById('flowConsole');
+            consoleEl.innerHTML = '';
+            
+            const logs = [
+                "🚀 Iniciando ciclo operativo FletesApp...",
+                "📥 [OPERARIO] Ingresó planilla: Placa SXG018, Conductor: Juan Pérez",
+                "🔍 Validando base de datos central...",
+                "✅ Vehículo AUTORIZADO (Seguros vigentes, RLS Ok)",
+                "⚙️ Detectando proveedor del vehículo...",
+                "🎯 Proveedor asignado: ALPINA",
+                "💵 Consultando tarifas vigentes para zona: Montenegro...",
+                "📊 Tarifa base cargada: $280,000 COP",
+                "⚡ Evaluando adicionales (1 Auxiliar): +$45,000 COP",
+                "⚖️ Aplicando retenciones legales de ley: -$13,200 COP",
+                "💰 Flete Liquidado Neto: $311,800 COP",
+                "📈 Validando rentabilidad del viaje vs Carga...",
+                "🟢 RENTABLE: Carga valorizada en $4,500,000 COP (Flete 6.9%)",
+                "📁 Generando soporte de planilla PDF...",
+                "💾 Guardado en Supabase exitosamente. ID: flt_99831a2",
+                "✨ Proceso Terminado. Listo para pago."
+            ];
+
+            let currentLogIdx = 0;
+            clearInterval(consoleInterval);
+
+            // Highlight the corresponding flow step
+            const flowSteps = document.querySelectorAll('.flow-step');
+
+            consoleInterval = setInterval(() => {
+                if (currentLogIdx < logs.length) {
+                    const div = document.createElement('div');
+                    div.textContent = logs[currentLogIdx];
+                    div.style.marginBottom = '4px';
+                    div.style.opacity = 0;
+                    div.style.transform = 'translateY(5px)';
+                    div.style.transition = 'all 0.3s ease';
+                    
+                    consoleEl.appendChild(div);
+                    consoleEl.scrollTop = consoleEl.scrollHeight;
+
+                    // Trigger smooth entry animation for the console line
+                    setTimeout(() => {
+                        div.style.opacity = 1;
+                        div.style.transform = 'none';
+                    }, 50);
+
+                    // Update visual flow step indicators based on console progress
+                    if (currentLogIdx === 1) {
+                        setFlowStepActive(0);
+                    } else if (currentLogIdx === 5) {
+                        setFlowStepActive(1);
+                    } else if (currentLogIdx === 10) {
+                        setFlowStepActive(2);
+                    } else if (currentLogIdx === 13) {
+                        setFlowStepActive(3);
+                    }
+
+                    currentLogIdx++;
+                } else {
+                    clearInterval(consoleInterval);
+                }
+            }, 800);
+        }
+
+        function setFlowStepActive(stepIndex) {
+            const steps = document.querySelectorAll('.flow-step');
+            steps.forEach((step, idx) => {
+                if (idx === stepIndex) {
+                    step.classList.add('active');
+                } else {
+                    step.classList.remove('active');
+                }
+            });
+        }
+
+        // Slide 4: Brand tabs controller
+        const brandShowcaseData = {
+            alpina: {
+                title: "Focalizado en Alpina",
+                desc: "Automatización total de las negociaciones de flete de Alpina para distribución de lácteos en todo el departamento. Controla estrictamente los viáticos y pagos de auxiliares negociados para zonas de alta montaña o rutas difíciles.",
+                badge: "Tarifa Plana Regional"
+            },
+            zenu: {
+                title: "Focalizado en Zenú",
+                desc: "Integrado para la distribución rápida de carnes frías (TAT). El sistema controla los fletes calculando variables de paradas realizadas y garantizando el flujo constante del producto alimenticio estrella de la marca.",
+                badge: "Optimización TAT"
+            },
+            fleischmann: {
+                title: "Focalizado en Fleischmann",
+                desc: "Diseñado para controlar la logística de levaduras e insumos. Ajusta los precios de fletes por peso volumétrico y gestiona de manera transparente las tarifas diferenciadas para entregas intermunicipales rápidas.",
+                badge: "Control de Volumen"
+            }
         };
-        update();
+
+        function switchBrandTab(brand) {
+            // Toggle active classes on tab buttons
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                if (btn.classList.contains(brand)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Toggle active classes on tab panes
+            const panes = document.querySelectorAll('.tab-pane');
+            panes.forEach(pane => {
+                if (pane.classList.contains(brand)) {
+                    pane.classList.add('active');
+                } else {
+                    pane.classList.remove('active');
+                }
+            });
+
+            // Update details block
+            const titleEl = document.getElementById('brandShowcaseTitle');
+            const contentEl = document.getElementById('brandShowcaseContent');
+            const data = brandShowcaseData[brand];
+
+            titleEl.textContent = data.title;
+            contentEl.innerHTML = `
+                <div style="display:flex; justify-content:space-between; margin-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; animation: fadeIn 0.3s ease;">
+                    <span style="color:var(--text-dim); font-size:0.8rem;">Negociación Activa</span>
+                    <span style="color:var(--brand-primary); font-weight:700; font-size:0.8rem;" id="showcaseBadge">${data.badge}</span>
+                </div>
+                <p style="font-size: 0.85rem; line-height: 1.5; color: var(--text-dim); animation: fadeIn 0.3s ease;">
+                    ${data.desc}
+                </p>
+            `;
+
+            // Adjust color of badge based on brand
+            const badgeEl = document.getElementById('showcaseBadge');
+            if (brand === 'zenu') badgeEl.style.color = 'var(--brand-danger)';
+            else if (brand === 'fleischmann') badgeEl.style.color = 'var(--brand-warning)';
+            else badgeEl.style.color = 'var(--brand-primary)';
+        }
+
+        // Slide 5: Simulator functionality
+        const simulationData = {
+            alpina: {
+                name: "Alpina Lácteos",
+                color: "var(--brand-primary)",
+                basePrices: { armenia: 245000, calarca: 275000, tebaida: 290000, montenegro: 280000 },
+                helperCost: 45000,
+                retentionRate: 0.04
+            },
+            zenu: {
+                name: "Zenú Cárnicos",
+                color: "var(--brand-danger)",
+                basePrices: { armenia: 220000, calarca: 260000, tebaida: 285000, montenegro: 270000 },
+                helperCost: 50000,
+                retentionRate: 0.04
+            },
+            fleischmann: {
+                name: "Fleischmann Levadura",
+                color: "var(--brand-warning)",
+                basePrices: { armenia: 260000, calarca: 290000, tebaida: 310000, montenegro: 300000 },
+                helperCost: 40000,
+                retentionRate: 0.035
+            }
+        };
+
+        function updateSimData() {
+            // Optional: can change available options depending on provider
+            const provider = document.getElementById('simProvider').value;
+            const data = simulationData[provider];
+            
+            // Soft visual effect on selection
+            const providerVal = document.getElementById('receiptProviderVal');
+            providerVal.textContent = data.name;
+            providerVal.style.color = data.color;
+        }
+
+        function runSimulation() {
+            const provider = document.getElementById('simProvider').value;
+            const route = document.getElementById('simRoute').value;
+            const helpersCount = parseInt(document.getElementById('simHelpers').value);
+
+            const data = simulationData[provider];
+            const basePrice = data.basePrices[route];
+            const helperCost = data.helperCost * helpersCount;
+            const subtotal = basePrice + helperCost;
+            const retentions = Math.round(subtotal * data.retentionRate);
+            const total = subtotal - retentions;
+
+            // Update receipt elements with quick animation
+            const receipt = document.querySelector('.sim-receipt');
+            receipt.style.transform = 'scale(0.98)';
+            receipt.style.opacity = '0.7';
+
+            setTimeout(() => {
+                // Formatting values
+                document.getElementById('receiptProviderVal').textContent = data.name;
+                document.getElementById('receiptProviderVal').style.color = data.color;
+                
+                const routeSelect = document.getElementById('simRoute');
+                const routeName = routeSelect.options[routeSelect.selectedIndex].text;
+                document.getElementById('receiptRouteVal').textContent = routeName;
+                
+                document.getElementById('receiptBaseVal').textContent = `$${basePrice.toLocaleString()} COP`;
+                document.getElementById('receiptHelperVal').textContent = `$${helperCost.toLocaleString()} COP`;
+                document.getElementById('receiptRetVal').textContent = `-$${retentions.toLocaleString()} COP`;
+                document.getElementById('receiptTotalVal').textContent = `$${total.toLocaleString()}`;
+
+                // Set dynamic date
+                const now = new Date();
+                document.getElementById('receiptDate').textContent = `Fecha: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+
+                // Dynamic simulation success/rentability check
+                const statusBadge = document.getElementById('receiptStatus');
+                statusBadge.className = "receipt-badge";
+                statusBadge.innerHTML = `<i data-lucide="check-circle" style="width:12px; height:12px"></i> Liquidado exitosamente`;
+                
+                receipt.style.transform = 'scale(1)';
+                receipt.style.opacity = '1';
+                
+                // Re-draw icons inside simulation dynamic element
+                lucide.createIcons();
+            }, 300);
+        }
+
+        // Initialize state
+        updateSlidePosition();
     </script>
 </body>
 

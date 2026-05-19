@@ -1,0 +1,58 @@
+-- ==========================================================
+-- 🚛 SCRIPT DE PROGRAMACIÓN: MIÉRCOLES 13 MAYO 2026 (CORREGIDO)
+-- ==========================================================
+
+-- 1. Limpiar registros de hoy para evitar duplicados
+DELETE FROM fletes WHERE fecha = '2026-05-13' AND proveedor IN ('ALPINA', 'FLEISCHMANN');
+
+-- 2. Insertar fletes
+INSERT INTO fletes (
+    fecha, dia, proveedor, contratista, placa, no_planilla, 
+    zona, poblacion, auxiliares, no_auxiliares, 
+    adicionales, valor_adicional_negociacion, razon_adicional_negociacion, 
+    valor_ruta, precio, no_pedidos, facturas_adicionales, razon_social
+)
+VALUES 
+-- MANIZALES (ALPINA)
+('2026-05-13', 'Miercoles', 'ALPINA', 'RUBEN', 'TRL186', '20160 20154', '7000 7001', 'MANIZALES', 'CRISTIAN OSPINA', 1, 'No', 0, '-', 8347530, 330000, 5, null, 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'JOHAN ECHEVERRY', 'TMO981', '20167 20159 18747 18750', '9552 9550', 'MANIZALES', 'EDWAR ZAPATA', 1, 'No', 0, '-', 8301413, 330000, 37, 'FEP1184283', 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'CAMILO CASTAÑO', 'KOL802', '20168 18748', '9553', 'VILLAMARIA', 'GERMAN GALVEZ', 1, 'No', 0, '-', 9579642, 330000, 57, 'FEP1184291 FEP1184279', 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'YONNI VALENCIA', 'WFV015', '20169 18749', '9554', 'MANIZALES', 'YEISON TABARES', 1, 'No', 0, '-', 7669851, 330000, 58, null, 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'RUBEN', 'EYY183', '20127TSS 20170', '9555', 'MANIZALES', 'JUAN ALEJANDRO', 1, 'No', 80000, 'EYY183 ADICIONAL AL FLETE $80.000 RETORNO DE CANASTAS', 10039575, 410000, 63, null, 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'MIGUEL GONZALES', 'SLI587', '20171 18751', '9556', 'MANIZALES', 'ADRIAN MARTINEZ', 1, 'No', 0, '-', 5363720, 330000, 37, null, 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'RICARDO PINEDA', 'WGZ876', '20172', '9557', 'MARMATO LA MERCED', 'JUAN DELGADO, MATEO VILLALBA', 2, 'No', 0, '-', 14098844, 620000, 28, null, 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'CARLOS GOMEZ', 'EYX091', '20133 20161 18753', '9558', 'AGUADAS', 'VICTOR PULGARIN, JUAN COCOMA', 2, 'No', 0, '-', 15008729, 800000, 68, null, 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'JUAN DAVID', 'SMH182', '20173 18754', '9559', 'ARAUCA PALESTINA', 'BRANDON BAEZ', 1, 'No', 0, '-', 10290016, 303000, 50, null, 'TYM'),
+
+-- ARMENIA / QUINDIO (ALPINA) - PRECIOS ACTUALIZADOS MAYO 2026
+('2026-05-13', 'Miercoles', 'ALPINA', 'WILMAR CARDONA', 'JVM223', '20157 20184', '9601 7009', 'ARMENIA', 'YEISON RENDON', 1, 'No', 0, '-', 7229248, 330000, 40, null, 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'ADALBERTO MEJIA', 'TNH494', '20156 20185', '9602 7008', 'ARMENIA', 'SEBASTIAN VILLADA', 1, 'No', 0, '-', 11297731, 330000, 52, null, 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'GOBER CRISTANCHO', 'EQY944', '20186', '9603', 'ARMENIA', 'ALEXANDER COSTAIN', 1, 'No', 0, '-', 8384532, 330000, 56, null, 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'FABIO RUIZ', 'SXF257', '20158 20187', '9604 7010', 'QUIMBAYA', 'CAMILO CONTRERAS, MILTON OSORIO', 2, 'No', 0, '-', 9956266, 275000, 46, null, 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'HUMBERTO RINCON', 'WLS478', '20162 18757 18756', '9605', 'PIJAO CORDOBA', 'CRISTIAN CAICEDO', 1, 'No', 0, '-', 7304844, 379000, 48, null, 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'YIMERSON GARCIA', 'TTL256', '20153 20163 18755', '9606 9600', 'SALENTO', 'CRISTIAN CAMACHO', 1, 'No', 0, '-', 10300344, 300000, 36, null, 'TYM'),
+
+-- PEREIRA / RISARALDA (ALPINA)
+('2026-05-13', 'Miercoles', 'ALPINA', 'GABRIEL PEREZ', 'SMO183', '20175 18766 18745', '9453', 'PEREIRA', 'JUAN QUINTERO', 1, 'No', 0, '-', 6295616, 224000, 51, null, 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'PABLO RAMIREZ', 'LUM993', '20176', '9454', 'PEREIRA', 'ANDRES PINEDA', 1, 'No', 0, '-', 6671168, 224000, 52, 'FEP1184310-311-312-317-320-327', 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'RICARDO LOPEZ', 'TMZ674', '20177', '9455', 'PEREIRA', 'ANDRES RIOS, JOHN GARCIA', 2, 'No', 0, '-', 9177735, 224000, 73, null, 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'CARLOS VELASCO', 'SPQ814', '20178', '9456', 'SANTA ROSA', 'SANTIAGO HENAO', 1, 'No', 0, '-', 7422080, 238000, 50, null, 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'HUMBERTO PARRA', 'WHM317', '20179', '9457', 'PEREIRA', 'CESAR CASTILLO', 1, 'No', 0, '-', 6944696, 224000, 54, null, 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'MIGUEL TABARES', 'PEK019', '20180', '9458', 'PEREIRA', 'JHON GIRALDO', 1, 'No', 0, '-', 5153291, 224000, 44, null, 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'ALEXANDER CUELLAR', 'WHM896', '20142TSS 20181', '9459', 'PEREIRA', 'CAMILO PEÑA', 1, 'No', 0, '-', 9739219, 224000, 63, null, 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'JULIAN', 'WLC133', '20182', '9460', 'PEREIRA', 'EDWIN GOMEZ, CAMILO MUÑOZ', 2, 'No', 0, '-', 6738378, 224000, 63, null, 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'CARLOS ARANGO', 'SJT873', '20096TSS 20183 20151', '9461 9450', 'CARTAGO', 'DIORLAN FLOREZ', 1, 'No', 0, '-', 7492826, 290000, 46, null, 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'DIEGO RATIVA', 'WTN748', '20149TSS 20188 18760', '7004', 'PEREIRA', 'BRAHIAN VALENCIA', 1, 'No', 60000, 'WTN748 EXTRA $60.000', 9440345, 284000, 67, null, 'TYM'),
+
+-- PUEBLOS / OTROS (ALPINA)
+('2026-05-13', 'Miercoles', 'ALPINA', 'JORGE RIVILLAS', 'EST067', '20189 18762', '7005', 'ANSERMA NUEVO', 'ESTEBAN GALLEGO', 1, 'No', 0, '-', 4641988, 302000, 33, null, 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'JORGE ALARCON', 'ERK303', '20114 20164', '7006 9450', 'BALBOA LA CELIA', 'ROBINSON TORRES', 1, 'No', 100000, 'ERK303 ADICIONAL AL FLETE $100.000 ENTRADA A LA VIRGINIA VUELTA LA MARINA', 9941608, 425000, 45, 'FEP1184259-260-262-264', 'TYM'),
+('2026-05-13', 'Miercoles', 'ALPINA', 'MIGUEL MARTINEZ', 'SNL038', '20152 20165 18761', '7007 9451', 'ANSERMA', 'LUIS CADAVID, OSCAR RESTREPO', 2, 'No', 0, '-', 14508167, 360000, 36, null, 'TYM'),
+
+-- FLEISCHMANN
+('2026-05-13', 'Miercoles', 'FLEISCHMANN', 'CARLOS CASTAÑO', 'SQB119', '18765 18767', 'FLEISCHMANN', 'PEREIRA', 'DIEGO FRANCO', 1, 'No', 0, '-', 5637572, 224000, 51, null, 'TYM');
+
+-- 🔍 Verificación
+SELECT proveedor, placa, precio, valor_adicional_negociacion AS extra, razon_adicional_negociacion AS razon
+FROM fletes
+WHERE fecha = '2026-05-13';

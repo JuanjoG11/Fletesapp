@@ -1,0 +1,802 @@
+[
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "IRRA, LA FELISA, VER RIOSUCIO",
+    "precio": 530000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "CORDOBA PIJAO BVISTA",
+    "precio": 379000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "ARGELIA EL CAIRO",
+    "precio": 370000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "EL AGUILA",
+    "precio": 335000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "EL AGUILA VILLA NUEVA",
+    "precio": 360000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "MONTENEGRO, PTAPAO",
+    "precio": 305000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "IRRA, LA FELISA, VER RIOSUCIO",
+    "precio": 530000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "ARABIA - ALTAGRACIA",
+    "precio": 235000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "CALARCA",
+    "precio": 338000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "ARMENIA",
+    "precio": 320000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "CIRCASIA",
+    "precio": 294000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "TEBAIDA",
+    "precio": 340000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "CUBA",
+    "precio": 224000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "MONTENEGRO, PTAPAO",
+    "precio": 325000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "PEREIRA FLEISCHMANN",
+    "precio": 230000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "AGUADAS",
+    "precio": 800000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "PACORA",
+    "precio": 725000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "ARANZAZU",
+    "precio": 460000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "FILADELFIA",
+    "precio": 460000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "PALESTINA",
+    "precio": 303000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "ARAUCA",
+    "precio": 303000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "LA TEBAIDA",
+    "precio": 340000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "BELEN",
+    "precio": 360000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "SANTA ROSA DE C",
+    "precio": 238000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "AGUADAS",
+    "precio": 800000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "PACORA",
+    "precio": 725000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "ARANZAZU",
+    "precio": 460000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "FILADELFIA",
+    "precio": 460000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "PALESTINA",
+    "precio": 303000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "ARAUCA",
+    "precio": 303000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "MANIZALES",
+    "precio": 330000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "VILLAMARIA",
+    "precio": 330000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "LA TEBAIDA",
+    "precio": 340000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "GENOVA",
+    "precio": 430000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "CAICEDONIA",
+    "precio": 385000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "ANSERMA",
+    "precio": 360000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "BELEN",
+    "precio": 360000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "BELEN DE UMBRIA",
+    "precio": 360000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "GUATICA",
+    "precio": 398000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "VITERBO",
+    "precio": 295000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "MISTRATO",
+    "precio": 390000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "CUBA",
+    "precio": 224000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "ALCALA ULLOA",
+    "precio": 275000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "PACORA SALAMINA",
+    "precio": 725000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "MONTENEGRO",
+    "precio": 300000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "MONTENEGRO PTAPAO",
+    "precio": 325000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "RDA S JOSE BELALCAZAR",
+    "precio": 346000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "QUIMBAYA",
+    "precio": 275000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "IRRA LA FELISA VER RIOSUCIO",
+    "precio": 530000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "CAIMO BARCELONA",
+    "precio": 360000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "PEREIRA-DOSQUEBRADAS",
+    "precio": 230000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "FILANDIA",
+    "precio": 300000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "MARMATO LA MERCED",
+    "precio": 620000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "SAN JOSE-BELALCAZAR",
+    "precio": 320000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "MARMATO",
+    "precio": 565000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "SANTUARIO APIA",
+    "precio": 305000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "SALENTO",
+    "precio": 300000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "CIRCASIA",
+    "precio": 300000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "CORDOBA PIJAO BVISTA",
+    "precio": 379000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "CAICEDONIA",
+    "precio": 398000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "TEBAIDA",
+    "precio": 355000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "AGUILA VILLANUEVA",
+    "precio": 305000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "APIA VIRGINIA",
+    "precio": 240000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "ARGELIA CAIRO",
+    "precio": 335000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "ARMENIA MONTENEGRO",
+    "precio": 320000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "BARCELONA CALARCA",
+    "precio": 340000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "BELEN MISTRATO",
+    "precio": 410000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "FILADELFIA ARANZAZU",
+    "precio": 425000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "GUATICA ANSERMA",
+    "precio": 450000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "KM41 IRRA FELISA SUPIA",
+    "precio": 505000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "MONTENEGRO P/TAPAO",
+    "precio": 305000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "PIJAO CORDOBA",
+    "precio": 370000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "SAN JOSE BELALCAZAR",
+    "precio": 320000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "SANTUARIO VIRGINIA",
+    "precio": 305000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "SUPIA RIOSUCIO",
+    "precio": 545000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "VIRGINIA",
+    "precio": 240000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "VITERBO BELEN MISTRATO",
+    "precio": 355000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "AGUADAS PACORA",
+    "precio": 800000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "ARANZAZU FILADELFIA",
+    "precio": 460000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "NEIRA",
+    "precio": 368000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "CHINCHINA",
+    "precio": 272000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "PALESTINA ARAUCA",
+    "precio": 303000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "QUINCHIA",
+    "precio": 470000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "RIOSUCIO",
+    "precio": 580000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "SUPIA",
+    "precio": 550000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "MANIZALES",
+    "precio": 330000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "VILLAMARIA",
+    "precio": 330000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "MANIZALES VILLAMARIA",
+    "precio": 330000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "ANSERMA",
+    "precio": 360000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "BELEN DE UMBRIA",
+    "precio": 360000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "GUATICA",
+    "precio": 398000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "VITERBO",
+    "precio": 295000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "GENOVA",
+    "precio": 430000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "ARMENIA",
+    "precio": 330000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "MONTENEGRO - P TAPAO",
+    "precio": 325000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "CALARCA",
+    "precio": 345000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "ARGELIA EL CAIRO",
+    "precio": 370000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "MISTRATO",
+    "precio": 390000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "ANSERMA NUEVO",
+    "precio": 302000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "ANSERMA NUEVO 2T",
+    "precio": 302000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "CARTAGO",
+    "precio": 290000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "PEREIRA",
+    "precio": 224000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "DOSQUEBRADAS",
+    "precio": 224000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "ANSERMA NUEVO",
+    "precio": 302000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "ANSERMA NUEVO 2T",
+    "precio": 302000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "CARTAGO",
+    "precio": 290000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "CARTAGO 2T",
+    "precio": 290000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "PEREIRA",
+    "precio": 224000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "EL AGUILA",
+    "precio": 335000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "EL AGUILA VILLA NUEVA",
+    "precio": 360000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "PACORA SALAMINA",
+    "precio": 725000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "RDA S JOSE BELALCAZAR",
+    "precio": 346000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "IRRA LA FELISA VER RIOSUCIO",
+    "precio": 530000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "MARMATO LA MERCED",
+    "precio": 620000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "MARMATO",
+    "precio": 565000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "ALCALA ULLOA",
+    "precio": 260000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "MONTENEGRO PTAPAO",
+    "precio": 305000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "CAIMO BARCELONA",
+    "precio": 340000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "CARTAGO 2T",
+    "precio": 290000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "PEREIRA - DOSQUEBRADAS",
+    "precio": 224000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "SANTA ROSA",
+    "precio": 238000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "MARSELLA",
+    "precio": 290000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "ARABIA ALTAGRACIA",
+    "precio": 235000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "SANTUARIO",
+    "precio": 330000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "APIA",
+    "precio": 330000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "BALBOA LA CELIA",
+    "precio": 325000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "LA VIRGINIA",
+    "precio": 255000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "PUEBLO RICO",
+    "precio": 370000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "SANTA CECILIA",
+    "precio": 450000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "AGUADAS PACORA",
+    "precio": 800000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "ARANZAZU FILADELFIA",
+    "precio": 460000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "NEIRA",
+    "precio": 368000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "CHINCHINA",
+    "precio": 272000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "PALESTINA ARAUCA",
+    "precio": 303000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "QUINCHIA",
+    "precio": 470000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "RIOSUCIO",
+    "precio": 580000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "SUPIA",
+    "precio": 550000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "MANIZALES VILLAMARIA",
+    "precio": 330000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "MONTENEGRO",
+    "precio": 282000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "QUIMBAYA",
+    "precio": 265000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "SALENTO",
+    "precio": 285000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "FILANDIA",
+    "precio": 285000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "DOSQUEBRADAS",
+    "precio": 224000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "PEREIRA - DOSQUEBRADAS",
+    "precio": 224000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "SANTA ROSA",
+    "precio": 238000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "SANTA ROSA DE C",
+    "precio": 238000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "MARSELLA",
+    "precio": 290000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "ARABIA ALTAGRACIA",
+    "precio": 235000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "ARABIA - ALTAGRACIA",
+    "precio": 235000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "SANTUARIO",
+    "precio": 330000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "APIA",
+    "precio": 330000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "BALBOA LA CELIA",
+    "precio": 325000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "LA VIRGINIA",
+    "precio": 255000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "PUEBLO RICO",
+    "precio": 370000
+  },
+  {
+    "lista_id": "FLEISCHMANN",
+    "poblacion": "SANTA CECILIA",
+    "precio": 450000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "CHINCHINA SUPERMERCADO",
+    "precio": 320000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "RIOSUCIO-SUPIA SUPERMERCADO",
+    "precio": 625000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "ARMENIA SUPERMERCADO",
+    "precio": 350000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "CALARCA SUPERMERCADO",
+    "precio": 370000
+  },
+  {
+    "lista_id": "ALPINA",
+    "poblacion": "MANIZALES SUPERMERCADO",
+    "precio": 365000
+  }
+]

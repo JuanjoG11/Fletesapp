@@ -882,17 +882,26 @@
                     
                     <div class="brands-grid">
                         <div class="brand-item-card alpina">
-                            <div class="brand-circle alpina">A</div>
+                            <div class="brand-circle alpina" style="overflow: hidden; background: #fff; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center;">
+                                <img src="assets/img/logo_alpina.png" alt="Alpina logo" style="display: none; width: 100%; height: 100%; object-fit: contain; border-radius: 50%;" onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                                <div style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-weight: 800; font-size: 1.8rem; color: #fff; background: linear-gradient(135deg, #0056b3, var(--brand-alpina));">A</div>
+                            </div>
                             <h2>ALPINA</h2>
                             <p>Logística de refrigerados y altos volúmenes de carga diaria.</p>
                         </div>
                         <div class="brand-item-card zenu">
-                            <div class="brand-circle zenu">Z</div>
+                            <div class="brand-circle zenu" style="overflow: hidden; background: #fff; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center;">
+                                <img src="assets/img/logo_zenu.png" alt="Zenú logo" style="display: none; width: 100%; height: 100%; object-fit: contain; border-radius: 50%;" onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                                <div style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-weight: 800; font-size: 1.8rem; color: #fff; background: linear-gradient(135deg, #a80006, var(--brand-zenu));">Z</div>
+                            </div>
                             <h2>ZENÚ</h2>
                             <p>Distribución en red TAT con control estricto de rutas urbanas.</p>
                         </div>
                         <div class="brand-item-card fleischmann">
-                            <div class="brand-circle fleischmann">F</div>
+                            <div class="brand-circle fleischmann" style="overflow: hidden; background: #fff; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center;">
+                                <img src="assets/img/logo_fleischmann.png" alt="Fleischmann logo" style="display: none; width: 100%; height: 100%; object-fit: contain; border-radius: 50%;" onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                                <div style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-weight: 800; font-size: 1.8rem; color: #000; background: linear-gradient(135deg, #b88600, var(--brand-fleischmann));">F</div>
+                            </div>
                             <h2>FLEISCHMANN</h2>
                             <p>Despacho de levaduras e insumos industriales con tarifas exactas.</p>
                         </div>
@@ -948,55 +957,63 @@
                 </div>
             </section>
 
-            <!-- SLIDE 3: ¿CÓMO FUNCIONA? -->
+            <!-- SLIDE 3: SEGURIDAD OPERATIVA Y BLOQUEOS -->
             <section class="slide-frame">
                 <div class="slide-left">
                     <div class="tagline">
-                        <i data-lucide="sliders"></i> Flujo Digital
+                        <i data-lucide="shield-alert"></i> Seguridad Operativa
                     </div>
-                    <h2>¿Cómo funciona? <span>Paso a Paso</span></h2>
-                    <p class="description">
-                        FletesApp simplifica la operación en un circuito cerrado y ultra seguro alimentado por base de datos en tiempo real.
+                    <h2>Control Preventivo y <span>Filtros Operativos</span></h2>
+                    <p class="description" style="font-size: 1.05rem; margin-bottom: 1.25rem;">
+                        FletesApp actúa como un filtro digital inteligente en el muelle de carga, impidiendo de forma activa el despacho de vehículos no habilitados.
                     </p>
 
-                    <div class="pipeline">
-                        <div class="pipeline-step active" id="pipe1">
-                            <div class="step-badge">1</div>
-                            <div class="step-body">
-                                <h4>Registro del Despacho</h4>
-                                <p>El despachador ingresa la placa del vehículo y la ruta a cubrir en la interfaz web rápida.</p>
+                    <div style="display:flex; flex-direction:column; gap:1.1rem; margin-top:0.5rem; width: 100%;">
+                        <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:12px; padding:1rem; display:flex; gap:0.75rem; transition: all 0.3s ease;">
+                            <div style="width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:rgba(239,68,68,0.1); color:var(--danger); flex-shrink:0;">
+                                <i data-lucide="alert-triangle" style="width:20px; height:20px;"></i>
+                            </div>
+                            <div>
+                                <h4 style="font-size:0.95rem; font-weight:700; color:#fff; margin-bottom:0.25rem;">Auditoría de SOAT y Técnico-Mecánica</h4>
+                                <p style="font-size:0.8rem; color:var(--text-secondary); line-height:1.4;">El sistema bloquea la salida y no permite liquidar fletes de vehículos con seguros y revisiones obligatorias vencidas.</p>
                             </div>
                         </div>
-                        <div class="pipeline-step" id="pipe2">
-                            <div class="step-badge">2</div>
-                            <div class="step-body">
-                                <h4>Procesamiento del Motor de Tarifas</h4>
-                                <p>El motor inteligente identifica las tarifas pre-negociadas del proveedor (Alpina, Zenú o Fleischmann).</p>
+
+                        <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:12px; padding:1rem; display:flex; gap:0.75rem; transition: all 0.3s ease;">
+                            <div style="width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:rgba(59,130,246,0.1); color:var(--primary); flex-shrink:0;">
+                                <i data-lucide="user-check" style="width:20px; height:20px;"></i>
+                            </div>
+                            <div>
+                                <h4 style="font-size:0.95rem; font-weight:700; color:#fff; margin-bottom:0.25rem;">Control de Licencias de Conductor</h4>
+                                <p style="font-size:0.8rem; color:var(--text-secondary); line-height:1.4;">Verifica de manera instantánea si la licencia de conducción del chofer está habilitada y cumple con la categoría del vehículo.</p>
                             </div>
                         </div>
-                        <div class="pipeline-step" id="pipe3">
-                            <div class="step-badge">3</div>
-                            <div class="step-body">
-                                <h4>Control Dinámico de Rentabilidad</h4>
-                                <p>La app valida que el costo del flete esté dentro de los márgenes permitidos vs. el valor total de la carga.</p>
+
+                        <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:12px; padding:1rem; display:flex; gap:0.75rem; transition: all 0.3s ease;">
+                            <div style="width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:rgba(16,185,129,0.1); color:var(--success); flex-shrink:0;">
+                                <i data-lucide="layers" style="width:20px; height:20px;"></i>
                             </div>
-                        </div>
-                        <div class="pipeline-step" id="pipe4">
-                            <div class="step-badge">4</div>
-                            <div class="step-body">
-                                <h4>Emisión de Relación de Pago</h4>
-                                <p>Se consolida la planilla de liquidación oficial en formato digital PDF con trazabilidad total.</p>
+                            <div>
+                                <h4 style="font-size:0.95rem; font-weight:700; color:#fff; margin-bottom:0.25rem;">Aislamiento Multitenant (RLS en Postgres)</h4>
+                                <p style="font-size:0.8rem; color:var(--text-secondary); line-height:1.4;">Row Level Security a nivel de base de datos. Ningún proveedor puede ver, modificar o alterar datos de otra marca.</p>
                             </div>
                         </div>
                     </div>
                 </div>
+
                 <div class="slide-right">
-                    <div class="glass-card" style="justify-content: flex-start; gap: 1rem;">
-                        <h4 style="font-size: 1.05rem; font-weight: 700; display:flex; align-items:center; gap:0.5rem;">
-                            <i data-lucide="terminal" style="color:var(--success)"></i> Log de Ejecución FletesApp
+                    <div class="glass-card" style="padding: 1.75rem; text-align: center; gap:1.25rem; width:100%; display:flex; flex-direction:column;">
+                        <h4 style="font-size: 1.1rem; font-weight: 700; display:flex; align-items:center; gap:0.5rem; justify-content:center;">
+                            <i data-lucide="shield-check" style="color:var(--success)"></i> Scanner de Seguridad Vial
                         </h4>
-                        <div id="logConsoleOutput" style="background: rgba(0,0,0,0.4); border-radius: 12px; padding: 1.25rem; font-family: monospace; font-size: 0.75rem; line-height: 1.5; color: var(--success); flex: 1; overflow-y: auto;">
-                            <div>&gt; Sistema inicializado. Esperando eventos...</div>
+                        
+                        <div class="brand-switcher-wrapper" style="margin-bottom:0.25rem; width:100%; display:flex; gap:0.5rem; background:rgba(0,0,0,0.2); padding:4px; border-radius:10px;">
+                            <button class="brand-switch-btn audit-switch-btn blocked active" onclick="simulateAuditPlate('blocked')" style="flex:1; font-size:0.75rem; padding:0.5rem; border-radius:6px; font-weight:700;">Vehículo Bloqueado</button>
+                            <button class="brand-switch-btn audit-switch-btn allowed" onclick="simulateAuditPlate('allowed')" style="flex:1; font-size:0.75rem; padding:0.5rem; border-radius:6px; font-weight:700;">Vehículo Habilitado</button>
+                        </div>
+
+                        <div id="auditStatusPanel" class="glass-card" style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; text-align: left; width: 100%; transition: all 0.3s ease; height: 260px; display: flex; flex-direction: column; justify-content: space-between;">
+                            <!-- Dynamically updated by JS -->
                         </div>
                     </div>
                 </div>
@@ -1127,7 +1144,7 @@
                         <i data-lucide="play"></i> Demostración Operativa
                     </div>
                     <h2>¡Pruebe el <span>Motor en Vivo</span>!</h2>
-                    <p class="description" style="font-size: 1.05rem; margin-bottom: 1.5rem;">
+                    <p class="description" style="font-size: 1.05rem; margin-bottom: 1.25rem;">
                         Ingrese los datos de despacho de prueba en el formulario y verifique la velocidad de procesamiento del motor financiero de la app.
                     </p>
 
@@ -1157,52 +1174,81 @@
                                 <option value="2">2 Auxiliares de Reparto</option>
                             </select>
                         </div>
+                        <div class="form-row">
+                            <label>Adicional Negociado (COP)</label>
+                            <input type="number" class="form-select" id="adicionalSelect" value="0" min="0" step="5000" style="color: #fff; background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.6rem 0.8rem; font-family: inherit;">
+                        </div>
+                        <div class="form-row" style="flex-direction: row; align-items: center; gap: 0.5rem; margin-top: 0.25rem;">
+                            <input type="checkbox" id="dominicalCheckbox" style="width: 18px; height: 18px; cursor: pointer;">
+                            <label for="dominicalCheckbox" style="cursor: pointer; margin: 0; font-size: 0.85rem; color: var(--text-secondary);">¿Día Dominico/Festivo? (+25% Tarifa Base)</label>
+                        </div>
                         <button class="form-btn" onclick="executeEngineSimulation()">
                             <i data-lucide="cpu"></i> Liquidar Flete de Prueba
                         </button>
                     </div>
                 </div>
                 <div class="slide-right">
-                    <div class="receipt-card" style="width: 100%; height: 90%;">
+                    <div class="receipt-card" style="width: 100%; height: 95%; max-height: 520px; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
-                            <div class="receipt-top">
+                            <div class="receipt-top" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1rem;">
                                 <div>
                                     <h4 style="font-size:0.9rem; font-weight:800; letter-spacing:0.5px;">FLETESAPP ENGINE v2.5</h4>
                                     <span style="font-size:0.65rem; color:var(--text-muted);" id="receiptTimestamp">Operación en espera...</span>
                                 </div>
-                                <span class="receipt-badge-status" id="receiptStatusLabel">Standby</span>
+                                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                                    <div id="receiptLogoArea" style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; background: #fff; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                                        <span style="font-weight:800; font-size:1.1rem; color:var(--brand-alpina)">A</span>
+                                    </div>
+                                    <span class="receipt-badge-status" id="receiptStatusLabel">Standby</span>
+                                </div>
                             </div>
 
                             <div class="receipt-body">
-                                <div class="receipt-item-row">
+                                <div class="receipt-item-row" style="margin-bottom: 0.5rem;">
                                     <span class="receipt-label" style="color:var(--text-secondary)">Marca / Proveedor:</span>
-                                    <span class="receipt-val" style="font-weight:700; color:var(--brand-alpina)" id="resProvider">Alpina</span>
+                                    <span class="receipt-val" style="font-weight:700; color:var(--brand-alpina)" id="resProvider">Alpina (Refrigerados)</span>
                                 </div>
-                                <div class="receipt-item-row">
+                                <div class="receipt-item-row" style="margin-bottom: 0.5rem;">
                                     <span class="receipt-label" style="color:var(--text-secondary)">Destino / Ruta:</span>
                                     <span class="receipt-val" id="resRoute" style="font-weight:600;">Armenia (Urbano)</span>
                                 </div>
-                                <div class="receipt-item-row">
+                                <div class="receipt-item-row" style="margin-bottom: 0.5rem;">
                                     <span class="receipt-label" style="color:var(--text-secondary)">Tarifa Base Pactada:</span>
                                     <span class="receipt-val" id="resBase">$245,000 COP</span>
                                 </div>
-                                <div class="receipt-item-row">
+                                <div class="receipt-item-row" id="resDominicalRow" style="display: none; margin-bottom: 0.5rem;">
+                                    <span class="receipt-label" style="color:var(--text-secondary)">Recargo Dominical (+25%):</span>
+                                    <span class="receipt-val" style="color:var(--warning)" id="resDominicalVal">$0 COP</span>
+                                </div>
+                                <div class="receipt-item-row" style="margin-bottom: 0.5rem;">
                                     <span class="receipt-label" style="color:var(--text-secondary)">Valor por Auxiliares:</span>
                                     <span class="receipt-val" id="resHelpers">$45,000 COP</span>
                                 </div>
-                                <div class="receipt-item-row">
-                                    <span class="receipt-label" style="color:var(--text-secondary)">Retenciones (ICA/RteFte):</span>
-                                    <span class="receipt-val" style="color:var(--danger)" id="resRet">- $11,600 COP</span>
+                                <div class="receipt-item-row" style="margin-bottom: 0.5rem;">
+                                    <span class="receipt-label" style="color:var(--text-secondary)">Adicional Negociado (Viáticos):</span>
+                                    <span class="receipt-val" id="resAdicional">$0 COP</span>
+                                </div>
+                                <div class="receipt-item-row" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem;">
+                                    <span class="receipt-label" style="color:#fff; font-weight: 600;">Subtotal Planilla:</span>
+                                    <span class="receipt-val" id="resSubtotal" style="font-weight: 700; color: #fff;">$290,000 COP</span>
+                                </div>
+                                <div class="receipt-item-row" style="margin-bottom: 0.3rem;">
+                                    <span class="receipt-label" style="color:var(--text-muted)">Deducción ReteFuente (4.0%):</span>
+                                    <span class="receipt-val" style="color:var(--danger); font-size: 0.8rem;" id="resRetFuente">- $11,600 COP</span>
+                                </div>
+                                <div class="receipt-item-row" style="margin-bottom: 0.3rem;">
+                                    <span class="receipt-label" style="color:var(--text-muted)">Deducción ReteICA (0.966%):</span>
+                                    <span class="receipt-val" style="color:var(--danger); font-size: 0.8rem;" id="resRetIca">- $2,801 COP</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="receipt-item-row total">
+                        <div class="receipt-item-row total" style="border-top: 2px dashed rgba(255,255,255,0.1); padding-top: 1rem; margin-top: 1rem;">
                             <div>
-                                <h3 style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary);">NETO A PAGAR:</h3>
-                                <p style="font-size: 0.6rem; color: var(--text-muted);">Autorizado para facturación</p>
+                                <h3 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary);">NETO A PAGAR:</h3>
+                                <p style="font-size: 0.6rem; color: var(--text-muted);">Liquidación autorizada RLS</p>
                             </div>
-                            <span style="font-size: 1.6rem; font-weight: 800; color: var(--success)" id="resNeto">$278,400</span>
+                            <span style="font-size: 1.7rem; font-weight: 800; color: var(--success)" id="resNeto">$275,599</span>
                         </div>
                     </div>
                 </div>
@@ -1292,9 +1338,9 @@
             prevSlideBtn.disabled = slideIndex === 0;
             nextSlideBtn.disabled = slideIndex === totalSlidesCount - 1;
 
-            // Trigger log console simulation when entering Slide 3
+            // Trigger security audit animation when entering Slide 3
             if (slideIndex === 2) {
-                runLogConsoleSimulation();
+                animateSecurityAudit();
             }
         }
 
@@ -1359,79 +1405,99 @@
             }, 200);
         }
 
-        // Slide 3: Console simulation logs
-        let logTimer;
-        function runLogConsoleSimulation() {
-            const consoleEl = document.getElementById('logConsoleOutput');
-            consoleEl.innerHTML = '';
-            
-            const logSteps = [
-                "🔄 Inicializando módulo de fletes...",
-                "📥 [AUXILIAR] Solicitud de carga: Placa SMX123, Ruta: La Tebaida",
-                "🔍 Ejecutando verificación de flota en Supabase...",
-                "✅ Vehículo AUTORIZADO (Placa activa, conductor habilitado)",
-                "⚙️ Detectando proveedor asignado...",
-                "🎯 Proveedor identificado: ZENÚ",
-                "💵 Consultando tarifario pre-negociado para: La Tebaida...",
-                "📊 Tarifa base cargada: $285,000 COP",
-                "⚡ Liquidando recargo de ayudantes (1 Auxiliar): +$50,000 COP",
-                "⚖️ Aplicando retención fiscal automatizada: -$13,400 COP",
-                "💰 Neto del flete calculado: $321,600 COP",
-                "📈 Evaluando viabilidad vs margen de carga...",
-                "🟢 ACEPTADO: Costo flete 7.2% del valor de carga ($4.5M)",
-                "📁 Guardando planilla contable oficial digital...",
-                "💾 Insertado en base de datos. ID: txn_zenu_88412x",
-                "✨ Proceso Terminado. Operación exitosa."
-            ];
+        // Slide 3: Security Audit Interactive Simulation
+        const auditPlatesData = {
+            blocked: {
+                plate: "SMX-123 (Camión Turbo)",
+                soat: "Vence hace 5 días",
+                soatClass: "danger",
+                soatStatus: "🚨 VENCIDO",
+                tecnico: "Vence en 18 días",
+                tecnicoClass: "success",
+                tecnicoStatus: "✅ VIGENTE",
+                lic: "Apta (Categoría C2)",
+                licClass: "success",
+                licStatus: "✅ VIGENTE",
+                status: "BLOQUEADO EN MUELLE",
+                statusClass: "danger",
+                statusDesc: "El despachador no puede generar la planilla de flete de este vehículo hasta que se actualicen las pólizas de seguro en el sistema central.",
+                icon: "lock"
+            },
+            allowed: {
+                plate: "HJK-456 (Furgón Frío)",
+                soat: "Vence en 145 días",
+                soatClass: "success",
+                soatStatus: "✅ VIGENTE",
+                tecnico: "Vence en 85 días",
+                tecnicoClass: "success",
+                tecnicoStatus: "✅ VIGENTE",
+                lic: "Apta (Categoría C3)",
+                licClass: "success",
+                licStatus: "✅ VIGENTE",
+                status: "DESPACHO AUTORIZADO",
+                statusClass: "success",
+                statusDesc: "Vehículo en regla. Tarifario pre-negociado aplicado automáticamente. Listo para cargar y generar planilla de fletes PDF.",
+                icon: "unlock"
+            }
+        };
 
-            let index = 0;
-            clearInterval(logTimer);
-
-            logTimer = setInterval(() => {
-                if (index < logSteps.length) {
-                    const row = document.createElement('div');
-                    row.textContent = logSteps[index];
-                    row.style.marginBottom = '4px';
-                    row.style.opacity = 0;
-                    row.style.transform = 'translateY(5px)';
-                    row.style.transition = 'all 0.3s ease';
-                    
-                    consoleEl.appendChild(row);
-                    consoleEl.scrollTop = consoleEl.scrollHeight;
-
-                    // Fade in effect
-                    setTimeout(() => {
-                        row.style.opacity = 1;
-                        row.style.transform = 'none';
-                    }, 50);
-
-                    // Sync the pipeline step dots
-                    if (index === 1) {
-                        syncPipeStepActive(0);
-                    } else if (index === 5) {
-                        syncPipeStepActive(1);
-                    } else if (index === 10) {
-                        syncPipeStepActive(2);
-                    } else if (index === 13) {
-                        syncPipeStepActive(3);
-                    }
-
-                    index++;
+        function simulateAuditPlate(type) {
+            // Update active state in switcher buttons
+            document.querySelectorAll('.audit-switch-btn').forEach(btn => {
+                if (btn.classList.contains(type)) {
+                    btn.classList.add('active');
                 } else {
-                    clearInterval(logTimer);
-                }
-            }, 850);
-        }
-
-        function syncPipeStepActive(pipeIdx) {
-            const steps = document.querySelectorAll('.pipeline-step');
-            steps.forEach((step, idx) => {
-                if (idx === pipeIdx) {
-                    step.classList.add('active');
-                } else {
-                    step.classList.remove('active');
+                    btn.classList.remove('active');
                 }
             });
+
+            const data = auditPlatesData[type];
+            const panel = document.getElementById('auditStatusPanel');
+            if (!panel) return;
+
+            panel.style.transform = 'scale(0.97)';
+            panel.style.opacity = '0.7';
+
+            setTimeout(() => {
+                panel.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:0.5rem;">
+                        <span style="font-size:0.7rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Vehículo Auditado</span>
+                        <span style="font-size:0.8rem; font-weight:800; color:#fff;" id="auditPlateVal">${data.plate}</span>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem;">
+                            <span style="color:var(--text-secondary);">1. Póliza SOAT:</span>
+                            <span style="font-weight:700; color:var(--${data.soatClass});">${data.soatStatus} <span style="font-size:0.7rem; font-weight:normal; color:var(--text-muted);">(${data.soat})</span></span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem;">
+                            <span style="color:var(--text-secondary);">2. Técnico-Mecánica:</span>
+                            <span style="font-weight:700; color:var(--${data.tecnicoClass});">${data.tecnicoStatus} <span style="font-size:0.7rem; font-weight:normal; color:var(--text-muted);">(${data.tecnico})</span></span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem;">
+                            <span style="color:var(--text-secondary);">3. Licencia Conductor:</span>
+                            <span style="font-weight:700; color:var(--${data.licClass});">${data.licStatus}</span>
+                        </div>
+                    </div>
+
+                    <div style="background:rgba(0,0,0,0.2); border:1px solid var(--border-color); border-radius:10px; padding:0.75rem; display:flex; align-items:flex-start; gap:0.6rem; margin-top:0.25rem;">
+                        <div style="width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.03); flex-shrink:0;">
+                            <i data-lucide="${data.icon}" style="width:16px; height:16px; color:var(--${data.statusClass});"></i>
+                        </div>
+                        <div>
+                            <h5 style="font-size:0.8rem; font-weight:800; color:var(--${data.statusClass}); margin-bottom:0.15rem; text-transform:uppercase; letter-spacing:0.5px;">${data.status}</h5>
+                            <p style="font-size:0.7rem; color:var(--text-secondary); line-height:1.3; margin:0;">${data.statusDesc}</p>
+                        </div>
+                    </div>
+                `;
+                panel.style.transform = 'scale(1)';
+                panel.style.opacity = '1';
+                lucide.createIcons();
+            }, 250);
+        }
+
+        function animateSecurityAudit() {
+            simulateAuditPlate('blocked');
         }
 
         // Slide 4: Brand tabs
@@ -1497,27 +1563,46 @@
         // Slide 5: Simulator logic
         const engineData = {
             alpina: {
-                name: "Alpina Lácteos",
+                name: "Alpina (Refrigerados)",
                 color: "var(--brand-alpina)",
                 prices: { armenia: 245000, calarca: 275000, tebaida: 290000, montenegro: 280000 },
-                helper: 45000,
-                retention: 0.04
+                helper: 45000
             },
             zenu: {
-                name: "Zenú Cárnicos",
+                name: "Zenú (TAT Cárnicos)",
                 color: "var(--brand-zenu)",
                 prices: { armenia: 220000, calarca: 260000, tebaida: 285000, montenegro: 270000 },
-                helper: 50000,
-                retention: 0.04
+                helper: 50000
             },
             fleischmann: {
-                name: "Fleischmann Levadura",
+                name: "Fleischmann (Levaduras)",
                 color: "var(--brand-fleischmann)",
                 prices: { armenia: 260000, calarca: 290000, tebaida: 310000, montenegro: 300000 },
-                helper: 40000,
-                retention: 0.035
+                helper: 40000
             }
         };
+
+        function updateReceiptLogo(provider) {
+            const logoArea = document.getElementById('receiptLogoArea');
+            let initial = 'A';
+            let imgPath = 'assets/img/logo_alpina.png';
+            let gradColor = 'linear-gradient(135deg, #0056b3, var(--brand-alpina))';
+            
+            if (provider === 'zenu') {
+                initial = 'Z';
+                imgPath = 'assets/img/logo_zenu.png';
+                gradColor = 'linear-gradient(135deg, #a80006, var(--brand-zenu))';
+            } else if (provider === 'fleischmann') {
+                initial = 'F';
+                imgPath = 'assets/img/logo_fleischmann.png';
+                gradColor = 'linear-gradient(135deg, #b88600, var(--brand-fleischmann))';
+            }
+
+            logoArea.innerHTML = `
+                <img src="${imgPath}" alt="${provider} logo" style="display: none; width: 100%; height: 100%; object-fit: contain; border-radius: 50%;" onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                <div style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; color: #fff; background: ${gradColor};">${initial}</div>
+            `;
+        }
 
         function syncSimulatorData() {
             const provider = document.getElementById('providerSelect').value;
@@ -1526,19 +1611,28 @@
             const resProvider = document.getElementById('resProvider');
             resProvider.textContent = data.name;
             resProvider.style.color = data.color;
+
+            // Sync top header logo in receipt
+            updateReceiptLogo(provider);
         }
 
         function executeEngineSimulation() {
             const provider = document.getElementById('providerSelect').value;
             const route = document.getElementById('routeSelect').value;
             const helpers = parseInt(document.getElementById('helpersSelect').value);
+            const adicionalNegociado = parseInt(document.getElementById('adicionalSelect').value) || 0;
+            const isDominical = document.getElementById('dominicalCheckbox').checked;
 
             const data = engineData[provider];
             const basePrice = data.prices[route];
+            const dominicalCost = isDominical ? Math.round(basePrice * 0.25) : 0;
             const helperCost = data.helper * helpers;
-            const subtotal = basePrice + helperCost;
-            const retentions = Math.round(subtotal * data.retention);
-            const totalNeto = subtotal - retentions;
+            const subtotal = basePrice + dominicalCost + helperCost + adicionalNegociado;
+            
+            // Deducciones realistas: ReteFuente 4% e ICA 0.966%
+            const retFuente = Math.round(subtotal * 0.04);
+            const retIca = Math.round(subtotal * 0.00966);
+            const totalNeto = subtotal - retFuente - retIca;
 
             // Trigger animation in card
             const receipt = document.querySelector('.receipt-card');
@@ -1554,8 +1648,21 @@
                 document.getElementById('resRoute').textContent = routeName;
                 
                 document.getElementById('resBase').textContent = `$${basePrice.toLocaleString()} COP`;
+                
+                // Dominical row display
+                const domRow = document.getElementById('resDominicalRow');
+                if (isDominical) {
+                    document.getElementById('resDominicalVal').textContent = `$${dominicalCost.toLocaleString()} COP`;
+                    domRow.style.display = 'flex';
+                } else {
+                    domRow.style.display = 'none';
+                }
+
                 document.getElementById('resHelpers').textContent = `$${helperCost.toLocaleString()} COP`;
-                document.getElementById('resRet').textContent = `- $${retentions.toLocaleString()} COP`;
+                document.getElementById('resAdicional').textContent = `$${adicionalNegociado.toLocaleString()} COP`;
+                document.getElementById('resSubtotal').textContent = `$${subtotal.toLocaleString()} COP`;
+                document.getElementById('resRetFuente').textContent = `- $${retFuente.toLocaleString()} COP`;
+                document.getElementById('resRetIca').textContent = `- $${retIca.toLocaleString()} COP`;
                 document.getElementById('resNeto').textContent = `$${totalNeto.toLocaleString()}`;
 
                 const timestamp = new Date();
@@ -1566,6 +1673,8 @@
                 statusLabel.style.background = "rgba(16, 185, 129, 0.15)";
                 statusLabel.style.color = "var(--success)";
                 
+                updateReceiptLogo(provider);
+                
                 receipt.style.transform = 'scale(1)';
                 receipt.style.opacity = '1';
                 
@@ -1575,6 +1684,7 @@
 
         // Initialize presentation
         updateSlideUI();
+        syncSimulatorData();
     </script>
 </body>
 

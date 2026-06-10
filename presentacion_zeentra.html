@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZEENTRA - Presentación Interactiva del Ecosistema de Indicadores</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-base: #030712;
+            --bg-surface: #090e1a;
+            --bg-card: rgba(13, 20, 38, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            
+            --zeentra: #00f2fe;
+            --zeentra-grad: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            --accent: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            
+            --brand-alpina: #0066ff;
+            --brand-zenu: #ff3333;
+            --brand-fleischmann: #ffaa00;
+            
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Ambient floating lights in background */
+        .glow-ambient-1 {
+            position: absolute;
+            top: -15%;
+            left: -15%;
+            width: 700px;
+            height: 700px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 242, 254, 0.12) 0%, transparent 70%);
+            filter: blur(100px);
+            z-index: 1;
+            pointer-events: none;
+            animation: pulseGlow 15s infinite alternate ease-in-out;
+        }
+
+        .glow-ambient-2 {
+            position: absolute;
+            bottom: -15%;
+            right: -15%;
+            width: 800px;
+            height: 800px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 70%);
+            filter: blur(120px);
+            z-index: 1;
+            pointer-events: none;
+            animation: pulseGlow 20s infinite alternate-reverse ease-in-out;
+        }
+
+        .glow-ambient-3 {
+            position: absolute;
+            top: 40%;
+            left: 35%;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
+            filter: blur(90px);
+            z-index: 1;
+            pointer-events: none;
+            animation: pulseGlow 18s infinite alternate ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.2) translate(100px, 80px); }
+        }
+
+        /* Top Navbar */
+        .navbar {
+            height: 75px;
+            padding: 0 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(3, 7, 18, 0.85);
+            backdrop-filter: blur(20px);
+            z-index: 10;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }
+
+        .nav-logo-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--zeentra), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            color: #030712;
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.35);
+            font-size: 1.4rem;
+            letter-spacing: -1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-logo-icon::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transform: rotate(45deg);
+            animation: shine 4s infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translate(-100%, -100%) rotate(45deg); }
+            100% { transform: translate(100%, 100%) rotate(45deg); }
+        }
+
+        .nav-logo-text {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 40%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .nav-logo-tag {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            padding: 0.3rem 0.8rem;
+            border-radius: 99px;
+            color: var(--zeentra);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.1);
+        }
+
+        /* Top progress bar */
+        .progress-bar-container {
+            position: absolute;
+            top: 74px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.02);
+            z-index: 11;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--zeentra), var(--accent), var(--success));
+            box-shadow: 0 0 15px var(--zeentra);
+            transition: width 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        /* Slides Container */
+        .viewport-wrapper {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+            z-index: 5;
+        }
+
+        .slides-horizontal-lane {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.85s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .slide-frame {
+            min-width: 100%;
+            width: 100%;
+            height: 100%;
+            padding: 2rem 5rem;
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 4rem;
+            align-items: center;
+            opacity: 0;
+            transform: scale(0.96) translateY(10px);
+            transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .slide-frame.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+
+        .slide-full {
+            grid-template-columns: 1fr;
+            text-align: center;
+            justify-items: center;
+            padding: 2rem 6rem;
+        }
+
+        /* Texts & Accents */
+        .tagline {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--zeentra);
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1.2rem;
+            background: rgba(0, 242, 254, 0.08);
+            padding: 0.4rem 1.1rem;
+            border-radius: 99px;
+            border: 1px solid rgba(0, 242, 254, 0.2);
+            align-self: flex-start;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.05);
+        }
+
+        .slide-full .tagline {
+            align-self: center;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3.8rem;
+            font-weight: 900;
+            line-height: 1.05;
+            letter-spacing: -2px;
+            margin-bottom: 1.2rem;
+        }
+
+        h1 span {
+            background: linear-gradient(135deg, var(--zeentra), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.6rem;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -1px;
+            margin-bottom: 1rem;
+        }
+
+        h2 span {
+            background: linear-gradient(135deg, var(--zeentra), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.description {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 1.8rem;
+            font-weight: 400;
+        }
+
+        .slide-full p.description {
+            max-width: 820px;
+        }
+
+        /* Glass Cards */
+        .glass-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2.2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            width: 100%;
+            height: auto;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 35px 60px -10px rgba(0, 242, 254, 0.08);
+            transform: translateY(-2px);
+        }
+
+        /* Interactive feature block */
+        .interactive-feature {
+            display: flex;
+            gap: 1.25rem;
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--border-color);
+            padding: 1.2rem;
+            border-radius: 18px;
+            margin-bottom: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .interactive-feature:hover, .interactive-feature.active {
+            background: rgba(0, 242, 254, 0.05);
+            border-color: rgba(0, 242, 254, 0.3);
+            transform: translateX(8px);
+        }
+
+        .interactive-feature.active {
+            border-left: 4px solid var(--zeentra);
+            background: rgba(0, 242, 254, 0.07);
+        }
+
+        .feature-num-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--zeentra);
+            font-size: 1.2rem;
+            font-weight: 800;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .interactive-feature:hover .feature-num-icon, .interactive-feature.active .feature-num-icon {
+            background: linear-gradient(135deg, var(--zeentra), var(--accent));
+            color: #030712;
+            border-color: transparent;
+            box-shadow: 0 5px 15px rgba(0, 242, 254, 0.4);
+        }
+
+        .feature-details h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.2rem;
+            color: #fff;
+        }
+
+        .feature-details p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Slide 1 - Portada Grid */
+        .brands-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            width: 100%;
+            margin-top: 1.5rem;
+        }
+
+        .brand-item-card {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2.2rem 1.2rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.25rem;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            cursor: pointer;
+        }
+
+        .brand-item-card:hover {
+            transform: translateY(-8px);
+            background: rgba(255, 255, 255, 0.04);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+        }
+
+        .brand-item-card.alpina { border-top: 4px solid var(--brand-alpina); }
+        .brand-item-card.zenu { border-top: 4px solid var(--brand-zenu); }
+        .brand-item-card.fleischmann { border-top: 4px solid var(--brand-fleischmann); }
+
+        .brand-circle {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #fff;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .brand-circle.alpina { background: linear-gradient(135deg, #0056b3, var(--brand-alpina)); }
+        .brand-circle.zenu { background: linear-gradient(135deg, #a80006, var(--brand-zenu)); }
+        .brand-circle.fleischmann { background: linear-gradient(135deg, #b88600, var(--brand-fleischmann)); color: #000; }
+
+        .brand-item-card h2 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin: 0;
+            color: #fff;
+        }
+
+        .brand-item-card p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Slide 4 - Brands Panel Tabs */
+        .brand-switcher-wrapper {
+            display: flex;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border-color);
+            padding: 0.35rem;
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+            width: 100%;
+        }
+
+        .brand-switch-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 800;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .brand-switch-btn.active.alpina { background: var(--brand-alpina); color: #fff; box-shadow: 0 4px 15px rgba(0, 102, 255, 0.3); }
+        .brand-switch-btn.active.zenu { background: var(--brand-zenu); color: #fff; box-shadow: 0 4px 15px rgba(255, 51, 51, 0.3); }
+        .brand-switch-btn.active.fleischmann { background: var(--brand-fleischmann); color: #000; box-shadow: 0 4px 15px rgba(255, 170, 0, 0.3); }
+
+        .brand-pane {
+            display: none;
+            animation: tabFadeIn 0.4s ease;
+        }
+
+        .brand-pane.active {
+            display: block;
+        }
+
+        @keyframes tabFadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .brand-layout-grid {
+            display: grid;
+            grid-template-columns: 1fr 140px;
+            gap: 1.25rem;
+            background: rgba(255,255,255,0.01);
+            border: 1px solid var(--border-color);
+            padding: 1.25rem;
+            border-radius: 18px;
+        }
+
+        .brand-highlights-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .bullet-point {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .bullet-dot {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.03);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--zeentra);
+            flex-shrink: 0;
+            border: 1px solid var(--border-color);
+        }
+
+        .brand-pane.alpina .bullet-dot { color: var(--brand-alpina); }
+        .brand-pane.zenu .bullet-dot { color: var(--brand-zenu); }
+        .brand-pane.fleischmann .bullet-dot { color: var(--brand-fleischmann); }
+
+        .bullet-content h5 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.15rem;
+            color: #fff;
+        }
+
+        .bullet-content p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.35;
+        }
+
+        .brand-mini-badge {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .brand-mini-badge i {
+            margin-bottom: 0.5rem;
+        }
+
+        .brand-pane.alpina .brand-mini-badge i { color: var(--brand-alpina); }
+        .brand-pane.zenu .brand-mini-badge i { color: var(--brand-zenu); }
+        .brand-pane.fleischmann .brand-mini-badge i { color: var(--brand-fleischmann); }
+
+        .brand-mini-badge span {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .brand-mini-badge h4 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #fff;
+            margin-top: 0.25rem;
+        }
+
+        /* Slide 5 - Simulator */
+        .deck-sim-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.1fr;
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        .sim-control-panel {
+            background: rgba(0,0,0,0.25);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.95rem;
+        }
+
+        .form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .form-row label {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-select, .form-input {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.65rem 0.85rem;
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.85rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-select:focus, .form-input:focus {
+            border-color: var(--zeentra);
+            background: rgba(255,255,255,0.05);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.15);
+        }
+
+        .form-select option {
+            background: #0d1220;
+            color: #fff;
+        }
+
+        .form-btn {
+            background: linear-gradient(135deg, var(--zeentra), var(--accent));
+            border: none;
+            color: #030712;
+            font-family: inherit;
+            font-weight: 800;
+            padding: 0.85rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .form-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 242, 254, 0.45);
+        }
+
+        /* Live Simulator Visualizer Card */
+        .live-visualizer-card {
+            background: linear-gradient(135deg, rgba(8, 12, 25, 0.9) 0%, rgba(13, 20, 38, 0.98) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            position: relative;
+            min-height: 410px;
+        }
+
+        .live-visualizer-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--zeentra), transparent);
+        }
+
+        .visualizer-top {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.75rem;
+            margin-bottom: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .system-status-indicator {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            color: var(--success);
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 0.2rem 0.6rem;
+            border-radius: 99px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .system-status-indicator span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--success);
+            box-shadow: 0 0 6px var(--success);
+            display: inline-block;
+        }
+
+        .visualizer-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+
+        .kpi-row-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .kpi-mini-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .kpi-mini-card span {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+
+        .kpi-mini-card h4 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .metric-progress-bar {
+            width: 100%;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 99px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+
+        .metric-progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--zeentra), var(--success));
+            width: 0%;
+            transition: width 1s ease;
+        }
+
+        .console-log-area {
+            background: rgba(3, 5, 10, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 0.75rem;
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            height: 110px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            margin-top: 0.5rem;
+        }
+
+        .console-log-row {
+            line-height: 1.35;
+        }
+
+        .console-log-row.info { color: var(--zeentra); }
+        .console-log-row.success { color: var(--success); }
+        .console-log-row.warning { color: var(--warning); }
+        .console-log-row.danger { color: var(--danger); }
+
+        /* Slide 6 - Business Metrics */
+        .deck-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .deck-metric-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2.2rem 1.5rem;
+            text-align: center;
+            backdrop-filter: blur(12px);
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            position: relative;
+        }
+
+        .deck-metric-box:hover {
+            transform: translateY(-8px);
+            border-color: rgba(0, 242, 254, 0.3);
+            background: rgba(0, 242, 254, 0.01);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        }
+
+        .deck-metric-num {
+            font-size: 3.5rem;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 0.65rem;
+            letter-spacing: -2px;
+            background: linear-gradient(135deg, var(--zeentra), var(--success));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .deck-metric-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #fff;
+        }
+
+        .deck-metric-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.45;
+        }
+
+        /* Bottom Navbar Controls */
+        .bottom-navbar {
+            height: 90px;
+            padding: 0 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+            background: rgba(3, 7, 18, 0.9);
+            backdrop-filter: blur(20px);
+            z-index: 10;
+        }
+
+        .counter-label {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .control-btns {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .circle-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            outline: none;
+        }
+
+        .circle-btn:hover:not(:disabled) {
+            background: #fff;
+            color: var(--bg-base);
+            transform: scale(1.08);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+        }
+
+        .circle-btn:disabled {
+            opacity: 0.15;
+            cursor: not-allowed;
+        }
+
+        /* Responsive Layouts */
+        @media (max-width: 1200px) {
+            .slide-frame {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+                padding: 1.5rem 2.5rem;
+                overflow-y: auto;
+            }
+            h1 { font-size: 2.8rem; }
+            h2 { font-size: 2rem; }
+            .navbar, .bottom-navbar { padding: 0 2rem; }
+            .brands-grid, .deck-metrics-grid, .deck-sim-grid {
+                grid-template-columns: 1fr;
+            }
+            .viewport-wrapper {
+                overflow-y: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="glow-ambient-1"></div>
+    <div class="glow-ambient-2"></div>
+    <div class="glow-ambient-3"></div>
+
+    <!-- Header Navigation -->
+    <nav class="navbar">
+        <div class="nav-logo">
+            <div class="nav-logo-icon">Z</div>
+            <span class="nav-logo-text">ZEENTRA</span>
+            <span class="nav-logo-tag">Multi-Marcas Portal</span>
+        </div>
+        <div style="font-size: 0.8rem; font-weight: 800; color: var(--zeentra); display: flex; align-items: center; gap: 0.5rem; letter-spacing: 1px;">
+            <span style="display:inline-block; width:8px; height:8px; background:var(--zeentra); border-radius:50%; box-shadow: 0 0 10px var(--zeentra); animation: pulseGlow 1.5s infinite alternate;"></span>
+            SISTEMA DE INDICADORES EN VIVO
+        </div>
+    </nav>
+
+    <!-- Top progress line -->
+    <div class="progress-bar-container">
+        <div class="progress-bar-fill" id="slideProgress"></div>
+    </div>
+
+    <!-- Main Viewport for Slides -->
+    <main class="viewport-wrapper">
+        <div class="slides-horizontal-lane" id="slidesLane">
+
+            <!-- DIAPOSITIVA 1: PORTADA IMPACTANTE -->
+            <section class="slide-frame slide-full active">
+                <div class="slide-left" style="align-items: center; text-align: center; max-width: 950px; display: flex; flex-direction: column;">
+                    <div class="tagline">
+                        <i data-lucide="sparkles"></i> Presentación Nueva Ejecutiva
+                    </div>
+                    <h1>El Cerebro Operativo de <br><span>Indicadores, Consignaciones y Fletes</span></h1>
+                    <p class="description">
+                        Conozca <strong>ZEENTRA</strong>, el ecosistema transaccional y cuadro de mando ejecutivo que unifica las métricas de negocio, fletes y validación financiera de forma 100% aislada para <strong>Alpina</strong>, <strong>Zenú</strong> y <strong>Fleischmann</strong>.
+                    </p>
+                    
+                    <div class="brands-grid">
+                        <div class="brand-item-card alpina" onclick="stepSlide(3)">
+                            <div class="brand-circle alpina">A</div>
+                            <h2>ALPINA</h2>
+                            <p>Control exacto de cadena de frío y liquidaciones volumétricas.</p>
+                        </div>
+                        <div class="brand-item-card zenu" onclick="stepSlide(3)">
+                            <div class="brand-circle zenu">Z</div>
+                            <h2>ZENÚ</h2>
+                            <p>Conciliación rápida de planillas urbanas del canal Tienda a Tienda.</p>
+                        </div>
+                        <div class="brand-item-card fleischmann" onclick="stepSlide(3)">
+                            <div class="brand-circle fleischmann">F</div>
+                            <h2>FLEISCHMANN</h2>
+                            <p>Control preciso del tarifario de insumos y ruta industrial Quindío.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DIAPOSITIVA 2: ¿QUÉ ES Y PARA QUÉ SIRVE? -->
+            <section class="slide-frame">
+                <div class="slide-left">
+                    <div class="tagline">
+                        <i data-lucide="help-circle"></i> Propósito del Sistema
+                    </div>
+                    <h2>¿Qué es <span>ZEENTRA</span> y para qué sirve?</h2>
+                    <p class="description">
+                        Es el centro de control definitivo para administradores, cajeros y transportadores. Une en una única plataforma las tres necesidades más críticas de la cadena de distribución:
+                    </p>
+
+                    <div class="interactive-feature active" onclick="activateFeature(0)">
+                        <div class="feature-num-icon">1</div>
+                        <div class="feature-details">
+                            <h3>Tablero de Indicadores Directivos</h3>
+                            <p>Vigila la salud de las marcas con métricas clave en tiempo real como <strong>Exactitud</strong> y <strong>Quiebres de Inventario</strong>.</p>
+                        </div>
+                    </div>
+
+                    <div class="interactive-feature" onclick="activateFeature(1)">
+                        <div class="feature-num-icon">2</div>
+                        <div class="feature-details">
+                            <h3>Gestión Segura de Consignaciones</h3>
+                            <p>Evita el error humano guiando a los cajeros en la asignación automática del banco correspondiente de cada marca.</p>
+                        </div>
+                    </div>
+
+                    <div class="interactive-feature" onclick="activateFeature(2)">
+                        <div class="feature-num-icon">3</div>
+                        <div class="feature-details">
+                            <h3>Liquidación de Fletes sin Fugas</h3>
+                            <p>Calcula retenciones, recargos y adicionales acumulando múltiples placas en segundos en planillas PDF oficiales.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="slide-right" style="display: flex; align-items: center; justify-content: center;">
+                    <div class="glass-card" id="purposeCardPanel" style="min-height: 380px; display: flex; flex-direction: column; justify-content: center;">
+                        <div style="text-align: center; padding: 1rem;">
+                            <i data-lucide="shield-check" style="width: 75px; height: 75px; color: var(--zeentra); margin-bottom: 1.5rem; filter: drop-shadow(0 0 15px rgba(0, 242, 254, 0.3));"></i>
+                            <h3 style="font-size: 1.4rem; margin-bottom: 1rem; color: #fff;">Control Blindado Total</h3>
+                            <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">
+                                ZEENTRA actúa como un escudo protector administrativo. Al centralizar datos transaccionales, se eliminan el 100% de las planillas de Excel vulnerables y los registros manuales no autorizados.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DIAPOSITIVA 3: CÓMO FUNCIONA EL SISTEMA (LOS 3 PILARES) -->
+            <section class="slide-frame">
+                <div class="slide-left" style="display: flex; flex-direction: column; justify-content: center;">
+                    <div class="tagline">
+                        <i data-lucide="cpu"></i> Los Tres Pilares
+                    </div>
+                    <h2>Arquitectura de <span>Funcionamiento</span></h2>
+                    <p class="description" style="font-size: 1.05rem; margin-bottom: 1.5rem;">
+                        ZEENTRA procesa la información de distribución bajo tres pilares fundamentales que aíslan el riesgo y potencian la velocidad operativa:
+                    </p>
+
+                    <div style="display:flex; flex-direction:column; gap:1rem; width: 100%;">
+                        <div style="background:rgba(255,255,255,0.01); border:1px solid var(--border-color); border-radius:14px; padding:0.95rem; display:flex; gap:0.75rem;">
+                            <div style="width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:rgba(0,242,254,0.1); color:var(--zeentra); flex-shrink:0;">
+                                <i data-lucide="bar-chart-3" style="width:20px; height:20px;"></i>
+                            </div>
+                            <div>
+                                <h4 style="font-size:0.95rem; font-weight:700; color:#fff; margin-bottom:0.15rem;">Aislamiento Estricto por Periodos</h4>
+                                <p style="font-size:0.8rem; color:var(--text-secondary); line-height:1.4;">Las métricas históricas de KPI se congelan mensualmente. Ningún registro extemporáneo puede alterar los indicadores consolidados de meses anteriores.</p>
+                            </div>
+                        </div>
+
+                        <div style="background:rgba(255,255,255,0.01); border:1px solid var(--border-color); border-radius:14px; padding:0.95rem; display:flex; gap:0.75rem;">
+                            <div style="width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:rgba(139,92,246,0.1); color:var(--accent); flex-shrink:0;">
+                                <i data-lucide="key-round" style="width:20px; height:20px;"></i>
+                            </div>
+                            <div>
+                                <h4 style="font-size:0.95rem; font-weight:700; color:#fff; margin-bottom:0.15rem;">Seguridad Multitenant Avanzada (RLS)</h4>
+                                <p style="font-size:0.8rem; color:var(--text-secondary); line-height:1.4;">Implementa Row Level Security en Base de Datos. La información de fletes y bancos de Zenú es invisible para los usuarios de Alpina o Fleischmann.</p>
+                            </div>
+                        </div>
+
+                        <div style="background:rgba(255,255,255,0.01); border:1px solid var(--border-color); border-radius:14px; padding:0.95rem; display:flex; gap:0.75rem;">
+                            <div style="width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:rgba(16,185,129,0.1); color:var(--success); flex-shrink:0;">
+                                <i data-lucide="landmark" style="width:20px; height:20px;"></i>
+                            </div>
+                            <div>
+                                <h4 style="font-size:0.95rem; font-weight:700; color:#fff; margin-bottom:0.15rem;">Conciliación Automatizada de Bancos</h4>
+                                <p style="font-size:0.8rem; color:var(--text-secondary); line-height:1.4;">El cajero ve exclusivamente las cuentas aprobadas para su marca asignada, forzando la subida obligatoria del comprobante de depósito.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="slide-right">
+                    <div class="glass-card" style="padding: 1.8rem; display:flex; flex-direction:column; gap:1.25rem;">
+                        <h4 style="font-size: 1.15rem; font-weight: 800; display:flex; align-items:center; gap:0.5rem; color:#fff;">
+                            <i data-lucide="shield-check" style="color:var(--zeentra)"></i> Flujo Operativo Consolidado
+                        </h4>
+                        <div style="position: relative; display: flex; flex-direction: column; gap: 0.85rem; background: rgba(0,0,0,0.2); padding: 1.2rem; border-radius: 14px; border: 1px solid var(--border-color);">
+                            <div style="display:flex; align-items:center; gap:0.75rem;">
+                                <span style="background:var(--zeentra); color:#030712; font-weight:900; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.75rem;">1</span>
+                                <span style="font-size:0.85rem; font-weight:700; color:#fff;">Carga de Rutas y Planillas de Despacho</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:0.75rem; margin-left: 0px;">
+                                <span style="background:var(--accent); color:#fff; font-weight:900; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.75rem;">2</span>
+                                <span style="font-size:0.85rem; font-weight:700; color:#fff;">Liquidación con Descuentos de Ley e ICA</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:0.75rem;">
+                                <span style="background:var(--success); color:#fff; font-weight:900; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.75rem;">3</span>
+                                <span style="font-size:0.85rem; font-weight:700; color:#fff;">Control de Recaudo de Caja vs Depósitos</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:0.75rem;">
+                                <span style="background:#fff; color:#030712; font-weight:900; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.75rem;">4</span>
+                                <span style="font-size:0.85rem; font-weight:700; color:#fff;">Métricas de Cumplimiento Gerencial</span>
+                            </div>
+                        </div>
+                        <div style="font-size:0.75rem; color:var(--text-secondary); text-align:center; background:rgba(255,255,255,0.02); padding:0.6rem; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                            💡 <strong>Todo conectado:</strong> La liquidación de un flete actualiza de inmediato el KPI de costos del tablero ejecutivo.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DIAPOSITIVA 4: ADAPTACIÓN POR MARCAS (LOS 3 PROVEEDORES) -->
+            <section class="slide-frame">
+                <div class="slide-left" style="justify-content: flex-start;">
+                    <div class="tagline">
+                        <i data-lucide="users"></i> Personalización por Marca
+                    </div>
+                    <h2>Adaptado a los <span>3 Proveedores</span></h2>
+                    <p class="description" style="margin-bottom: 1.2rem; font-size: 1.05rem;">
+                        Cada uno de los tres proveedores posee un ecosistema de cuentas bancarias, responsables administrativos y lógicas logísticas aisladas en el core:
+                    </p>
+
+                    <div class="brand-switcher-wrapper">
+                        <button class="brand-switch-btn active alpina" onclick="switchBrandPane('alpina')">Alpina</button>
+                        <button class="brand-switch-btn zenu" onclick="switchBrandPane('zenu')">Zenú</button>
+                        <button class="brand-switch-btn fleischmann" onclick="switchBrandPane('fleischmann')">Fleischmann</button>
+                    </div>
+
+                    <!-- ALPINA TAB PANE -->
+                    <div id="pane-alpina" class="brand-pane active alpina">
+                        <div class="brand-layout-grid">
+                            <div class="brand-highlights-list">
+                                <div class="bullet-point">
+                                    <div class="bullet-dot">1</div>
+                                    <div class="bullet-content">
+                                        <h5>Cajeras Asignadas</h5>
+                                        <p>Cuentas restringidas a bancos de Alpina gestionadas por <strong>Eliana</strong> y <strong>Nataly</strong>.</p>
+                                    </div>
+                                </div>
+                                <div class="bullet-point">
+                                    <div class="bullet-dot">2</div>
+                                    <div class="bullet-content">
+                                        <h5>Fletes de Cadena Fría</h5>
+                                        <p>Control exacto sobre la liquidación del peso térmico de carga y recargo de auxiliares en zonas complejas.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="brand-mini-badge">
+                                <i data-lucide="snowflake" style="width: 24px; height: 24px;"></i>
+                                <span>Cadena</span>
+                                <h4>Fría</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ZENÚ TAB PANE -->
+                    <div id="pane-zenu" class="brand-pane zenu">
+                        <div class="brand-layout-grid">
+                            <div class="brand-highlights-list">
+                                <div class="bullet-point">
+                                    <div class="bullet-dot">1</div>
+                                    <div class="bullet-content">
+                                        <h5>Cajera Designada</h5>
+                                        <p>Auditoría directa y flujo exclusivo para <strong>Cristina</strong> con selección forzada de bancos Zenú.</p>
+                                    </div>
+                                </div>
+                                <div class="bullet-point">
+                                    <div class="bullet-dot">2</div>
+                                    <div class="bullet-content">
+                                        <h5>Logística de Alto Tránsito</h5>
+                                        <p>Unificación de liquidaciones para múltiples vehículos y conductores urbanos TAT.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="brand-mini-badge">
+                                <i data-lucide="truck" style="width: 24px; height: 24px;"></i>
+                                <span>Canal</span>
+                                <h4>TAT</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FLEISCHMANN TAB PANE -->
+                    <div id="pane-fleischmann" class="brand-pane fleischmann">
+                        <div class="brand-layout-grid">
+                            <div class="brand-highlights-list">
+                                <div class="bullet-point">
+                                    <div class="bullet-dot">1</div>
+                                    <div class="bullet-content">
+                                        <h5>Fletes de Insumos e Levaduras</h5>
+                                        <p>Aplica tarifas fijas de transporte industrial intermunicipal con destino a la red Quindío.</p>
+                                    </div>
+                                </div>
+                                <div class="bullet-point">
+                                    <div class="bullet-dot">2</div>
+                                    <div class="bullet-content">
+                                        <h5>Métricas Consolidadas</h5>
+                                        <p>Visualización separada de la rentabilidad del transporte industrial sin mezclar flujos de alimentos.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="brand-mini-badge">
+                                <i data-lucide="package" style="width: 24px; height: 24px;"></i>
+                                <span>Tarifa</span>
+                                <h4>Industrial</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="slide-right">
+                    <div class="glass-card" style="padding: 1.8rem; text-align: center; height: 100%; display:flex; flex-direction:column; justify-content:center;">
+                        <h4 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 1.25rem; color:#fff;" id="brandCardTitle">Políticas Operativas Alpina</h4>
+                        <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 14px; padding: 1.5rem; text-align: left;" id="brandCardContent">
+                            <div style="display:flex; justify-content:space-between; margin-bottom: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem;">
+                                <span style="color:var(--text-secondary); font-size:0.8rem; font-weight:700;">Canal Validado</span>
+                                <span style="color:var(--brand-alpina); font-weight:800; font-size:0.8rem;" id="brandCardBadge">Refrigerados Masivos</span>
+                            </div>
+                            <p style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary);">
+                                El sistema unifica automáticamente el cobro volumétrico de Alpina, descontando tasas impositivas en origen y exigiendo que las cajeras Nataly y Eliana carguen los depósitos bancarios antes del cierre de planilla.
+                            </p>
+                        </div>
+                        <div style="margin-top: 1.5rem; font-size: 0.75rem; color: var(--text-muted); display:flex; align-items:center; justify-content:center; gap:0.5rem;">
+                            <i data-lucide="lock" style="width:12px; height:12px; color:var(--zeentra)"></i>
+                            Aislamiento multitenant por políticas de base de datos
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DIAPOSITIVA 5: DEMO INTERACTIVO Y SIMULADOR EN VIVO -->
+            <section class="slide-frame">
+                <div class="slide-left" style="display:flex; flex-direction:column; justify-content:center;">
+                    <div class="tagline">
+                        <i data-lucide="play"></i> Simulador En Vivo
+                    </div>
+                    <h2>¡Pruebe el <span>Motor ZEENTRA</span>!</h2>
+                    <p class="description" style="font-size: 1rem; margin-bottom: 1.2rem;">
+                        Simule el comportamiento del sistema seleccionando una marca y ejecutando una acción operativa para ver cómo reacciona la base de datos en tiempo real:
+                    </p>
+
+                    <div class="sim-control-panel">
+                        <div class="form-row">
+                            <label>1. Seleccione la Marca</label>
+                            <select class="form-select" id="simBrandSelect" onchange="syncSimulatorBrand()">
+                                <option value="alpina">Alpina (Eliana / Nataly)</option>
+                                <option value="zenu">Zenú (Cristina)</option>
+                                <option value="fleischmann">Fleischmann (Logística Industrial)</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <label>2. Módulo a Simular</label>
+                            <select class="form-select" id="simModuleSelect" onchange="syncSimulatorModule()">
+                                <option value="kpis">Tablero de Indicadores (Exactitud & Quiebres)</option>
+                                <option value="consignaciones">Caja y Consignaciones Bancarias</option>
+                                <option value="fletes">Cálculo y Liquidación de Fletes</option>
+                            </select>
+                        </div>
+                        <div class="form-row" id="simDynamicInputRow">
+                            <label id="simDynamicInputLabel">Métrica de Venta Mensual (COP)</label>
+                            <input type="number" class="form-input" id="simDynamicInputValue" value="120000000" step="5000000">
+                        </div>
+                        <button class="form-btn" onclick="executeZeentraSimulation()">
+                            <i data-lucide="play"></i> Procesar Transacción en Zeentra
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="slide-right">
+                    <div class="live-visualizer-card" id="simVisualizerCard">
+                        <div class="visualizer-top">
+                            <div>
+                                <h4 style="font-size: 0.95rem; font-weight: 800; color: #fff;" id="visHeaderTitle">ZEENTRA - CORE MONITOR</h4>
+                                <span style="font-size: 0.65rem; color: var(--text-muted);" id="visHeaderSubtitle">Base de Datos: Segura</span>
+                            </div>
+                            <div class="system-status-indicator" id="visStatusBadge">
+                                <span></span> ACTIVO
+                            </div>
+                        </div>
+
+                        <div class="visualizer-body" id="visBodyArea">
+                            <!-- Dynamically loaded indicators based on simulated module -->
+                            <div class="kpi-row-display">
+                                <div class="kpi-mini-card">
+                                    <span>Exactitud de Inventario</span>
+                                    <h4 id="visKpi1">97.8%</h4>
+                                    <div class="metric-progress-bar">
+                                        <div class="metric-progress-bar-fill" id="visProgress1" style="width: 97.8%"></div>
+                                    </div>
+                                </div>
+                                <div class="kpi-mini-card">
+                                    <span>Quiebres de Stock</span>
+                                    <h4 id="visKpi2" style="color: var(--danger)">2.1%</h4>
+                                    <div class="metric-progress-bar">
+                                        <div class="metric-progress-bar-fill" id="visProgress2" style="width: 2.1%; background: var(--danger)"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="console-log-area" id="visConsoleLog">
+                            <div class="console-log-row info">&gt; Consola de auditoría iniciada...</div>
+                            <div class="console-log-row">&gt; Seleccione opciones a la izquierda y presione Procesar.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DIAPOSITIVA 6: MÉTRICAS Y BENEFICIOS FINALES -->
+            <section class="slide-frame slide-full">
+                <div class="slide-left" style="align-items: center; text-align: center; max-width: 950px; display: flex; flex-direction: column;">
+                    <div class="tagline">
+                        <i data-lucide="bar-chart-3"></i> Retorno y Beneficios
+                    </div>
+                    <h1>El Impacto de <span>ZEENTRA</span> en Cifras</h1>
+                    <p class="description">
+                        Al unificar las tres marcas en una plataforma robusta y modular, ZEENTRA genera beneficios inmediatos y comprobados en la salud contable y logística de la compañía:
+                    </p>
+
+                    <div class="deck-metrics-grid">
+                        <div class="deck-metric-box" style="border-top: 4px solid var(--zeentra);">
+                            <div class="deck-metric-num">0%</div>
+                            <h3 class="deck-metric-title">Fugas Contables</h3>
+                            <p class="deck-metric-desc">Gracias al bloqueo estricto de digitación manual de fletes y la validación obligatoria de consignaciones.</p>
+                        </div>
+                        <div class="deck-metric-box" style="border-top: 4px solid var(--accent);">
+                            <div class="deck-metric-num">100%</div>
+                            <h3 class="deck-metric-title">Aislamiento Multimarca</h3>
+                            <p class="deck-metric-desc">Seguridad de datos garantizada. Alpina, Zenú y Fleischmann jamás mezclan información operativa.</p>
+                        </div>
+                        <div class="deck-metric-box" style="border-top: 4px solid var(--success);">
+                            <div class="deck-metric-num">-90%</div>
+                            <h3 class="deck-metric-title">Tiempo de Conciliación</h3>
+                            <p class="deck-metric-desc">Los informes contables se calculan y generan al instante en PDF listos para autorizar.</p>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 2rem; display: flex; gap: 1.5rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+                            <i data-lucide="check-circle" style="color: var(--success); width: 18px; height: 18px;"></i> Tablero Ejecutivo Actualizado
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+                            <i data-lucide="check-circle" style="color: var(--success); width: 18px; height: 18px;"></i> Auditoría de Bancos Habilitada
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+                            <i data-lucide="check-circle" style="color: var(--success); width: 18px; height: 18px;"></i> Despacho Seguro e Independiente
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Bottom Navigation Controls -->
+    <footer class="bottom-navbar">
+        <span class="counter-label" id="slideCounterLabel">Diapositiva 1 de 6</span>
+        <div class="control-btns">
+            <button class="circle-btn" id="prevSlideBtn" onclick="stepSlide(-1)">
+                <i data-lucide="arrow-left"></i>
+            </button>
+            <button class="circle-btn" id="nextSlideBtn" onclick="stepSlide(1)">
+                <i data-lucide="arrow-right"></i>
+            </button>
+        </div>
+    </footer>
+
+    <script>
+        // Start Lucide Icons
+        lucide.createIcons();
+
+        // Slides handling logic
+        let slideIndex = 0;
+        const totalSlidesCount = document.querySelectorAll('.slide-frame').length;
+        const slidesLane = document.getElementById('slidesLane');
+        const slideProgress = document.getElementById('slideProgress');
+        const slideCounterLabel = document.getElementById('slideCounterLabel');
+        const prevSlideBtn = document.getElementById('prevSlideBtn');
+        const nextSlideBtn = document.getElementById('nextSlideBtn');
+        const slideFrames = document.querySelectorAll('.slide-frame');
+
+        function updateSlideUI() {
+            slidesLane.style.transform = `translateX(-${slideIndex * 100}%)`;
+            
+            // Set active class
+            slideFrames.forEach((frame, idx) => {
+                if (idx === slideIndex) {
+                    frame.classList.add('active');
+                } else {
+                    frame.classList.remove('active');
+                }
+            });
+
+            // Slide progress bar update
+            const progressPct = ((slideIndex + 1) / totalSlidesCount) * 100;
+            slideProgress.style.width = `${progressPct}%`;
+
+            // Counter label update
+            slideCounterLabel.textContent = `Diapositiva ${slideIndex + 1} de ${totalSlidesCount}`;
+
+            // Buttons state
+            prevSlideBtn.disabled = slideIndex === 0;
+            nextSlideBtn.disabled = slideIndex === totalSlidesCount - 1;
+
+            // Trigger action on simulator slide
+            if (slideIndex === 4) {
+                initializeSimulatorView();
+            }
+        }
+
+        function stepSlide(dir) {
+            slideIndex += dir;
+            if (slideIndex < 0) slideIndex = 0;
+            if (slideIndex >= totalSlidesCount) slideIndex = totalSlidesCount - 1;
+            updateSlideUI();
+        }
+
+        // Key listeners
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                if (slideIndex < totalSlidesCount - 1) stepSlide(1);
+            } else if (e.key === 'ArrowLeft') {
+                if (slideIndex > 0) stepSlide(-1);
+            }
+        });
+
+        // Slide 2: Feature description cards
+        const featuresTextData = [
+            {
+                title: "Tablero de Indicadores Directivos",
+                desc: "ZEENTRA ofrece cuadros de mando en tiempo real que miden los indicadores más vitales de la operación logística. Permite comparar al instante los niveles de Exactitud (efectividad en entrega) y Quiebres de Stock de cada marca para tomar decisiones estratégicas de inmediato sin esperar reportes mensuales."
+            },
+            {
+                title: "Gestión Segura de Consignaciones",
+                desc: "Diseñado para blindar los recaudos de caja. Cuando un cajero (como Cristina para Zenú, o Eliana/Nataly para Alpina) ingresa una transacción, ZEENTRA pre-filtra los bancos válidos según la marca. La interfaz exige subir el comprobante digital y restringe cualquier eliminación maliciosa de registros."
+            },
+            {
+                title: "Liquidación de Fletes sin Fugas",
+                desc: "Un motor automatizado que liquida de forma exacta las tarifas de transporte contratistas TAT y TYM. Cruza zonas, poblados, auxiliares asignados, calcula automáticamente retenciones fiscales como ReteFuente (4%) y ReteICA (0.966%), y agrupa múltiples placas bajo un mismo NIT en PDFs auditables."
+            }
+        ];
+
+        function activateFeature(idx) {
+            const features = document.querySelectorAll('.interactive-feature');
+            features.forEach((feat, index) => {
+                if (index === idx) {
+                    feat.classList.add('active');
+                } else {
+                    feat.classList.remove('active');
+                }
+            });
+
+            const panel = document.getElementById('purposeCardPanel');
+            const data = featuresTextData[idx];
+
+            panel.style.opacity = 0;
+            setTimeout(() => {
+                panel.innerHTML = `
+                    <div style="text-align: left; padding: 0.5rem; animation: tabFadeIn 0.3s ease;">
+                        <span style="color:var(--zeentra); font-weight:800; font-size:0.75rem; text-transform:uppercase; display:block; margin-bottom:0.75rem; letter-spacing:1px;">Detalle del Módulo</span>
+                        <h3 style="font-size: 1.35rem; margin-bottom: 1rem; color:#fff;">${data.title}</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; margin-bottom:1.5rem;">${data.desc}</p>
+                        <div style="background:rgba(255,255,255,0.02); padding:0.8rem; border-radius:12px; border:1px solid var(--border-color)">
+                            <code style="font-size:0.75rem; color:var(--zeentra); display:block; font-family: monospace;">// ZEENTRA Core CoreModule Secured Validation<br>Status: OK - Isolated Brand Instance Validated<br>Operation: Encrypted & Audited</code>
+                        </div>
+                    </div>
+                `;
+                panel.style.opacity = 1;
+                lucide.createIcons();
+            }, 200);
+        }
+
+        // Slide 4: Brand tabs
+        const brandPaneData = {
+            alpina: {
+                title: "Políticas Operativas Alpina",
+                desc: "El sistema unifica automáticamente el cobro volumétrico de Alpina, descontando tasas impositivas en origen y exigiendo que las cajeras Nataly y Eliana carguen los depósitos bancarios antes del cierre de planilla.",
+                badge: "Refrigerados Masivos",
+                color: "var(--brand-alpina)"
+            },
+            zenu: {
+                title: "Políticas Operativas Zenú",
+                desc: "Diseñado para la distribución intensiva Tienda a Tienda. Permite a la cajera Cristina auditar depósitos contra el dinero físico recaudado por ruta de entrega diaria, consolidando la información de manera limpia e instantánea.",
+                badge: "Canal TAT Urbano",
+                color: "var(--brand-zenu)"
+            },
+            fleischmann: {
+                title: "Políticas Operativas Fleischmann",
+                desc: "Pensado para la distribución industrial de levaduras y materias primas. Mantiene activo el tarifario pre-negociado de la ruta industrial Quindío para evitar cualquier cobro manual fraudulento por parte de transportadoras.",
+                badge: "Canal Industrial",
+                color: "var(--brand-fleischmann)"
+            }
+        };
+
+        function switchBrandPane(brand) {
+            // Tab buttons
+            const buttons = document.querySelectorAll('.brand-switch-btn');
+            buttons.forEach(btn => {
+                if (btn.classList.contains(brand)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Tab panes
+            const panes = document.querySelectorAll('.brand-pane');
+            panes.forEach(pane => {
+                if (pane.classList.contains(brand)) {
+                    pane.classList.add('active');
+                } else {
+                    pane.classList.remove('active');
+                }
+            });
+
+            // Update content panel
+            const data = brandPaneData[brand];
+            const title = document.getElementById('brandCardTitle');
+            const content = document.getElementById('brandCardContent');
+
+            title.textContent = data.title;
+            title.style.color = `var(--brand-${brand})`;
+            content.innerHTML = `
+                <div style="display:flex; justify-content:space-between; margin-bottom: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; animation: tabFadeIn 0.3s ease;">
+                    <span style="color:var(--text-secondary); font-size:0.8rem; font-weight:700;">Canal Validado</span>
+                    <span style="color:${data.color}; font-weight:800; font-size:0.8rem;">${data.badge}</span>
+                </div>
+                <p style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); animation: tabFadeIn 0.3s ease;">
+                    ${data.desc}
+                </p>
+            `;
+        }
+
+        // Slide 5: Simulator Core Logic
+        const brandMockData = {
+            alpina: {
+                kpis: { exactitud: '98.2%', quiebres: '1.8%', log: 'Alpina dashboard cargado. Analizando periodo Mayo 2026.' },
+                consignaciones: { label: 'Subir Comprobante Alpina', val: '$45,890,000 COP', log: 'Validación de bancos de Alpina activa (Bancolombia Recaudo). Cajeras Eliana/Nataly autorizadas.' },
+                fletes: { label: 'Ruta Fría - Placas', val: '$12,450,000 COP', log: 'Liquidación masiva de fletes para Alpina con retención automatizada del 4.96% aplicada.' }
+            },
+            zenu: {
+                kpis: { exactitud: '96.5%', quiebres: '3.4%', log: 'Zenú dashboard cargado. Reportando canal TAT.' },
+                consignaciones: { label: 'Recaudo Cajera Cristina', val: '$62,400,000 COP', log: 'Cajera Cristina en línea. Forzando comprobante de depósito obligatorio para Banco de Bogotá.' },
+                fletes: { label: 'Ruta TAT Urbana', val: '$8,920,000 COP', log: 'Unificación de planillas Zenú procesada. 14 vehículos urbanos liquidados con éxito.' }
+            },
+            fleischmann: {
+                kpis: { exactitud: '99.1%', quiebres: '0.9%', log: 'Fleischmann industrial cargado. Canal levaduras.' },
+                consignaciones: { label: 'Depósitos Insumos', val: '$18,340,000 COP', log: 'Validación de depósitos para Fleischmann activa (Banco de Occidente Recaudos).' },
+                fletes: { label: 'Flete Ruta Quindío', val: '$5,800,000 COP', log: 'Aplicando tarifario de fletes fijos pre-negociados de Fleischmann Quindío. $0 COP cobros manuales.' }
+            }
+        };
+
+        function initializeSimulatorView() {
+            syncSimulatorBrand();
+        }
+
+        function syncSimulatorBrand() {
+            const brand = document.getElementById('simBrandSelect').value;
+            const module = document.getElementById('simModuleSelect').value;
+            
+            const visHeaderTitle = document.getElementById('visHeaderTitle');
+            const visHeaderSubtitle = document.getElementById('visHeaderSubtitle');
+            
+            visHeaderTitle.textContent = `ZEENTRA - ${brand.toUpperCase()} ENGINE`;
+            visHeaderSubtitle.textContent = `Políticas Multi-Tenant: Habilitadas`;
+            
+            // Highlight color base
+            const visBadge = document.getElementById('visStatusBadge');
+            let color = 'var(--zeentra)';
+            if (brand === 'alpina') color = 'var(--brand-alpina)';
+            if (brand === 'zenu') color = 'var(--brand-zenu)';
+            if (brand === 'fleischmann') color = 'var(--brand-fleischmann)';
+            visBadge.style.color = color;
+            visBadge.style.borderColor = color;
+            visBadge.querySelector('span').style.backgroundColor = color;
+            visBadge.querySelector('span').style.boxShadow = `0 0 8px ${color}`;
+
+            syncSimulatorModule();
+        }
+
+        function syncSimulatorModule() {
+            const brand = document.getElementById('simBrandSelect').value;
+            const module = document.getElementById('simModuleSelect').value;
+            const labelEl = document.getElementById('simDynamicInputLabel');
+            const valInput = document.getElementById('simDynamicInputValue');
+            const dynamicRow = document.getElementById('simDynamicInputRow');
+            
+            dynamicRow.style.display = 'flex';
+
+            if (module === 'kpis') {
+                labelEl.textContent = 'Métrica Venta Estimada (COP)';
+                valInput.type = 'number';
+                valInput.value = '120000000';
+            } else if (module === 'consignaciones') {
+                labelEl.textContent = 'Monto del Depósito Bancario (COP)';
+                valInput.type = 'number';
+                valInput.value = '24500000';
+            } else if (module === 'fletes') {
+                labelEl.textContent = 'Número de Placas a Liquidar';
+                valInput.type = 'number';
+                valInput.value = '8';
+            }
+        }
+
+        function executeZeentraSimulation() {
+            const brand = document.getElementById('simBrandSelect').value;
+            const module = document.getElementById('simModuleSelect').value;
+            const inputValue = parseFloat(document.getElementById('simDynamicInputValue').value) || 0;
+            
+            const bodyArea = document.getElementById('visBodyArea');
+            const consoleLog = document.getElementById('visConsoleLog');
+            
+            const data = brandMockData[brand][module];
+
+            // Clean log and simulate writing speed
+            consoleLog.innerHTML = `<div class="console-log-row info">&gt; Conexión segura establecida con la base de datos de ${brand.toUpperCase()}...</div>`;
+            
+            setTimeout(() => {
+                const row2 = document.createElement('div');
+                row2.className = 'console-log-row';
+                row2.textContent = `> Verificando políticas RLS para ${brand.toUpperCase()}... AUTORIZADO.`;
+                consoleLog.appendChild(row2);
+            }, 300);
+
+            setTimeout(() => {
+                const row3 = document.createElement('div');
+                row3.className = 'console-log-row warning';
+                row3.textContent = `> [MÓDULO ${module.toUpperCase()}] ${data.log}`;
+                consoleLog.appendChild(row3);
+            }, 600);
+
+            setTimeout(() => {
+                const row4 = document.createElement('div');
+                row4.className = 'console-log-row success';
+                row4.textContent = `> Transacción finalizada y guardada. ID único: txn_${brand}_${Math.floor(Math.random()*900000+100000)}`;
+                consoleLog.appendChild(row4);
+                consoleLog.scrollTop = consoleLog.scrollHeight;
+            }, 900);
+
+            // Update visual body area
+            if (module === 'kpis') {
+                const exactVal = parseFloat(brandMockData[brand].kpis.exactitud);
+                const quiebreVal = parseFloat(brandMockData[brand].kpis.quiebres);
+
+                bodyArea.innerHTML = `
+                    <div class="kpi-row-display" style="animation: tabFadeIn 0.3s ease;">
+                        <div class="kpi-mini-card">
+                            <span>Exactitud de Inventario</span>
+                            <h4 style="color: var(--success);">${exactVal}%</h4>
+                            <div class="metric-progress-bar">
+                                <div class="metric-progress-bar-fill" id="fillKpi1" style="width: 0%; background: var(--success)"></div>
+                            </div>
+                        </div>
+                        <div class="kpi-mini-card">
+                            <span>Quiebres de Stock</span>
+                            <h4 style="color: var(--danger);">${quiebreVal}%</h4>
+                            <div class="metric-progress-bar">
+                                <div class="metric-progress-bar-fill" id="fillKpi2" style="width: 0%; background: var(--danger)"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                setTimeout(() => {
+                    document.getElementById('fillKpi1').style.width = `${exactVal}%`;
+                    document.getElementById('fillKpi2').style.width = `${quiebreVal}%`;
+                }, 50);
+            } 
+            
+            else if (module === 'consignaciones') {
+                bodyArea.innerHTML = `
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 1rem; border-radius: 12px; animation: tabFadeIn 0.3s ease;">
+                        <span style="font-size:0.65rem; color:var(--text-muted); font-weight:800; display:block; margin-bottom:0.25rem;">VALIDADOR DE CONSIGNACIONES</span>
+                        <h4 style="font-size: 1.15rem; color:#fff; font-weight:800; margin-bottom: 0.5rem;">Carga de Depósito Exitoso</h4>
+                        
+                        <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem; font-size:0.8rem;">
+                            <span style="color:var(--text-secondary)">Monto Transacción:</span>
+                            <span style="color:var(--success); font-weight:800;">$${inputValue.toLocaleString()} COP</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem; font-size:0.8rem;">
+                            <span style="color:var(--text-secondary)">Banco Destino:</span>
+                            <span style="color:#fff; font-weight:700;">${brand === 'alpina' ? 'Bancolombia Recaudo' : brand === 'zenu' ? 'Banco de Bogotá' : 'Banco de Occidente'}</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+                            <span style="color:var(--text-secondary)">Estado de Comprobante:</span>
+                            <span style="color:var(--success); font-weight:800; display:flex; align-items:center; gap:0.25rem;">
+                                <i data-lucide="image" style="width:14px; height:14px"></i> Subido & Auditado
+                            </span>
+                        </div>
+                    </div>
+                `;
+            } 
+            
+            else if (module === 'fletes') {
+                const subtotal = inputValue * 280000;
+                const reteFuente = subtotal * 0.04;
+                const reteIca = subtotal * 0.00966;
+                const neto = subtotal - reteFuente - reteIca;
+
+                bodyArea.innerHTML = `
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 0.95rem; border-radius: 12px; animation: tabFadeIn 0.3s ease;">
+                        <span style="font-size:0.65rem; color:var(--text-muted); font-weight:800; display:block; margin-bottom:0.25rem;">PREVISUALIZACIÓN DE PLANILLA PDF</span>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:0.3rem; font-size:0.8rem;">
+                            <span style="color:var(--text-secondary)">Placas Liquidadas:</span>
+                            <span style="color:#fff; font-weight:700;">${inputValue} Vehículos</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:0.3rem; font-size:0.8rem;">
+                            <span style="color:var(--text-secondary)">Subtotal Bruto:</span>
+                            <span style="color:#fff; font-weight:700;">$${subtotal.toLocaleString()} COP</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:0.3rem; font-size:0.8rem;">
+                            <span style="color:var(--text-muted)">Descuentos (ReteFuente + ICA):</span>
+                            <span style="color:var(--danger); font-weight:700;">- $${(reteFuente + reteIca).toLocaleString(undefined, {maximumFractionDigits: 0})} COP</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; border-top:1px dashed rgba(255,255,255,0.1); padding-top:0.4rem; font-size:0.85rem; font-weight:800; margin-top:0.4rem;">
+                            <span style="color:#fff;">Neto Autorizado:</span>
+                            <span style="color:var(--success);">$${neto.toLocaleString(undefined, {maximumFractionDigits: 0})} COP</span>
+                        </div>
+                    </div>
+                `;
+            }
+            setTimeout(() => {
+                lucide.createIcons();
+            }, 50);
+        }
+
+        // Initialize UI
+        updateSlideUI();
+    </script>
+</body>
+
+</html>

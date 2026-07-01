@@ -221,13 +221,13 @@ const LISTA_AUXILIARES_ALPINA = [
     "MICHAEL STEVEN HENAO RODRIGUEZ", "JUAN CAMILO COCOMA OROZCO", "GERMAN DANIEL PATIÑO VELASQUEZ",
     "JUAN DIEGO FRANCO VERGARA", "JAMMES ALBERTO RAMIREZ NIETO", "SEBASTIAN SALAZAR HENAO",
     "DANIEL FELIPE MURILLO GRANDA", "FELIPE MONTES RIVERA", "GUSTAVO ADOLFO MORALES TIRADO",
-    "JHONATAN MENA GALLEGO", "OSCAR MAURICIO GUARUMO CLAVIJO"
+    "OSCAR MAURICIO GUARUMO CLAVIJO"
 ];
 
 const LISTA_AUXILIARES_ZENU = [
     "CESAR AUGUSTO CASTILLO LONDOÑO", "JAMMES ALBERTO RAMIREZ NIETO", "SEBASTIAN SALAZAR HENAO",
     "DANIEL FELIPE MURILLO GRANDA", "FELIPE MONTES RIVERA", "GUSTAVO ADOLFO MORALES TIRADO",
-    "JHONATAN MENA GALLEGO", "OSCAR MAURICIO GUARUMO CLAVIJO"
+    "JEAN MICHAEL ZULUAGA", "OSCAR MAURICIO GUARUMO CLAVIJO"
 ];
 
 const LISTA_AUXILIARES_TAT = [
@@ -3634,40 +3634,60 @@ async function generarPDF() {
                     5: { cellWidth: 25, halign: 'center' }, 6: { cellWidth: 47, halign: 'right' }
                 };
             } else {
-                head = [['RUTA', 'PLACA', 'CONDUCTOR', 'AUXILIAR', '# PEDIDO', 'VR. PEDIDO', 'POBLACIÓN', 'VALOR FLETE', 'PARTICIPACIÓN', 'FIRMA CONDUCTOR']];
-                let totalRuta = 0, totalFlete = 0, totalPedidos = 0;
+                head = [['RUTA', 'PLACA', 'CONDUCTOR', 'AUXILIAR', 'VR. PEDIDO', 'POBLACIÓN', 'FLETE INICIAL', 'NEGOCIACIÓN', 'TOTAL FLETE FINAL', 'FIRMA']];
+                let totalRuta = 0, totalFleteInicial = 0, totalNegociacion = 0, totalFleteFinal = 0;
 
                 bodyData = fletesProv.map(f => {
                     const vRuta = f.valor_ruta || 0;
-                    const vFlete = f.precio || 0;
-                    const numPed = f.no_pedidos || 0;
-                    totalRuta += vRuta; totalFlete += vFlete; totalPedidos += numPed;
-                    const part = vRuta > 0 ? ((vFlete / vRuta) * 100).toFixed(1) + '%' : '0%';
-                    return [f.zona || '', f.placa, f.contratista, f.auxiliares || '', numPed,
-                    moneyFormatter.format(vRuta), f.poblacion || '', moneyFormatter.format(vFlete), part, ''];
+                    const vFleteFinal = f.precio || 0;
+                    const vNegociacion = f.valor_adicional_negociacion || 0;
+                    
+                    // Calcular flete inicial restando la negociación del total
+                    const vFleteInicial = vFleteFinal - vNegociacion;
+                    
+                    totalRuta += vRuta;
+                    totalFleteInicial += vFleteInicial;
+                    totalNegociacion += vNegociacion;
+                    totalFleteFinal += vFleteFinal;
+                    
+                    return [
+                        f.zona || '', 
+                        f.placa, 
+                        f.contratista, 
+                        f.auxiliares || '',
+                        moneyFormatter.format(vRuta), 
+                        f.poblacion || '', 
+                        moneyFormatter.format(vFleteInicial),
+                        moneyFormatter.format(vNegociacion),
+                        moneyFormatter.format(vFleteFinal),
+                        ''
+                    ];
                 });
 
                 grandTotalRuta += totalRuta;
-                grandTotalFlete += totalFlete;
-                grandTotalPedidos += totalPedidos;
+                grandTotalFlete += totalFleteFinal;
 
-                const pSub = totalRuta > 0 ? (totalFlete / totalRuta * 100).toFixed(1) + '%' : '0%';
                 bodyData.push([
                     { content: `SUBTOTAL ${provActual}`, colSpan: 4, styles: { fontStyle: 'bold', fillColor: [230, 240, 255], halign: 'right' } },
-                    { content: totalPedidos, styles: { fontStyle: 'bold', fillColor: [230, 240, 255] } },
-                    { content: moneyFormatter.format(totalRuta), styles: { fontStyle: 'bold', fillColor: [230, 240, 255] } },
+                    { content: moneyFormatter.format(totalRuta), styles: { fontStyle: 'bold', fillColor: [230, 240, 255], halign: 'right' } },
                     { content: '', styles: { fillColor: [230, 240, 255] } },
-                    { content: moneyFormatter.format(totalFlete), styles: { fontStyle: 'bold', fillColor: [230, 240, 255] } },
-                    { content: pSub, styles: { fontStyle: 'bold', fillColor: [230, 240, 255] } },
+                    { content: moneyFormatter.format(totalFleteInicial), styles: { fontStyle: 'bold', fillColor: [230, 240, 255], halign: 'right' } },
+                    { content: moneyFormatter.format(totalNegociacion), styles: { fontStyle: 'bold', fillColor: [230, 240, 255], halign: 'right' } },
+                    { content: moneyFormatter.format(totalFleteFinal), styles: { fontStyle: 'bold', fillColor: [230, 240, 255], halign: 'right' } },
                     { content: '', styles: { fillColor: [230, 240, 255] } }
                 ]);
 
                 columnStyles = {
-                    0: { cellWidth: 25 }, 1: { cellWidth: 18 }, 2: { cellWidth: 50 },
-                    3: { cellWidth: 35 }, 4: { cellWidth: 16, halign: 'center' },
-                    5: { cellWidth: 28, halign: 'right' }, 6: { cellWidth: 30 },
-                    7: { cellWidth: 28, halign: 'right' }, 8: { cellWidth: 22, halign: 'center' },
-                    9: { cellWidth: 25 }
+                    0: { cellWidth: 22 }, 
+                    1: { cellWidth: 18 }, 
+                    2: { cellWidth: 48 },
+                    3: { cellWidth: 35 }, 
+                    4: { cellWidth: 28, halign: 'right' }, 
+                    5: { cellWidth: 32 },
+                    6: { cellWidth: 26, halign: 'right' },
+                    7: { cellWidth: 26, halign: 'right' },
+                    8: { cellWidth: 26, halign: 'right' },
+                    9: { cellWidth: 36 }
                 };
             }
 
@@ -3709,42 +3729,13 @@ async function generarPDF() {
                 14, finalY
             );
         } else {
-            const pGrand = grandTotalRuta > 0 ? (grandTotalFlete / grandTotalRuta * 100).toFixed(1) + '%' : '0%';
             doc.text(
-                `TOTAL DÍA ${tituloFecha}:  VR. Ruta: ${moneyFormatter.format(grandTotalRuta)}   VR. Flete: ${moneyFormatter.format(grandTotalFlete)}   Participación: ${pGrand}`,
+                `TOTAL DÍA ${tituloFecha}:  VR. Ruta: ${moneyFormatter.format(grandTotalRuta)}   Total Flete: ${moneyFormatter.format(grandTotalFlete)}`,
                 14, finalY
             );
         }
 
-        // --- NOTAS DE NEGOCIACIÓN DEL DÍA ---
-        const negoDia = fletesDia.filter(f =>
-            (f.valor_adicional_negociacion || 0) > 0 ||
-            (f.razon_adicional_negociacion && f.razon_adicional_negociacion.trim() !== '' && f.razon_adicional_negociacion !== '-')
-        );
-        if (tipo === 'fletes' && negoDia.length > 0) {
-            finalY += 8;
-            doc.setFontSize(8);
-            doc.setFont(undefined, 'bold');
-            doc.text('Negociaciones:', 14, finalY);
-            doc.setFont(undefined, 'normal');
-            finalY += 5;
-
-            negoDia.forEach(neg => {
-                const pk = neg.vehiculo?.placa || neg.placa || 'N/A';
-                const mot = neg.razon_adicional_negociacion || 'Sin motivo';
-                const val = (neg.valor_adicional_negociacion || 0) > 0
-                    ? ` - ${moneyFormatter.format(neg.valor_adicional_negociacion)}`
-                    : '';
-                const line = `• ${pk} - ${mot}${val}`;
-                const parts = doc.splitTextToSize(line, 270);
-                if (finalY + (parts.length * 4) > 200) {
-                    doc.addPage();
-                    finalY = 20;
-                }
-                doc.text(parts, 14, finalY);
-                finalY += (parts.length * 4) + 1;
-            });
-        }
+        // --- NOTAS DE NEGOCIACIÓN DEL DÍA: ELIMINADAS ---
     }
 
     // Nombre del archivo con rango de fechas

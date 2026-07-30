@@ -449,6 +449,8 @@ async function checkAuth() {
         // Administradores ven ambos botones de exportación
         if (btnExportarExcel) btnExportarExcel.style.display = 'inline-flex';
         if (btnExportarPDF) btnExportarPDF.style.display = 'inline-flex';
+        const btnReporteAuxiliar = document.getElementById("btnReporteAuxiliar");
+        if (btnReporteAuxiliar) btnReporteAuxiliar.style.display = 'inline-flex';
     } else if (role === 'caja') {
         // PERFIL CAJA (SOLO DOWNLOADS, SIN NAVS, DASHBOARD ESPECIAL)
         // Hide Entire Sidebar and Header
@@ -3752,6 +3754,263 @@ async function generarPDF() {
         color: '#fff'
     });
 }
+
+// ==========================================================
+// 👷 REPORTE HORAS EXTRAS AUXILIAR
+// ==========================================================
+
+// Tabla de horas extras por población (fija según definición del negocio)
+const HORAS_EXTRAS_POBLACION = {
+    "AGUADAS PACORA": 2,
+    "ALCALA ULLOA": 2,
+    "ANSERMA": 2,
+    "ANSERMA NUEVO 2T": 2,
+    "APIA": 2,
+    "ARABIA ALTAGRACIA": 1,
+    "ARANZAZU FILADELFIA": 2,
+    "ARGELIA EL CAIRO": 2,
+    "ARMENIA": 2,
+    "ARMENIA FLEISCHMANN": 2,
+    "ARMENIA SUPERMERCADO": 2,
+    "BALBOA LA CELIA": 2,
+    "BELEN DE UMBRIA": 2,
+    "CAICEDONIA": 2,
+    "CAIMO BARCELONA": 2,
+    "CALARCA": 1,
+    "CALARCA SUPERMERCADO": 2,
+    "CARTAGO": 1,
+    "CHINCHINA": 1,
+    "CHINCHINA SUPERMERCADO": 1,
+    "CIRCASIA": 1,
+    "CORDOBA PIJAO BVISTA": 2,
+    "EL AGUILA": 2,
+    "EL AGUILA VILLA NUEVA": 2,
+    "FILANDIA": 2,
+    "GENOVA": 2,
+    "GUATICA": 2,
+    "IRRA LA FELISA VER RIOSUCIO": 2,
+    "LA VIRGINIA": 2,
+    "MANIZALES SUPERMERCADO": 2,
+    "MANIZALES VILLAMARIA": 2,
+    "MARMATO": 2,
+    "MARMATO LA MERCED": 2,
+    "MARSELLA": 1,
+    "MISTRATO": 2,
+    "MONTENEGRO": 1,
+    "MONTENEGRO PTAPAO": 2,
+    "NEIRA": 2,
+    "PACORA SALAMINA": 2,
+    "PALESTINA ARAUCA": 2,
+    "PEREIRA FLEISCHMANN": 0,
+    "PEREIRA-DOSQUEBRADAS": 0,
+    "PEREIRA - DOSQUEBRADAS": 0,
+    "PUEBLO RICO": 2,
+    "QUIMBAYA": 2,
+    "QUINCHIA": 2,
+    "RDA S JOSE BELALCAZAR": 2,
+    "RIOSUCIO": 2,
+    "RIOSUCIO-SUPIA SUPERMERCADO": 2,
+    "SALENTO": 2,
+    "SANTA CECILIA": 2,
+    "SANTA ROSA": 0,
+    "SANTA ROSA FLEISCHMANN": 0,
+    "SANTUARIO": 2,
+    "SUPIA": 2,
+    "TEBAIDA": 2,
+    "VITERBO": 2,
+};
+
+async function generarReporteAuxiliar() {
+    const hoy = new Date().toISOString().split('T')[0];
+    const primerDiaMes = hoy.substring(0, 8) + '01';
+
+    const { value: form } = await Swal.fire({
+        title: '👷 Reporte Horas Extras',
+        background: '#1e293b',
+        color: '#fff',
+        width: '480px',
+        html: `
+            <div style="text-align:left; padding: 10px 0;">
+                <div style="margin-bottom:16px;">
+                    <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Fecha inicio:</label>
+                    <input id="rep-inicio" type="date" class="swal2-input" value="${primerDiaMes}" style="width:100%; margin:0;">
+                </div>
+                <div style="margin-bottom:4px;">
+                    <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Fecha fin:</label>
+                    <input id="rep-fin" type="date" class="swal2-input" value="${hoy}" style="width:100%; margin:0;">
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Generar Reporte',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+            const inicio = document.getElementById('rep-inicio').value;
+            const fin    = document.getElementById('rep-fin').value;
+            if (!inicio || !fin) { Swal.showValidationMessage('Selecciona las fechas'); return false; }
+            if (inicio > fin)    { Swal.showValidationMessage('La fecha inicio no puede ser mayor a la fin'); return false; }
+            return { inicio, fin };
+        }
+    });
+
+    if (!form) return;
+    const { inicio, fin } = form;
+
+    Swal.fire({
+        title: 'Generando reporte...',
+        allowOutsideClick: false,
+        background: '#1e293b',
+        color: '#fff',
+        didOpen: () => Swal.showLoading()
+    });
+
+    // Traer todos los fletes ALPINA/FLEISCHMANN del período
+    const { data: fletes, error } = await SupabaseClient.supabase
+        .from('fletes')
+        .select('fecha, dia, poblacion, auxiliares, proveedor')
+        .gte('fecha', inicio)
+        .lte('fecha', fin)
+        .in('proveedor', ['ALPINA', 'FLEISCHMANN'])
+        .order('fecha', { ascending: true })
+        .limit(5000);
+
+    if (error) {
+        return Swal.fire({ icon: 'error', title: 'Error', text: error.message, background: '#1e293b', color: '#fff' });
+    }
+
+    if (!fletes || fletes.length === 0) {
+        return Swal.fire({ icon: 'info', title: 'Sin datos', text: `No hay fletes ALPINA en el período.`, background: '#1e293b', color: '#fff' });
+    }
+
+    // ── Normalizar campo auxiliares ──────────────────────────────
+    const extraerNombres = (raw) => {
+        if (!raw) return [];
+        let texto = raw.toUpperCase();
+        // Remover patrón "N (" al inicio: "1 (", "2 ("
+        texto = texto.replace(/^\d+\s*\(/, '').replace(/\)$/, '');
+        // Remover paréntesis residuales
+        texto = texto.replace(/[()]/g, '');
+        // Separar por coma y normalizar espacios internos (múltiples → uno)
+        return texto.split(',')
+            .map(n => n.trim().replace(/\s+/g, ' '))
+            .filter(n => n.length > 0);
+    };
+
+    // ── Construir índice: fecha+nombre → flete ───────────────────
+    // Esto evita contar el mismo flete dos veces si un auxiliar aparece
+    // en dos fletes el mismo día
+    const auxiliaresConocidos = LISTA_AUXILIARES_ALPINA
+        .filter(a => a !== 'NO APLICA')
+        .sort();
+
+    const dataPorAuxiliar = {};
+
+    auxiliaresConocidos.forEach(aux => {
+        const auxNorm = aux.trim().toUpperCase().replace(/\s+/g, ' ');
+        // Obtener las palabras del apellido (última y penúltima)
+        const partes = auxNorm.split(' ');
+        // Usamos las últimas 2 palabras (apellidos) para match flexible
+        const apellido1 = partes.length >= 2 ? partes[partes.length - 2] : partes[0];
+        const apellido2 = partes[partes.length - 1];
+
+        const filas = [];
+        const fechasVistas = new Set();
+
+        fletes.forEach(f => {
+            const nombres = extraerNombres(f.auxiliares);
+            // Verificar si alguno de los nombres extraídos contiene ambos apellidos
+            const encontrado = nombres.some(n => {
+                // Match: el nombre debe contener los dos apellidos del auxiliar
+                return n.includes(apellido1) && n.includes(apellido2);
+            });
+            if (!encontrado) return;
+
+            const pobNorm = (f.poblacion || '').trim().toUpperCase();
+            const horas = HORAS_EXTRAS_POBLACION[pobNorm] ??
+                          HORAS_EXTRAS_POBLACION[f.poblacion] ?? 0;
+
+            fechasVistas.add(f.fecha);
+            filas.push({
+                fecha:     f.fecha,
+                dia:       f.dia || '',
+                poblacion: f.poblacion || '',
+                horas
+            });
+        });
+
+        if (filas.length > 0) {
+            const totalHoras = filas.reduce((s, r) => s + r.horas, 0);
+            dataPorAuxiliar[aux] = {
+                filas,
+                totalHoras,
+                diasUnicos: fechasVistas.size
+            };
+        }
+    });
+
+    if (Object.keys(dataPorAuxiliar).length === 0) {
+        return Swal.fire({ icon: 'info', title: 'Sin resultados', text: 'Ningún auxiliar aparece en fletes del período.', background: '#1e293b', color: '#fff' });
+    }
+
+    // ── Construir Excel ──────────────────────────────────────────
+    const wb = XLSX.utils.book_new();
+
+    // Hoja RESUMEN
+    const resumenData = [
+        [`RESUMEN HORAS EXTRAS AUXILIARES ALPINA — ${inicio} al ${fin}`],
+        [],
+        ['AUXILIAR', 'DÍAS TRABAJADOS', 'TOTAL HORAS EXTRAS'],
+    ];
+    Object.entries(dataPorAuxiliar).forEach(([aux, { diasUnicos, totalHoras }]) => {
+        resumenData.push([aux, diasUnicos, totalHoras]);
+    });
+    const wsResumen = XLSX.utils.aoa_to_sheet(resumenData);
+    wsResumen['!cols'] = [{ wch: 42 }, { wch: 18 }, { wch: 20 }];
+    wsResumen['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 2 } }];
+    XLSX.utils.book_append_sheet(wb, wsResumen, 'RESUMEN');
+
+    // Una hoja por auxiliar
+    Object.entries(dataPorAuxiliar).forEach(([aux, { filas, totalHoras, diasUnicos }]) => {
+        const wsData = [
+            [aux],
+            [`Período: ${inicio} al ${fin}  |  Días trabajados: ${diasUnicos}`],
+            [],
+            ['FECHA', 'DÍA', 'POBLACIÓN / RUTA', 'HORAS EXTRAS'],
+        ];
+        filas.forEach(f => wsData.push([f.fecha, f.dia, f.poblacion, f.horas]));
+        wsData.push([]);
+        wsData.push(['', '', 'TOTAL HORAS EXTRAS:', totalHoras]);
+
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        ws['!cols'] = [{ wch: 14 }, { wch: 12 }, { wch: 38 }, { wch: 16 }];
+        ws['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } },
+        ];
+
+        // Nombre único de pestaña (máx 31 chars Excel)
+        let nombreHoja = aux.split(' ').slice(0, 3).join(' ').substring(0, 31);
+        let intento = nombreHoja;
+        let cnt = 1;
+        while (wb.SheetNames.includes(intento)) {
+            intento = nombreHoja.substring(0, 28) + ` ${cnt++}`;
+        }
+        XLSX.utils.book_append_sheet(wb, ws, intento);
+    });
+
+    XLSX.writeFile(wb, `HorasExtras_${inicio}_${fin}.xlsx`);
+
+    Swal.fire({
+        icon: 'success',
+        title: '¡Reporte generado!',
+        html: `<b>${Object.keys(dataPorAuxiliar).length}</b> auxiliares con actividad en el período`,
+        timer: 3000,
+        showConfirmButton: false,
+        background: '#1e293b',
+        color: '#fff'
+    });
+}
+
 // ==========================================================
 // 📊 GRÁFICOS (COLORFUL)
 // ==========================================================

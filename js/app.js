@@ -4003,60 +4003,29 @@ async function generarReporteAuxiliar() {
 // 💳 MÓDULO DE PAGOS (contabilidad / caja)
 // ==========================================================
 
-// Genera las quincenas de los últimos 6 meses para el selector
-function generarOpcionesQuincena() {
-    const sel = document.getElementById('pagos-quincena');
-    if (!sel || sel.options.length > 1) return; // ya poblado
-    const hoy = new Date();
-    const opciones = [];
-    for (let i = 0; i < 12; i++) {
-        const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        // Primera quincena: 01-15
-        opciones.push({
-            label: `1ª quincena ${d.toLocaleString('es', { month: 'long' })} ${y}`,
-            inicio: `${y}-${m}-01`,
-            fin: `${y}-${m}-15`
-        });
-        // Segunda quincena: 16-fin de mes
-        const ultimoDia = new Date(y, d.getMonth() + 1, 0).getDate();
-        opciones.push({
-            label: `2ª quincena ${d.toLocaleString('es', { month: 'long' })} ${y}`,
-            inicio: `${y}-${m}-16`,
-            fin: `${y}-${m}-${ultimoDia}`
-        });
-    }
-    opciones.forEach(o => {
-        const opt = document.createElement('option');
-        opt.value = JSON.stringify({ inicio: o.inicio, fin: o.fin });
-        opt.textContent = o.label;
-        sel.appendChild(opt);
-    });
-    // Seleccionar quincena actual por defecto
-    const dia = hoy.getDate();
-    const mesActual = String(hoy.getMonth() + 1).padStart(2, '0');
-    const anoActual = hoy.getFullYear();
-    const inicioAuto = dia <= 15
-        ? `${anoActual}-${mesActual}-01`
-        : `${anoActual}-${mesActual}-16`;
-    for (let opt of sel.options) {
-        try {
-            const v = JSON.parse(opt.value);
-            if (v.inicio === inicioAuto) { sel.value = opt.value; break; }
-        } catch (e) {}
-    }
+// Inicializa las fechas del módulo de pagos con el mes actual
+function initFechasPagos() {
+    const hoy  = new Date();
+    const yyyy = hoy.getFullYear();
+    const mm   = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dd   = String(hoy.getDate()).padStart(2, '0');
+    const desdeEl = document.getElementById('pagos-desde');
+    const hastaEl = document.getElementById('pagos-hasta');
+    if (desdeEl && !desdeEl.value) desdeEl.value = `${yyyy}-${mm}-01`;
+    if (hastaEl && !hastaEl.value) hastaEl.value = `${yyyy}-${mm}-${dd}`;
 }
 
-async function cargarModuloPagos() {
-    generarOpcionesQuincena();
-    const sel = document.getElementById('pagos-quincena');
-    const tbody = document.getElementById('tablaPagos');
-    const resumen = document.getElementById('pagos-resumen');
-    if (!sel || !sel.value) return;
+// La función generarOpcionesQuincena ya no es necesaria pero se conserva vacía por compatibilidad
+function generarOpcionesQuincena() {}
 
-    let quincena;
-    try { quincena = JSON.parse(sel.value); } catch (e) { return; }
+async function cargarModuloPagos() {
+    initFechasPagos();
+    const desde   = document.getElementById('pagos-desde')?.value || '';
+    const hasta   = document.getElementById('pagos-hasta')?.value || '';
+    const tbody   = document.getElementById('tablaPagos');
+    const resumen = document.getElementById('pagos-resumen');
+
+    if (!desde || !hasta) return;
 
     const proveedor = document.getElementById('pagos-proveedor')?.value || '';
     const estado    = document.getElementById('pagos-estado')?.value || '';
@@ -4066,8 +4035,8 @@ async function cargarModuloPagos() {
     let query = SupabaseClient.supabase
         .from('fletes')
         .select('id, fecha, dia, proveedor, contratista, placa, poblacion, precio, estado_pago, fecha_pago, pagado_por')
-        .gte('fecha', quincena.inicio)
-        .lte('fecha', quincena.fin)
+        .gte('fecha', desde)
+        .lte('fecha', hasta)
         .order('fecha', { ascending: true })
         .limit(2000);
 

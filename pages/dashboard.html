@@ -786,10 +786,15 @@
             <div class="card glass-card">
                 <div class="card-header flex-header">
                     <h2><i class="ri-bank-card-line"></i> Gestión de Pagos</h2>
-                    <div class="filters" style="gap: 10px; flex-wrap: wrap;">
-                        <select id="pagos-quincena" onchange="cargarModuloPagos()" class="input-modern">
-                            <option value="">Selecciona quincena...</option>
-                        </select>
+                    <div class="filters" style="gap: 10px; flex-wrap: wrap; align-items: center;">
+                        <label style="font-size:0.8rem; color:var(--text-muted); display:flex; align-items:center; gap:6px;">
+                            <i class="ri-calendar-line"></i> Desde:
+                            <input type="date" id="pagos-desde" onchange="cargarModuloPagos()" class="input-modern" style="width:140px;">
+                        </label>
+                        <label style="font-size:0.8rem; color:var(--text-muted); display:flex; align-items:center; gap:6px;">
+                            <i class="ri-calendar-line"></i> Hasta:
+                            <input type="date" id="pagos-hasta" onchange="cargarModuloPagos()" class="input-modern" style="width:140px;">
+                        </label>
                         <select id="pagos-proveedor" onchange="cargarModuloPagos()" class="input-modern" style="width:180px;">
                             <option value="">Todos los proveedores</option>
                             <option value="ALPINA">ALPINA</option>

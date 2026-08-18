@@ -89,6 +89,10 @@
             <a class="nav-item" data-tab="admin-crear" id="navCrearFlete">
                 <i class="ri-add-circle-line"></i> Crear Flete
             </a>
+            <!-- Tab Pagos (admin + caja) -->
+            <a class="nav-item" data-tab="pagos" id="navPagos" style="display:none;">
+                <i class="ri-bank-card-line"></i> Pagos
+            </a>
 
         </nav>
 
@@ -777,9 +781,84 @@
             </div>
         </section>
 
+        <!-- 💳 SECCIÓN PAGOS (admin + caja) -->
+        <section id="pagos" class="tab-content fade-in">
+            <div class="card glass-card">
+                <div class="card-header flex-header">
+                    <h2><i class="ri-bank-card-line"></i> Gestión de Pagos</h2>
+                    <div class="filters" style="gap: 10px; flex-wrap: wrap;">
+                        <select id="pagos-quincena" onchange="cargarModuloPagos()" class="input-modern">
+                            <option value="">Selecciona quincena...</option>
+                        </select>
+                        <select id="pagos-proveedor" onchange="cargarModuloPagos()" class="input-modern" style="width:180px;">
+                            <option value="">Todos los proveedores</option>
+                            <option value="ALPINA">ALPINA</option>
+                            <option value="FLEISCHMANN">FLEISCHMANN</option>
+                            <option value="ZENU">ZENU</option>
+                            <option value="UNILEVER">UNILEVER</option>
+                            <option value="FAMILIA">FAMILIA</option>
+                            <option value="POLAR">POLAR</option>
+                        </select>
+                        <select id="pagos-estado" onchange="cargarModuloPagos()" class="input-modern" style="width:150px;">
+                            <option value="">Todos</option>
+                            <option value="PENDIENTE">Pendientes</option>
+                            <option value="PAGADO">Pagados</option>
+                        </select>
+                    </div>
+                </div>
 
+                <!-- Resumen quincena -->
+                <div id="pagos-resumen" style="display:none; padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                    <div style="display:flex; gap:24px; flex-wrap:wrap;">
+                        <div style="background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); border-radius:8px; padding:12px 20px; text-align:center;">
+                            <div style="font-size:0.75rem; color: var(--text-muted);">PAGADOS</div>
+                            <div id="pagos-count-pagado" style="font-size:1.4rem; font-weight:700; color:#22c55e;">0</div>
+                            <div id="pagos-total-pagado" style="font-size:0.85rem; color:#22c55e;">$0</div>
+                        </div>
+                        <div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius:8px; padding:12px 20px; text-align:center;">
+                            <div style="font-size:0.75rem; color: var(--text-muted);">PENDIENTES</div>
+                            <div id="pagos-count-pendiente" style="font-size:1.4rem; font-weight:700; color:#ef4444;">0</div>
+                            <div id="pagos-total-pendiente" style="font-size:0.85rem; color:#ef4444;">$0</div>
+                        </div>
+                        <div style="background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); border-radius:8px; padding:12px 20px; text-align:center;">
+                            <div style="font-size:0.75rem; color: var(--text-muted);">TOTAL QUINCENA</div>
+                            <div id="pagos-count-total" style="font-size:1.4rem; font-weight:700; color:#3b82f6;">0</div>
+                            <div id="pagos-total-total" style="font-size:0.85rem; color:#3b82f6;">$0</div>
+                        </div>
+                        <div style="margin-left:auto; display:flex; align-items:center; gap:10px;">
+                            <button id="btnSeleccionarTodos" onclick="seleccionarTodosPagos()" class="btn btn-secondary" style="font-size:0.8rem; padding:8px 14px;">
+                                <i class="ri-checkbox-multiple-line"></i> Seleccionar todos
+                            </button>
+                            <button onclick="marcarFletesPagados()" class="btn btn-primary" style="font-size:0.8rem; padding:8px 16px; background: #22c55e; border-color: #22c55e;">
+                                <i class="ri-check-double-line"></i> Marcar pagados
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
-    </main>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:40px;"><input type="checkbox" id="chk-todos-pagos" onchange="toggleTodosCheckboxPagos(this)"></th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th>Proveedor</th>
+                                <th>Conductor</th>
+                                <th>Placa</th>
+                                <th>Población</th>
+                                <th>Valor Flete</th>
+                                <th>Fecha Pago</th>
+                                <th>Pagado por</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaPagos">
+                            <tr><td colspan="10" style="text-align:center; color: var(--text-muted);">Selecciona una quincena para comenzar</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>    </main>
 
     <!-- MODAL EDICIÓN -->
     <div id="modalEdicionFlete" class="modal-overlay">

@@ -451,51 +451,37 @@ async function checkAuth() {
         if (btnExportarPDF) btnExportarPDF.style.display = 'inline-flex';
         const btnReporteAuxiliar = document.getElementById("btnReporteAuxiliar");
         if (btnReporteAuxiliar) btnReporteAuxiliar.style.display = 'inline-flex';
+        // Admin ve módulo de pagos
+        const navPagos = document.getElementById("navPagos");
+        if (navPagos) navPagos.style.display = 'flex';
     } else if (role === 'caja') {
-        // PERFIL CAJA (SOLO DOWNLOADS, SIN NAVS, DASHBOARD ESPECIAL)
-        // Hide Entire Sidebar and Header
-        const sidebar = document.querySelector('.sidebar');
-        const topbar = document.querySelector('.topbar');
-        const mainContent = document.querySelector('.main-content'); // Fix layout
-
-        if (sidebar) sidebar.style.display = 'none';
-        if (topbar) topbar.style.display = 'none';
-
-        // Remove sidebar margin from main content and center everything
-        if (mainContent) {
-            mainContent.style.marginLeft = '0';
-            mainContent.style.width = '100%';
-            mainContent.style.padding = '0';
-            mainContent.style.display = 'flex';
-            mainContent.style.alignItems = 'center';
-            mainContent.style.justifyContent = 'center';
-            mainContent.style.minHeight = '100vh';
-        }
-
-        // Hide specific navs (redundant if sidebar is hidden, but good for safety)
+        // PERFIL CAJA: accede al módulo de pagos + descarga de PDF
+        // Mostrar solo las opciones necesarias en sidebar
         if (navFletes) navFletes.style.display = 'none';
         if (navVehiculos) navVehiculos.style.display = 'none';
         if (navCrear) navCrear.style.display = 'none';
+        if (navStats) navStats.style.display = 'none';
 
-        // Hide standard dashboard grid, show special Caja View
+        // Caja puede ver pagos y descargar PDF
+        const navPagosC = document.getElementById("navPagos");
+        if (navPagosC) navPagosC.style.display = 'flex';
+        if (btnExportarPDF) btnExportarPDF.style.display = 'inline-flex';
+
+        // Mostrar vista de pagos como pantalla principal
         const inicioSection = document.getElementById("inicio");
-        const cajaView = document.getElementById("caja-view");
-
+        const pagosSection = document.getElementById("pagos");
         if (inicioSection) inicioSection.classList.remove("visible");
-        if (cajaView) {
-            cajaView.classList.add("visible");
-            cajaView.style.display = "flex";
-            // Ensure cajaView takes full space available in the centered main
-            cajaView.style.width = "100%";
-            cajaView.style.justifyContent = "center";
+        if (pagosSection) {
+            pagosSection.classList.add("visible");
         }
 
-        // Set Caja Header Name
+        // Ocultar caja-view (ya no se usa para pagos)
+        const cajaView = document.getElementById("caja-view");
+        if (cajaView) cajaView.style.display = 'none';
+
+        // Set user name badge
         const cajaNameEl = document.getElementById("cajaUserName");
         if (cajaNameEl) cajaNameEl.textContent = userName;
-
-        // Hide stats nav if exists
-        if (navStats) navStats.style.display = 'none';
 
     } else {
         // PERFIL OPERARIO (GESTIONA FLETES SOLO CREACION)
@@ -2737,6 +2723,7 @@ function renderTable(fletes) {
             <td class="actions-cell">
                 <button class="btn-icon edit" onclick="editarFlete('${f.id}')" title="Editar Costos"><i class="ri-pencil-line"></i></button>
                 ${role === 'admin' ? `<button class="btn-icon delete" onclick="eliminarFlete('${f.id}')" title="Eliminar"><i class="ri-delete-bin-line"></i></button>` : ''}
+                ${role === 'admin' ? `<button class="btn-icon" onclick="togglePagoFlete('${f.id}','${f.estado_pago || 'PENDIENTE'}')" title="${(f.estado_pago === 'PAGADO') ? 'Marcar pendiente' : 'Marcar pagado'}" style="color:${(f.estado_pago === 'PAGADO') ? '#22c55e' : '#94a3b8'};"><i class="ri-${(f.estado_pago === 'PAGADO') ? 'checkbox-circle' : 'checkbox-blank-circle'}-line"></i></button>` : ''}
             </td>` : ''}
         `;
         fragment.appendChild(tr);
@@ -4013,6 +4000,238 @@ async function generarReporteAuxiliar() {
 }
 
 // ==========================================================
+// 💳 MÓDULO DE PAGOS (contabilidad / caja)
+// ==========================================================
+
+// Genera las quincenas de los últimos 6 meses para el selector
+function generarOpcionesQuincena() {
+    const sel = document.getElementById('pagos-quincena');
+    if (!sel || sel.options.length > 1) return; // ya poblado
+    const hoy = new Date();
+    const opciones = [];
+    for (let i = 0; i < 12; i++) {
+        const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        // Primera quincena: 01-15
+        opciones.push({
+            label: `1ª quincena ${d.toLocaleString('es', { month: 'long' })} ${y}`,
+            inicio: `${y}-${m}-01`,
+            fin: `${y}-${m}-15`
+        });
+        // Segunda quincena: 16-fin de mes
+        const ultimoDia = new Date(y, d.getMonth() + 1, 0).getDate();
+        opciones.push({
+            label: `2ª quincena ${d.toLocaleString('es', { month: 'long' })} ${y}`,
+            inicio: `${y}-${m}-16`,
+            fin: `${y}-${m}-${ultimoDia}`
+        });
+    }
+    opciones.forEach(o => {
+        const opt = document.createElement('option');
+        opt.value = JSON.stringify({ inicio: o.inicio, fin: o.fin });
+        opt.textContent = o.label;
+        sel.appendChild(opt);
+    });
+    // Seleccionar quincena actual por defecto
+    const dia = hoy.getDate();
+    const mesActual = String(hoy.getMonth() + 1).padStart(2, '0');
+    const anoActual = hoy.getFullYear();
+    const inicioAuto = dia <= 15
+        ? `${anoActual}-${mesActual}-01`
+        : `${anoActual}-${mesActual}-16`;
+    for (let opt of sel.options) {
+        try {
+            const v = JSON.parse(opt.value);
+            if (v.inicio === inicioAuto) { sel.value = opt.value; break; }
+        } catch (e) {}
+    }
+}
+
+async function cargarModuloPagos() {
+    generarOpcionesQuincena();
+    const sel = document.getElementById('pagos-quincena');
+    const tbody = document.getElementById('tablaPagos');
+    const resumen = document.getElementById('pagos-resumen');
+    if (!sel || !sel.value) return;
+
+    let quincena;
+    try { quincena = JSON.parse(sel.value); } catch (e) { return; }
+
+    const proveedor = document.getElementById('pagos-proveedor')?.value || '';
+    const estado    = document.getElementById('pagos-estado')?.value || '';
+
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center"><i class="ri-loader-4-line rotate"></i> Cargando...</td></tr>`;
+
+    let query = SupabaseClient.supabase
+        .from('fletes')
+        .select('id, fecha, dia, proveedor, contratista, placa, poblacion, precio, estado_pago, fecha_pago, pagado_por')
+        .gte('fecha', quincena.inicio)
+        .lte('fecha', quincena.fin)
+        .order('fecha', { ascending: true })
+        .limit(2000);
+
+    if (proveedor) query = query.eq('proveedor', proveedor);
+    if (estado)    query = query.eq('estado_pago', estado);
+
+    const { data: fletes, error } = await query;
+
+    if (error) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#ef4444;">Error: ${error.message}</td></tr>`;
+        return;
+    }
+
+    if (!fletes || fletes.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color: var(--text-muted);">No hay fletes en este período</td></tr>`;
+        if (resumen) resumen.style.display = 'none';
+        return;
+    }
+
+    // Calcular resumen
+    const pagados    = fletes.filter(f => f.estado_pago === 'PAGADO');
+    const pendientes = fletes.filter(f => f.estado_pago !== 'PAGADO');
+    const sumPagado    = pagados.reduce((s, f) => s + (f.precio || 0), 0);
+    const sumPendiente = pendientes.reduce((s, f) => s + (f.precio || 0), 0);
+    const sumTotal     = fletes.reduce((s, f) => s + (f.precio || 0), 0);
+
+    if (resumen) {
+        resumen.style.display = 'block';
+        document.getElementById('pagos-count-pagado').textContent    = pagados.length;
+        document.getElementById('pagos-total-pagado').textContent     = moneyFormatter.format(sumPagado);
+        document.getElementById('pagos-count-pendiente').textContent  = pendientes.length;
+        document.getElementById('pagos-total-pendiente').textContent  = moneyFormatter.format(sumPendiente);
+        document.getElementById('pagos-count-total').textContent      = fletes.length;
+        document.getElementById('pagos-total-total').textContent      = moneyFormatter.format(sumTotal);
+    }
+
+    // Renderizar tabla
+    const fragment = document.createDocumentFragment();
+    fletes.forEach(f => {
+        const esPagado = f.estado_pago === 'PAGADO';
+        const tr = document.createElement('tr');
+        tr.style.opacity = esPagado ? '0.65' : '1';
+        tr.innerHTML = `
+            <td><input type="checkbox" class="chk-pago" data-id="${f.id}" ${esPagado ? 'disabled' : ''}></td>
+            <td>
+                <span class="badge" style="background:${esPagado ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'}; color:${esPagado ? '#22c55e' : '#ef4444'}; font-size:0.7rem; padding:2px 8px;">
+                    ${esPagado ? '✓ PAGADO' : '⏳ PENDIENTE'}
+                </span>
+            </td>
+            <td>${f.fecha}</td>
+            <td><span class="badge" style="background:var(--accent-blue);font-size:0.7rem;padding:2px 6px;">${f.proveedor}</span></td>
+            <td><strong>${f.contratista || '-'}</strong></td>
+            <td><span class="badge-plate">${f.placa}</span></td>
+            <td>${f.poblacion || '-'}</td>
+            <td class="price-cell" style="font-weight:600;">${moneyFormatter.format(f.precio || 0)}</td>
+            <td style="color:var(--text-muted); font-size:0.85rem;">${f.fecha_pago || '-'}</td>
+            <td style="color:var(--text-muted); font-size:0.85rem;">${f.pagado_por || '-'}</td>
+        `;
+        fragment.appendChild(tr);
+    });
+    tbody.innerHTML = '';
+    tbody.appendChild(fragment);
+
+    // Sync checkbox maestro
+    document.getElementById('chk-todos-pagos').checked = false;
+}
+
+function toggleTodosCheckboxPagos(masterChk) {
+    document.querySelectorAll('.chk-pago:not(:disabled)').forEach(chk => {
+        chk.checked = masterChk.checked;
+    });
+}
+
+function seleccionarTodosPagos() {
+    const chks = document.querySelectorAll('.chk-pago:not(:disabled)');
+    const todosSeleccionados = [...chks].every(c => c.checked);
+    chks.forEach(c => c.checked = !todosSeleccionados);
+    const master = document.getElementById('chk-todos-pagos');
+    if (master) master.checked = !todosSeleccionados;
+}
+
+// Toggle rápido de pago desde el listado de fletes (admin)
+async function togglePagoFlete(id, estadoActual) {
+    const nuevoEstado = estadoActual === 'PAGADO' ? 'PENDIENTE' : 'PAGADO';
+    const session = CURRENT_SESSION;
+    const userName = session?.profile?.nombre || session?.user?.user_metadata?.nombre || 'Admin';
+    const fechaHoy = new Date().toISOString().split('T')[0];
+
+    const { error } = await SupabaseClient.supabase
+        .from('fletes')
+        .update({
+            estado_pago: nuevoEstado,
+            fecha_pago:  nuevoEstado === 'PAGADO' ? fechaHoy : null,
+            pagado_por:  nuevoEstado === 'PAGADO' ? userName : null
+        })
+        .eq('id', id);
+
+    if (error) {
+        Swal.fire({ icon: 'error', title: 'Error', text: error.message, background: '#1e293b', color: '#fff' });
+        return;
+    }
+    // Actualizar flete en cache y re-renderizar
+    const idx = CACHED_FLETES.findIndex(f => f.id === id);
+    if (idx !== -1) {
+        CACHED_FLETES[idx].estado_pago = nuevoEstado;
+        CACHED_FLETES[idx].fecha_pago  = nuevoEstado === 'PAGADO' ? fechaHoy : null;
+        CACHED_FLETES[idx].pagado_por  = nuevoEstado === 'PAGADO' ? userName : null;
+        renderTable(CACHED_FLETES);
+    }
+}
+
+async function marcarFletesPagados() {
+    const seleccionados = [...document.querySelectorAll('.chk-pago:checked')].map(c => c.dataset.id);
+    if (seleccionados.length === 0) {
+        return Swal.fire({ icon: 'warning', title: 'Sin selección', text: 'Selecciona al menos un flete para marcar como pagado.', background: '#1e293b', color: '#fff' });
+    }
+
+    const { isConfirmed } = await Swal.fire({
+        title: `¿Marcar ${seleccionados.length} flete(s) como pagados?`,
+        text: 'Esta acción registrará la fecha y usuario de pago.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, marcar pagados',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#22c55e',
+        background: '#1e293b',
+        color: '#fff'
+    });
+
+    if (!isConfirmed) return;
+
+    Swal.fire({ title: 'Procesando...', allowOutsideClick: false, background: '#1e293b', color: '#fff', didOpen: () => Swal.showLoading() });
+
+    const session = CURRENT_SESSION;
+    const userName = session?.profile?.nombre || session?.user?.user_metadata?.nombre || 'Contabilidad';
+    const fechaHoy = new Date().toISOString().split('T')[0];
+
+    const { error } = await SupabaseClient.supabase
+        .from('fletes')
+        .update({
+            estado_pago: 'PAGADO',
+            fecha_pago: fechaHoy,
+            pagado_por: userName
+        })
+        .in('id', seleccionados);
+
+    if (error) {
+        return Swal.fire({ icon: 'error', title: 'Error', text: error.message, background: '#1e293b', color: '#fff' });
+    }
+
+    Swal.fire({
+        icon: 'success',
+        title: `¡${seleccionados.length} flete(s) marcados como pagados!`,
+        timer: 2500,
+        showConfirmButton: false,
+        background: '#1e293b',
+        color: '#fff'
+    });
+
+    // Recargar tabla
+    await cargarModuloPagos();
+}
+
+// ==========================================================
 // 📊 GRÁFICOS (COLORFUL)
 // ==========================================================
 let myChart = null;
@@ -4437,6 +4656,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 document.getElementById(target).classList.add("visible");
                 t.classList.add("active");
+
+                // Inicializar módulo de pagos al entrar al tab
+                if (target === 'pagos') {
+                    generarOpcionesQuincena();
+                    cargarModuloPagos();
+                }
             });
         });
 

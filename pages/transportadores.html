@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Fletes | Transportadores</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+            color: #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ── Header ── */
+        .header {
+            width: 100%;
+            background: rgba(30,41,59,0.9);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            backdrop-filter: blur(12px);
+        }
+        .header img { height: 36px; }
+        .header-title { font-size: 1.1rem; font-weight: 700; }
+        .header-sub { font-size: 0.75rem; color: #94a3b8; }
+
+        /* ── Main container ── */
+        .container {
+            width: 100%;
+            max-width: 900px;
+            padding: 32px 16px;
+            flex: 1;
+        }
+
+        /* ── Search card ── */
+        .search-card {
+            background: rgba(30,41,59,0.8);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 32px;
+            text-align: center;
+            margin-bottom: 28px;
+            backdrop-filter: blur(12px);
+        }
+        .search-card h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .search-card p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+
+        .search-row {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .input-placa {
+            background: rgba(15,23,42,0.8);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            padding: 12px 18px;
+            color: #e2e8f0;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            width: 200px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-placa:focus { border-color: #3b82f6; }
+        .input-placa::placeholder { letter-spacing: 0; color: #64748b; }
+
+        .btn-buscar {
+            background: #3b82f6;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 24px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .btn-buscar:hover { background: #2563eb; }
+        .btn-buscar:active { transform: scale(0.97); }
+        .btn-buscar:disabled { background: #334155; cursor: not-allowed; }
+
+        /* Filtro fechas */
+        .filtros-extra {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+        .filtros-extra input, .filtros-extra select {
+            background: rgba(15,23,42,0.8);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: #e2e8f0;
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+        }
+        .filtros-extra label { font-size: 0.8rem; color: #94a3b8; display: flex; align-items: center; gap: 6px; }
+
+        /* ── Resultados ── */
+        #resultados { display: none; }
+
+        .results-header {
+            background: rgba(30,41,59,0.8);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px 12px 0 0;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .results-header h2 { font-size: 1rem; font-weight: 700; }
+        .results-meta { font-size: 0.8rem; color: #94a3b8; }
+
+        /* Resumen stats */
+        .stats-row {
+            display: flex;
+            gap: 12px;
+            padding: 14px 20px;
+            background: rgba(30,41,59,0.6);
+            border-left: 1px solid rgba(255,255,255,0.08);
+            border-right: 1px solid rgba(255,255,255,0.08);
+            flex-wrap: wrap;
+        }
+        .stat-box {
+            flex: 1;
+            min-width: 120px;
+            background: rgba(15,23,42,0.6);
+            border-radius: 8px;
+            padding: 10px 14px;
+            text-align: center;
+        }
+        .stat-box .stat-label { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-box .stat-value { font-size: 1.2rem; font-weight: 700; margin-top: 2px; }
+
+        /* Tabla */
+        .table-wrap {
+            background: rgba(30,41,59,0.8);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            overflow-x: auto;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        thead tr { background: rgba(15,23,42,0.8); }
+        th {
+            padding: 11px 14px;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #94a3b8;
+            white-space: nowrap;
+        }
+        tbody tr { border-top: 1px solid rgba(255,255,255,0.05); transition: background 0.15s; }
+        tbody tr:hover { background: rgba(59,130,246,0.05); }
+        td {
+            padding: 12px 14px;
+            font-size: 0.88rem;
+            vertical-align: middle;
+        }
+
+        .badge-estado {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+        .badge-pagado    { background: rgba(34,197,94,0.15);  color: #22c55e;  border: 1px solid rgba(34,197,94,0.3); }
+        .badge-pendiente { background: rgba(239,68,68,0.12);  color: #ef4444;  border: 1px solid rgba(239,68,68,0.25); }
+
+        .price-val { font-weight: 600; color: #e2e8f0; }
+        .date-val  { color: #94a3b8; font-size: 0.82rem; }
+
+        /* ── Empty / Error states ── */
+        .state-box {
+            text-align: center;
+            padding: 48px 24px;
+            color: #64748b;
+        }
+        .state-box i { font-size: 2.5rem; margin-bottom: 12px; display: block; }
+        .state-box p { font-size: 0.9rem; }
+
+        /* ── Footer ── */
+        footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #475569;
+        }
+
+        /* ── Loading spinner ── */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { display: inline-block; animation: spin 1s linear infinite; }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .search-card { padding: 20px 16px; }
+            .input-placa { width: 100%; }
+            .btn-buscar { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <img src="../assets/img/logo_tym.png" alt="TYM Logo" onerror="this.style.display='none'">
+        <div>
+            <div class="header-title">Portal Transportadores</div>
+            <div class="header-sub">Consulta el estado de tus fletes</div>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- Búsqueda -->
+        <div class="search-card">
+            <h1><i class="ri-truck-line" style="color:#3b82f6;"></i> Consulta de Fletes</h1>
+            <p>Ingresa la placa de tu vehículo para ver el historial y estado de pago de tus fletes.</p>
+
+            <div class="search-row">
+                <input
+                    id="inputPlaca"
+                    class="input-placa"
+                    type="text"
+                    placeholder="Ej: SYU652"
+                    maxlength="8"
+                    autocomplete="off"
+                    onkeydown="if(event.key==='Enter') buscarFletesTrans()"
+                >
+                <button class="btn-buscar" onclick="buscarFletesTrans()" id="btnBuscar">
+                    <i class="ri-search-2-line"></i> Consultar
+                </button>
+            </div>
+
+            <div class="filtros-extra">
+                <label>
+                    <i class="ri-calendar-line"></i> Desde:
+                    <input type="date" id="filtroDesde">
+                </label>
+                <label>
+                    <i class="ri-calendar-line"></i> Hasta:
+                    <input type="date" id="filtroHasta">
+                </label>
+                <label>
+                    Estado:
+                    <select id="filtroEstado">
+                        <option value="">Todos</option>
+                        <option value="PENDIENTE">Pendiente</option>
+                        <option value="PAGADO">Pagado</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+
+        <!-- Resultados -->
+        <div id="resultados">
+            <div class="results-header">
+                <h2 id="resultsTitle">Fletes de —</h2>
+                <span class="results-meta" id="resultsMeta"></span>
+            </div>
+
+            <div class="stats-row" id="statsRow">
+                <div class="stat-box">
+                    <div class="stat-label">Total fletes</div>
+                    <div class="stat-value" id="statTotal">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label" style="color:#22c55e;">Pagados</div>
+                    <div class="stat-value" id="statPagados" style="color:#22c55e;">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label" style="color:#ef4444;">Pendientes</div>
+                    <div class="stat-value" id="statPendientes" style="color:#ef4444;">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Total acumulado</div>
+                    <div class="stat-value" id="statValor" style="color:#3b82f6; font-size:0.95rem;">$0</div>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Día</th>
+                            <th>Proveedor</th>
+                            <th>Población</th>
+                            <th>Valor Flete</th>
+                            <th>Estado Pago</th>
+                            <th>Fecha Pago</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaResultados"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        © 2026 Tiendas y Marcas Eje Cafetero · Portal Transportadores
+    </footer>
+
+    <script>
+        // ── Supabase setup ────────────────────────────────────────
+        const SUPA_URL = 'https://culezzzujkwjpdlalfzi.supabase.co';
+        const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1bGV6enp1amt3anBkbGFsZnppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxNzQ2NTIsImV4cCI6MjA4MTc1MDY1Mn0.qKp2IrOQW0YaPvSmIsmSFxcnFB_vPd2D0A6VzZJAhe8';
+        const db = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+        const fmt = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+
+        // Fechas por defecto: primer día del mes actual → hoy
+        (function initFechas() {
+            const hoy  = new Date();
+            const yyyy = hoy.getFullYear();
+            const mm   = String(hoy.getMonth() + 1).padStart(2, '0');
+            const dd   = String(hoy.getDate()).padStart(2, '0');
+            document.getElementById('filtroDesde').value = `${yyyy}-${mm}-01`;
+            document.getElementById('filtroHasta').value = `${yyyy}-${mm}-${dd}`;
+        })();
+
+        async function buscarFletesTrans() {
+            const placa  = document.getElementById('inputPlaca').value.trim().toUpperCase();
+            const desde  = document.getElementById('filtroDesde').value;
+            const hasta  = document.getElementById('filtroHasta').value;
+            const estado = document.getElementById('filtroEstado').value;
+            const btn    = document.getElementById('btnBuscar');
+            const tbody  = document.getElementById('tablaResultados');
+
+            if (!placa || placa.length < 5) {
+                tbody.innerHTML = '';
+                document.getElementById('resultados').style.display = 'none';
+                alert('Ingresa una placa válida (mínimo 5 caracteres).');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="ri-loader-4-line spin"></i> Buscando...';
+
+            let query = db
+                .from('fletes')
+                .select('fecha, dia, proveedor, poblacion, precio, estado_pago, fecha_pago')
+                .ilike('placa', placa)
+                .order('fecha', { ascending: false })
+                .limit(500);
+
+            if (desde) query = query.gte('fecha', desde);
+            if (hasta) query = query.lte('fecha', hasta);
+            if (estado) query = query.eq('estado_pago', estado);
+
+            const { data, error } = await query;
+
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ri-search-2-line"></i> Consultar';
+
+            const resDiv = document.getElementById('resultados');
+            resDiv.style.display = 'block';
+
+            if (error || !data) {
+                tbody.innerHTML = `<tr><td colspan="7"><div class="state-box"><i class="ri-error-warning-line" style="color:#ef4444;"></i><p>Error al consultar. Intenta de nuevo.</p></div></td></tr>`;
+                return;
+            }
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7"><div class="state-box"><i class="ri-file-search-line"></i><p>No se encontraron fletes para la placa <strong>${placa}</strong> en el período seleccionado.</p></div></td></tr>`;
+                document.getElementById('resultsTitle').textContent = `Fletes de ${placa}`;
+                document.getElementById('resultsMeta').textContent = '';
+                // Limpiar stats
+                ['statTotal','statPagados','statPendientes'].forEach(id => document.getElementById(id).textContent = '0');
+                document.getElementById('statValor').textContent = '$0';
+                return;
+            }
+
+            // Stats
+            const pagados    = data.filter(f => f.estado_pago === 'PAGADO').length;
+            const pendientes = data.filter(f => f.estado_pago !== 'PAGADO').length;
+            const total      = data.reduce((s, f) => s + (f.precio || 0), 0);
+
+            document.getElementById('resultsTitle').textContent  = `Fletes de ${placa}`;
+            document.getElementById('resultsMeta').textContent   = `${data.length} resultado(s) · ${desde || '...'} al ${hasta || '...'}`;
+            document.getElementById('statTotal').textContent     = data.length;
+            document.getElementById('statPagados').textContent   = pagados;
+            document.getElementById('statPendientes').textContent = pendientes;
+            document.getElementById('statValor').textContent     = fmt.format(total);
+
+            // Render rows
+            tbody.innerHTML = data.map(f => {
+                const esPagado = f.estado_pago === 'PAGADO';
+                return `
+                    <tr>
+                        <td class="date-val">${f.fecha}</td>
+                        <td class="date-val">${f.dia || '-'}</td>
+                        <td>
+                            <span style="background:rgba(59,130,246,0.15);color:#60a5fa;border-radius:4px;padding:2px 7px;font-size:0.72rem;font-weight:600;">
+                                ${f.proveedor || '-'}
+                            </span>
+                        </td>
+                        <td>${f.poblacion || '-'}</td>
+                        <td class="price-val">${fmt.format(f.precio || 0)}</td>
+                        <td>
+                            <span class="badge-estado ${esPagado ? 'badge-pagado' : 'badge-pendiente'}">
+                                ${esPagado ? '✓ PAGADO' : '⏳ PENDIENTE'}
+                            </span>
+                        </td>
+                        <td class="date-val">${f.fecha_pago || '—'}</td>
+                    </tr>`;
+            }).join('');
+        }
+
+        // Permitir Enter en el input de placa
+        document.getElementById('inputPlaca').addEventListener('input', function() {
+            this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        });
+    </script>
+</body>
+</html>

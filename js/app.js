@@ -253,9 +253,9 @@ const LISTA_AUXILIARES_ALPINA = [
 ];
 
 const LISTA_AUXILIARES_ZENU = [
-    "CESAR AUGUSTO CASTILLO LONDOÑO", "JAMMES ALBERTO RAMIREZ NIETO", "SEBASTIAN SALAZAR HENAO",
+    "CESAR AUGUSTO CASTILLO LONDOÑO", "JAMMES ALBERTO RAMIREZ NIETO",
     "DANIEL FELIPE MURILLO GRANDA", "FELIPE MONTES RIVERA", "GUSTAVO ADOLFO MORALES TIRADO",
-    "JEAN MICHAEL ZULUAGA", "OSCAR MAURICIO GUARUMO CLAVIJO"
+    "JEAN MICHAEL ZULUAGA", "OSCAR MAURICIO GUARUMO CLAVIJO", "CRISTIAN MAURICIO GIRALDO RAMIREZ"
 ];
 
 const LISTA_AUXILIARES_TAT = [
@@ -482,6 +482,9 @@ async function checkAuth() {
         // Admin ve módulo de pagos
         const navPagos = document.getElementById("navPagos");
         if (navPagos) navPagos.style.display = 'flex';
+        // Admin ve módulo de promedios por placa
+        const navPromedios = document.getElementById("navPromedios");
+        if (navPromedios) navPromedios.style.display = 'flex';
     } else if (role === 'caja') {
         // PERFIL CAJA: accede al módulo de pagos + descarga de PDF
         // Mostrar solo las opciones necesarias en sidebar
@@ -4659,6 +4662,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                     generarOpcionesQuincena();
                     cargarModuloPagos();
                 }
+                // Inicializar módulo de promedios al entrar al tab
+                if (target === 'promedios-placa') {
+                    inicializarFechasPromedios();
+                }
             });
         });
 
@@ -4741,3 +4748,187 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error("❌ Error Crítico en inicialización:", error);
     }
 });
+
+// ==========================================================
+// 📊 MÓDULO: PROMEDIOS DE FLETES POR PLACA
+// ==========================================================
+
+/**
+ * Al entrar al tab carga automáticamente los últimos 3 meses.
+ */
+function inicializarFechasPromedios() {
+    // Solo disparar la consulta automática la primera vez que se entra al tab
+    const tabla = document.getElementById('prom-tabla');
+    if (tabla && tabla.style.display === 'table') return; // Ya hay datos
+    cargarPromediosPorPlaca();
+}
+
+/**
+ * Consulta todos los fletes del período, agrupa por placa y mes,
+ * y renderiza la tabla de promedios.
+ */
+async function cargarPromediosPorPlaca() {
+    const mesesAtras = parseInt(document.getElementById('prom-periodo')?.value || '3');
+    const proveedor  = document.getElementById('prom-proveedor')?.value;
+
+    // Construir array con los N meses anteriores al mes en curso (completos)
+    // Ej: septiembre 2026, N=3 → [{key:'2026-06',...}, {key:'2026-07',...}, {key:'2026-08',...}]
+    const hoy = new Date();
+    const meses = [];
+    for (let i = mesesAtras; i >= 1; i--) {
+        const d         = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+        const y         = d.getFullYear();
+        const m         = d.getMonth(); // 0-indexed
+        const primerDia = `${y}-${String(m + 1).padStart(2,'0')}-01`;
+        const ultimo    = new Date(y, m + 1, 0);
+        const ultimoDia = `${y}-${String(m + 1).padStart(2,'0')}-${String(ultimo.getDate()).padStart(2,'0')}`;
+        meses.push({ key: primerDia.substring(0, 7), desde: primerDia, hasta: ultimoDia });
+    }
+
+    // Estado de carga
+    document.getElementById('prom-loading').style.display = 'block';
+    document.getElementById('prom-loading').innerHTML = '<i class="ri-loader-4-line" style="font-size:2rem;"></i><p style="margin-top:8px;">Cargando datos...</p>';
+    document.getElementById('prom-tabla').style.display = 'none';
+    document.getElementById('prom-empty').style.display = 'none';
+    document.getElementById('prom-kpis').style.display = 'none';
+    document.getElementById('btnExportarPromedios').style.display = 'none';
+
+    try {
+        // Una query independiente por mes → evita el límite de 1000 filas de Supabase
+        const porPlaca = {};
+
+        for (const mes of meses) {
+            let query = SupabaseClient.supabase
+                .from('fletes')
+                .select('placa, contratista, precio')
+                .gte('fecha', mes.desde)
+                .lte('fecha', mes.hasta)
+                .limit(3000);
+
+            if (CURRENT_RAZON_SOCIAL && CURRENT_RAZON_SOCIAL !== 'GLOBAL') {
+                query = query.eq('razon_social', CURRENT_RAZON_SOCIAL === 'TAT' ? 'TAT' : 'TYM');
+            }
+            if (proveedor) {
+                query = query.eq('proveedor', proveedor);
+            }
+
+            const { data: fletes, error } = await query;
+            if (error) throw error;
+
+            (fletes || []).forEach(f => {
+                if (!f.placa || !f.precio) return;
+                if (!porPlaca[f.placa]) {
+                    porPlaca[f.placa] = { conductor: f.contratista || '-', meses: {} };
+                }
+                porPlaca[f.placa].meses[mes.key] = (porPlaca[f.placa].meses[mes.key] || 0) + Number(f.precio);
+                if (f.contratista) porPlaca[f.placa].conductor = f.contratista;
+            });
+        }
+
+        if (Object.keys(porPlaca).length === 0) {
+            document.getElementById('prom-loading').style.display = 'none';
+            document.getElementById('prom-empty').style.display = 'block';
+            return;
+        }
+
+        // Calcular promedio por placa (solo sobre meses con actividad)
+        const placasOrdenadas = Object.keys(porPlaca);
+        placasOrdenadas.forEach(placa => {
+            const row    = porPlaca[placa];
+            const totales = meses.map(m => row.meses[m.key] || 0);
+            const activos = totales.filter(v => v > 0).length;
+            row.totalGeneral = totales.reduce((s, v) => s + v, 0);
+            row.promedio     = activos > 0 ? row.totalGeneral / activos : 0;
+        });
+        placasOrdenadas.sort((a, b) => porPlaca[b].promedio - porPlaca[a].promedio);
+
+        // KPIs
+        const promedioGeneral = placasOrdenadas.reduce((s, p) => s + porPlaca[p].promedio, 0) / placasOrdenadas.length;
+        document.getElementById('prom-kpi-placas').textContent   = placasOrdenadas.length;
+        document.getElementById('prom-kpi-promedio').textContent = moneyFormatter.format(Math.round(promedioGeneral));
+        document.getElementById('prom-kpi-meses').textContent    = meses.length;
+        document.getElementById('prom-kpis').style.display       = 'grid';
+
+        // Nombre legible del mes
+        const mesNombre = key => {
+            const [y, m] = key.split('-');
+            return new Date(Number(y), Number(m) - 1, 1)
+                .toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })
+                .replace(/^\w/, c => c.toUpperCase());
+        };
+
+        // Encabezado
+        document.getElementById('prom-thead').innerHTML = `
+            <tr>
+                <th style="min-width:90px;">Placa</th>
+                <th style="min-width:160px;">Conductor</th>
+                ${meses.map(m => `<th style="min-width:140px; text-align:right;">${mesNombre(m.key)}</th>`).join('')}
+                <th style="min-width:140px; text-align:right; color:var(--accent-blue, #60a5fa);">Promedio / Mes</th>
+            </tr>`;
+
+        // Filas
+        const tbody    = document.getElementById('prom-tbody');
+        const fragment = document.createDocumentFragment();
+        placasOrdenadas.forEach(placa => {
+            const row = porPlaca[placa];
+            const tr  = document.createElement('tr');
+            const celdas = meses.map(m => {
+                const val = row.meses[m.key] || 0;
+                return `<td style="text-align:right; ${val === 0 ? 'color:var(--text-muted)' : ''}">${val > 0 ? moneyFormatter.format(val) : '—'}</td>`;
+            }).join('');
+            tr.innerHTML = `
+                <td><strong>${placa}</strong></td>
+                <td style="font-size:0.82rem; color:var(--text-muted);">${row.conductor}</td>
+                ${celdas}
+                <td style="text-align:right; font-weight:700; color:var(--accent-blue, #60a5fa);">${moneyFormatter.format(Math.round(row.promedio))}</td>`;
+            fragment.appendChild(tr);
+        });
+        tbody.innerHTML = '';
+        tbody.appendChild(fragment);
+
+        window._PROM_DATA = { meses, porPlaca, placasOrdenadas, mesNombre };
+
+        document.getElementById('prom-loading').style.display = 'none';
+        document.getElementById('prom-tabla').style.display   = 'table';
+        document.getElementById('btnExportarPromedios').style.display = 'inline-flex';
+
+    } catch (err) {
+        console.error('Error cargando promedios:', err);
+        document.getElementById('prom-loading').innerHTML = `<p style="color:#ff4d4d;">Error al cargar datos: ${err.message}</p>`;
+    }
+}
+
+/**
+ * Exporta la tabla de promedios a Excel con SheetJS.
+ */
+function exportarPromediosExcel() {
+    const d = window._PROM_DATA;
+    if (!d) return;
+
+    const { meses, porPlaca, placasOrdenadas, mesNombre } = d;
+
+    // Cabecera
+    const header = ['Placa', 'Conductor', ...meses.map(mesNombre), 'Promedio / Mes'];
+    const rows   = placasOrdenadas.map(placa => {
+        const row = porPlaca[placa];
+        return [
+            placa,
+            row.conductor,
+            ...meses.map(m => row.meses[m] || 0),
+            Math.round(row.promedio)
+        ];
+    });
+
+    const wsData = [header, ...rows];
+    const ws     = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Ancho de columnas
+    ws['!cols'] = [{ wch: 12 }, { wch: 28 }, ...meses.map(() => ({ wch: 18 })), { wch: 18 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Promedios por Placa');
+
+    const desde = document.getElementById('prom-desde')?.value || '';
+    const hasta = document.getElementById('prom-hasta')?.value || '';
+    XLSX.writeFile(wb, `promedios_placa_${desde}_${hasta}.xlsx`);
+}

@@ -93,6 +93,10 @@
             <a class="nav-item" data-tab="pagos" id="navPagos" style="display:none;">
                 <i class="ri-bank-card-line"></i> Pagos
             </a>
+            <!-- Tab Promedios por Placa (solo admin) -->
+            <a class="nav-item" data-tab="promedios-placa" id="navPromedios" style="display:none;">
+                <i class="ri-bar-chart-grouped-line"></i> Promedios Placa
+            </a>
 
         </nav>
 
@@ -861,6 +865,79 @@
                             <tr><td colspan="10" style="text-align:center; color: var(--text-muted);">Selecciona una quincena para comenzar</td></tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 📊 SECCIÓN PROMEDIOS POR PLACA (solo admin) -->
+        <section id="promedios-placa" class="tab-content fade-in">
+            <div class="card glass-card">
+                <div class="card-header flex-header">
+                    <h2><i class="ri-bar-chart-grouped-line"></i> Promedio de Fletes por Placa</h2>
+                    <div class="filters" style="gap:10px; flex-wrap:wrap; align-items:center;">
+                        <select id="prom-periodo" class="input-modern" style="width:180px;">
+                            <option value="3">Últimos 3 meses</option>
+                            <option value="6">Últimos 6 meses</option>
+                            <option value="12">Últimos 12 meses</option>
+                        </select>
+                        <select id="prom-proveedor" class="input-modern" style="width:180px;">
+                            <option value="">Todos los proveedores</option>
+                            <option value="ALPINA">ALPINA</option>
+                            <option value="FLEISCHMANN">FLEISCHMANN</option>
+                            <option value="ZENU">ZENU</option>
+                            <option value="FAMILIA">FAMILIA</option>
+                        </select>
+                        <button onclick="cargarPromediosPorPlaca()" class="btn btn-primary" style="height:36px; padding:0 16px;">
+                            <i class="ri-search-line"></i> Consultar
+                        </button>
+                        <button onclick="exportarPromediosExcel()" class="btn" id="btnExportarPromedios" style="height:36px; padding:0 16px; background:var(--accent-green, #22c55e); color:#fff; display:none;">
+                            <i class="ri-file-excel-2-line"></i> Excel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Resumen KPI cards -->
+                <div id="prom-kpis" class="kpi-grid" style="display:none; margin:16px 0; gap:12px;">
+                    <div class="card glass-card kpi-card" style="padding:14px;">
+                        <div class="kpi-icon icon-blue"><i class="ri-truck-line"></i></div>
+                        <div class="kpi-info">
+                            <h3>Placas analizadas</h3>
+                            <p id="prom-kpi-placas" class="kpi-value">0</p>
+                        </div>
+                    </div>
+                    <div class="card glass-card kpi-card" style="padding:14px;">
+                        <div class="kpi-icon icon-green"><i class="ri-money-dollar-circle-line"></i></div>
+                        <div class="kpi-info">
+                            <h3>Promedio general / mes</h3>
+                            <p id="prom-kpi-promedio" class="kpi-value">$ 0</p>
+                        </div>
+                    </div>
+                    <div class="card glass-card kpi-card" style="padding:14px;">
+                        <div class="kpi-icon icon-orange"><i class="ri-calendar-check-line"></i></div>
+                        <div class="kpi-info">
+                            <h3>Meses en el período</h3>
+                            <p id="prom-kpi-meses" class="kpi-value">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de resultados -->
+                <div style="overflow-x:auto; margin-top:8px;">
+                    <table class="data-table" id="prom-tabla" style="display:none;">
+                        <thead id="prom-thead">
+                            <!-- Se genera dinámicamente con las columnas de mes -->
+                        </thead>
+                        <tbody id="prom-tbody">
+                        </tbody>
+                    </table>
+                    <div id="prom-empty" style="text-align:center; padding:40px; color:var(--text-muted); display:none;">
+                        <i class="ri-truck-line" style="font-size:2rem;"></i>
+                        <p style="margin-top:8px;">No hay datos para el período seleccionado.</p>
+                    </div>
+                    <div id="prom-loading" style="text-align:center; padding:40px; color:var(--text-muted);">
+                        <i class="ri-loader-4-line" style="font-size:2rem; animation: spin 1s linear infinite;"></i>
+                        <p style="margin-top:8px;">Seleccione un rango y haga clic en Consultar.</p>
+                    </div>
                 </div>
             </div>
         </section>    </main>

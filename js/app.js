@@ -4891,11 +4891,32 @@ async function cargarPromediosPorPlaca() {
         document.getElementById('prom-loading').style.display = 'none';
         document.getElementById('prom-tabla').style.display   = 'table';
         document.getElementById('btnExportarPromedios').style.display = 'inline-flex';
+        document.getElementById('prom-buscador-wrap').style.display  = 'block';
+        document.getElementById('prom-buscar-placa').value = ''; // limpiar búsqueda anterior
 
     } catch (err) {
         console.error('Error cargando promedios:', err);
         document.getElementById('prom-loading').innerHTML = `<p style="color:#ff4d4d;">Error al cargar datos: ${err.message}</p>`;
     }
+}
+
+/**
+ * Filtra las filas de la tabla de promedios por placa o conductor
+ * en tiempo real, sin volver a consultar Supabase.
+ */
+function filtrarTablaPromedios(texto) {
+    const filtro = texto.trim().toUpperCase();
+    const filas  = document.querySelectorAll('#prom-tbody tr');
+    let visibles = 0;
+    filas.forEach(tr => {
+        const placa     = tr.cells[0]?.textContent.trim().toUpperCase() || '';
+        const conductor = tr.cells[1]?.textContent.trim().toUpperCase() || '';
+        const mostrar   = !filtro || placa.includes(filtro) || conductor.includes(filtro);
+        tr.style.display = mostrar ? '' : 'none';
+        if (mostrar) visibles++;
+    });
+    // Actualizar contador KPI de placas con el número visible
+    document.getElementById('prom-kpi-placas').textContent = filtro ? visibles : (window._PROM_DATA?.placasOrdenadas?.length || 0);
 }
 
 /**
@@ -4907,14 +4928,14 @@ function exportarPromediosExcel() {
 
     const { meses, porPlaca, placasOrdenadas, mesNombre } = d;
 
-    // Cabecera
-    const header = ['Placa', 'Conductor', ...meses.map(mesNombre), 'Promedio / Mes'];
+    // Cabecera — meses es array de {key, desde, hasta}, mesNombre recibe key
+    const header = ['Placa', 'Conductor', ...meses.map(m => mesNombre(m.key)), 'Promedio / Mes'];
     const rows   = placasOrdenadas.map(placa => {
         const row = porPlaca[placa];
         return [
             placa,
             row.conductor,
-            ...meses.map(m => row.meses[m] || 0),
+            ...meses.map(m => row.meses[m.key] || 0),
             Math.round(row.promedio)
         ];
     });
@@ -4923,12 +4944,16 @@ function exportarPromediosExcel() {
     const ws     = XLSX.utils.aoa_to_sheet(wsData);
 
     // Ancho de columnas
-    ws['!cols'] = [{ wch: 12 }, { wch: 28 }, ...meses.map(() => ({ wch: 18 })), { wch: 18 }];
+    ws['!cols'] = [{ wch: 12 }, { wch: 28 }, ...meses.map(() => ({ wch: 20 })), { wch: 18 }];
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Promedios por Placa');
 
-    const desde = document.getElementById('prom-desde')?.value || '';
-    const hasta = document.getElementById('prom-hasta')?.value || '';
-    XLSX.writeFile(wb, `promedios_placa_${desde}_${hasta}.xlsx`);
+    // Nombre de archivo con el período
+    const hoy        = new Date();
+    const mesesAtras = parseInt(document.getElementById('prom-periodo')?.value || '3');
+    const desdeDate  = new Date(hoy.getFullYear(), hoy.getMonth() - mesesAtras, 1);
+    const hastaDate  = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+    const fmt        = d => d.toISOString().split('T')[0];
+    XLSX.writeFile(wb, `promedios_placa_${fmt(desdeDate)}_${fmt(hastaDate)}.xlsx`);
 }

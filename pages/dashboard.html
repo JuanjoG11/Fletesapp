@@ -894,6 +894,15 @@
                             <i class="ri-file-excel-2-line"></i> Excel
                         </button>
                     </div>
+                    <!-- Buscador de placa (aparece cuando hay datos) -->
+                    <div id="prom-buscador-wrap" style="display:none; margin-top:10px;">
+                        <div style="position:relative; max-width:260px;">
+                            <i class="ri-search-line" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+                            <input id="prom-buscar-placa" type="text" placeholder="Buscar placa..." class="input-modern"
+                                style="padding-left:32px; width:100%;"
+                                oninput="filtrarTablaPromedios(this.value)">
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Resumen KPI cards -->

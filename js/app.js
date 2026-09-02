@@ -486,29 +486,42 @@ async function checkAuth() {
         const navPromedios = document.getElementById("navPromedios");
         if (navPromedios) navPromedios.style.display = 'flex';
     } else if (role === 'caja') {
-        // PERFIL CAJA: accede al módulo de pagos + descarga de PDF
-        // Mostrar solo las opciones necesarias en sidebar
+        // PERFIL CAJA: solo ve la pantalla de impresión de planillas, nada más
+        // Ocultar toda la navegación
         if (navFletes) navFletes.style.display = 'none';
         if (navVehiculos) navVehiculos.style.display = 'none';
         if (navCrear) navCrear.style.display = 'none';
         if (navStats) navStats.style.display = 'none';
-
-        // Caja puede ver pagos y descargar PDF
         const navPagosC = document.getElementById("navPagos");
-        if (navPagosC) navPagosC.style.display = 'flex';
-        if (btnExportarPDF) btnExportarPDF.style.display = 'inline-flex';
+        if (navPagosC) navPagosC.style.display = 'none';
+        const navPromediosC = document.getElementById("navPromedios");
+        if (navPromediosC) navPromediosC.style.display = 'none';
 
-        // Mostrar vista de pagos como pantalla principal
-        const inicioSection = document.getElementById("inicio");
-        const pagosSection = document.getElementById("pagos");
-        if (inicioSection) inicioSection.classList.remove("visible");
-        if (pagosSection) {
-            pagosSection.classList.add("visible");
-        }
+        // Ocultar todos los botones del footer del sidebar
+        if (btnExportarExcel) btnExportarExcel.style.display = 'none';
+        if (btnExportarPDF) btnExportarPDF.style.display = 'none';
+        const btnReporteAuxiliarC = document.getElementById("btnReporteAuxiliar");
+        if (btnReporteAuxiliarC) btnReporteAuxiliarC.style.display = 'none';
 
-        // Ocultar caja-view (ya no se usa para pagos)
+        // Ocultar el sidebar completo
+        const sidebar = document.querySelector(".sidebar");
+        if (sidebar) sidebar.style.display = 'none';
+
+        // Sin margen izquierdo al no haber sidebar
+        const mainContent = document.querySelector(".main-content");
+        if (mainContent) mainContent.style.marginLeft = '0';
+
+        // Ocultar el topbar
+        const topbar = document.querySelector(".topbar");
+        if (topbar) topbar.style.display = 'none';
+
+        // Mostrar únicamente la vista de caja
         const cajaView = document.getElementById("caja-view");
-        if (cajaView) cajaView.style.display = 'none';
+        if (cajaView) cajaView.style.display = 'block';
+
+        // Ocultar sección inicio (dashboard)
+        const inicioSection = document.getElementById("inicio");
+        if (inicioSection) inicioSection.classList.remove("visible");
 
         // Set user name badge
         const cajaNameEl = document.getElementById("cajaUserName");

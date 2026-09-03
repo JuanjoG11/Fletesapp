@@ -434,7 +434,15 @@ async function checkAuth() {
     // Actualizar badge de rol
     const userRoleBadge = document.getElementById("userRoleBadge");
     if (userRoleBadge) {
-        const roleText = role === 'admin' ? 'Administrador' : 'Operario Logístico';
+        const roleLabels = {
+            'admin': 'Administrador',
+            'operario': 'Operario Logístico',
+            'cargador': 'Cargador de Planillas',
+            'programador': 'Programador',
+            'cajera_plan': 'Cajera Planillas',
+            'caja': 'Caja',
+        };
+        const roleText = roleLabels[role] || 'Operario Logístico';
         userRoleBadge.textContent = `${roleText} / ${userName}`;
     }
 
@@ -485,6 +493,60 @@ async function checkAuth() {
         // Admin ve módulo de promedios por placa
         const navPromedios = document.getElementById("navPromedios");
         if (navPromedios) navPromedios.style.display = 'flex';
+        // Admin ve solo el kanban de Estado Planillas en el dashboard
+        // (Carga y Programación son páginas externas accesibles por URL directa)
+        const navEstadoA = document.getElementById("navEstadoPlanillas");
+        if (navEstadoA) navEstadoA.style.display = 'flex';
+        // Admin ve el módulo de aprobaciones de programaciones
+        const navApr = document.getElementById("navAprobaciones");
+        if (navApr) navApr.style.display = 'flex';
+    } else if (role === 'cargador') {
+        // PERFIL CARGADOR: va directo a carga-planillas.html (página externa)
+        if (navFletes)    navFletes.style.display    = 'none';
+        if (navVehiculos) navVehiculos.style.display = 'none';
+        if (navCrear)     navCrear.style.display     = 'none';
+        if (navStats)     navStats.style.display     = 'none';
+        document.getElementById("navPagos")?.style && (document.getElementById("navPagos").style.display = 'none');
+        document.getElementById("navPromedios")?.style && (document.getElementById("navPromedios").style.display = 'none');
+        const navCargaC = document.getElementById("navCargaPlanillas");
+        if (navCargaC) navCargaC.style.display = 'flex';
+        if (btnExportarExcel) btnExportarExcel.style.display = 'none';
+        if (btnExportarPDF)   btnExportarPDF.style.display   = 'none';
+        // Redirigir directo a la página de carga
+        window.location.href = 'carga-planillas.html';
+        return;
+    } else if (role === 'programador') {
+        // PERFIL PROGRAMADOR: ve Fletes + Crear Flete + links externos de planillas
+        if (navFletes)    navFletes.style.display    = 'flex';
+        if (navVehiculos) navVehiculos.style.display = 'none';
+        if (navCrear)     navCrear.style.display     = 'flex';
+        if (navStats)     navStats.style.display     = 'none';
+        document.getElementById("navPagos")?.style && (document.getElementById("navPagos").style.display = 'none');
+        document.getElementById("navPromedios")?.style && (document.getElementById("navPromedios").style.display = 'none');
+        const navProgP = document.getElementById("navProgramacionPlanillas");
+        if (navProgP) navProgP.style.display = 'flex';
+        const navEstadoP = document.getElementById("navEstadoPlanillas");
+        if (navEstadoP) navEstadoP.style.display = 'flex';
+        if (btnExportarExcel) btnExportarExcel.style.display = 'none';
+        if (btnExportarPDF)   btnExportarPDF.style.display   = 'inline-flex';
+        if (headerAccionesFletes) headerAccionesFletes.style.display = 'table-cell';
+    } else if (role === 'cajera_plan') {
+        // PERFIL CAJERA PLANILLAS: solo ve Estado Planillas (kanban) en el dashboard
+        if (navFletes)    navFletes.style.display    = 'none';
+        if (navVehiculos) navVehiculos.style.display = 'none';
+        if (navCrear)     navCrear.style.display     = 'none';
+        if (navStats)     navStats.style.display     = 'none';
+        document.getElementById("navPagos")?.style && (document.getElementById("navPagos").style.display = 'none');
+        document.getElementById("navPromedios")?.style && (document.getElementById("navPromedios").style.display = 'none');
+        const navEstadoCP = document.getElementById("navEstadoPlanillas");
+        if (navEstadoCP) navEstadoCP.style.display = 'flex';
+        if (btnExportarExcel) btnExportarExcel.style.display = 'none';
+        if (btnExportarPDF)   btnExportarPDF.style.display   = 'none';
+        // Ir directo al kanban de estado
+        document.getElementById("inicio")?.classList.remove("visible");
+        document.getElementById("estado-planillas")?.classList.add("visible");
+        document.querySelectorAll(".nav-item[data-tab]").forEach(n =>
+            n.classList.toggle("active", n.dataset.tab === 'estado-planillas'));
     } else if (role === 'caja') {
         // PERFIL CAJA: solo ve la pantalla de impresión de planillas, nada más
         // Ocultar toda la navegación
@@ -4619,12 +4681,24 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // OPTIMIZACIÓN: Cargar solo datos necesarios según el rol
         if (role === 'admin') {
-            // Administradores cargan TODO: vehículos, fletes y KPIs
+            // Administradores cargan TODO: vehículos, fletes, KPIs y badge de aprobaciones
             Promise.all([
                 listarVehiculos(),
                 listarFletes(),
                 actualizarKPI()
-            ]).catch(err => {
+            ]).then(() => {
+                // Cargar badge de aprobaciones pendientes después de que cargue planillas.js
+                setTimeout(async () => {
+                    if (typeof SupabaseClient !== 'undefined' && SupabaseClient.programaciones) {
+                        const count = await SupabaseClient.programaciones.countPendientes();
+                        const badge = document.getElementById('badge-aprobaciones');
+                        if (badge && count > 0) {
+                            badge.textContent   = count;
+                            badge.style.display = 'inline-flex';
+                        }
+                    }
+                }, 800);
+            }).catch(err => {
                 console.error("❌ Error cargando datos:", err);
                 Swal.fire({
                     icon: 'error',
@@ -4650,7 +4724,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                 });
             });
             console.log("✅ Usuario 'operario' - Carga optimizada (sin vehículos)");
-        } else {
+        } else if (['cargador','cajera_plan'].includes(role)) {
+            // cargador: fue redirigido arriba. cajera_plan: carga kanban
+            if (role === 'cajera_plan') {
+                console.log("✅ Usuario 'cajera_plan' - Cargando kanban de planillas");
+                setTimeout(() => {
+                    if (typeof inicializarModuloEstado === 'function') inicializarModuloEstado();
+                }, 200);
+            }
+        } else if (role === 'programador') {
+            // Programador carga fletes + KPIs
+            Promise.all([listarFletes(), actualizarKPI()]).catch(console.error);        } else {
             console.log("✅ Usuario 'caja' - Interfaz limpia sin datos innecesarios");
         }
 
@@ -4659,6 +4743,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         tabs.forEach(t => {
             t.addEventListener("click", async () => {
                 const target = t.dataset.tab;
+
+                // Si no tiene data-tab es un link externo (href) — dejar navegar normalmente
+                if (!target) return;
+
                 const session = CURRENT_SESSION;
                 const role = (session?.profile?.rol || session?.user?.user_metadata?.rol || 'operario').toLowerCase();
 
@@ -4667,7 +4755,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("visible"));
                 document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
 
-                document.getElementById(target).classList.add("visible");
+                const targetEl = document.getElementById(target);
+                if (!targetEl) return; // sección no existe en este contexto
+                targetEl.classList.add("visible");
                 t.classList.add("active");
 
                 // Inicializar módulo de pagos al entrar al tab
@@ -4678,6 +4768,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Inicializar módulo de promedios al entrar al tab
                 if (target === 'promedios-placa') {
                     inicializarFechasPromedios();
+                }
+                // Inicializar módulo según el tab de planillas que se active
+                if (target === 'estado-planillas') {
+                    if (typeof inicializarModuloEstado === 'function') inicializarModuloEstado();
+                }
+                // Inicializar módulo de aprobaciones al entrar
+                if (target === 'aprobaciones') {
+                    if (typeof cargarAprobaciones === 'function') cargarAprobaciones();
                 }
             });
         });

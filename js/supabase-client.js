@@ -724,3 +724,431 @@ window.supabaseClient.crearFlete = crearFlete;
 window.supabaseClient.buscarVehiculoPorPlaca = buscarVehiculoPorPlaca;
 window.supabaseClient.obtenerSesionActual = obtenerSesionActual;
 window.supabaseClient.cerrarSesion = cerrarSesion;
+
+// ==========================================================
+// 📋 MÓDULO DE PLANILLAS
+// ==========================================================
+
+/**
+ * Obtener planillas con sus totales de facturas
+ * @param {object} filtros - { estado, fecha, proveedor, busqueda }
+ */
+async function obtenerPlanillas(filtros = {}) {
+    try {
+        const razonSocial = await _getRazonSocialUsuario();
+        let query = _supabase
+            .from('planillas')
+            .select(`*, planilla_facturas(id, no_factura, valor_bruto, valor_factura, valor_total, asignada, zona, fecha_entrega)`)
+            .order('fecha', { ascending: false })
+            .order('created_at', { ascending: false });
+
+        if (razonSocial) query = query.eq('razon_social', razonSocial.toUpperCase());
+        if (filtros.estado) query = query.eq('estado', filtros.estado);
+        if (filtros.fecha) query = query.eq('fecha', filtros.fecha);
+        if (filtros.proveedor) query = query.eq('proveedor', filtros.proveedor);
+        if (filtros.busqueda) {
+            const q = `%${filtros.busqueda}%`;
+            query = query.or(`no_planilla.ilike.${q},placa.ilike.${q},conductor.ilike.${q},zona.ilike.${q}`);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return { success: true, data: data || [] };
+    } catch (error) {
+        console.error('Error al obtener planillas:', error);
+        return { success: false, data: [], error: error.message };
+    }
+}
+
+/**
+ * Crear planilla con sus facturas (bulk insert desde Excel)
+ * @param {object} planillaData - Datos de la cabecera
+ * @param {Array}  facturas     - Array de { no_factura, fecha_entrega, zona, valor_bruto, valor_factura, valor_total }
+ */
+async function crearPlanillaConFacturas(planillaData, facturas = []) {
+    try {
+        const { data: sessionData } = await _supabase.auth.getSession();
+        const userId = sessionData?.session?.user?.id;
+        const razonSocial = await _getRazonSocialUsuario() || 'TYM';
+
+        // 1. Insertar cabecera
+        const { data: planilla, error: errP } = await _supabase
+            .from('planillas')
+            .insert([{
+                ...planillaData,
+                razon_social: razonSocial,
+                created_by: userId,
+                total_facturas: facturas.length,
+                valor_bruto_total:   facturas.reduce((s, f) => s + (parseFloat(f.valor_bruto)   || 0), 0),
+                valor_factura_total: facturas.reduce((s, f) => s + (parseFloat(f.valor_factura) || 0), 0),
+                valor_total:         facturas.reduce((s, f) => s + (parseFloat(f.valor_total)   || 0), 0),
+            }])
+            .select()
+            .single();
+
+        if (errP) throw errP;
+
+        // 2. Insertar facturas si las hay
+        if (facturas.length > 0) {
+            const rowsFacturas = facturas.map(f => ({
+                planilla_id:   planilla.id,
+                no_factura:    String(f.no_factura),
+                fecha_entrega: f.fecha_entrega || planillaData.fecha,
+                zona:          f.zona || planillaData.zona || null,
+                valor_bruto:   parseFloat(f.valor_bruto)   || 0,
+                valor_factura: parseFloat(f.valor_factura) || 0,
+                valor_total:   parseFloat(f.valor_total)   || 0,
+                asignada:      true,
+                razon_social:  razonSocial,
+            }));
+
+            const { error: errF } = await _supabase.from('planilla_facturas').insert(rowsFacturas);
+            if (errF) throw errF;
+        }
+
+        return { success: true, data: planilla };
+    } catch (error) {
+        console.error('Error al crear planilla:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Actualizar estado de una planilla
+ * @param {string} planillaId
+ * @param {string} nuevoEstado - TRANSITORIA | POR DESPACHAR | DESPACHADA | CUADRADA
+ * @param {object} extraData   - Campos adicionales a actualizar (ej. placa, conductor)
+ */
+async function actualizarEstadoPlanilla(planillaId, nuevoEstado, extraData = {}) {
+    try {
+        const { error } = await _supabase
+            .from('planillas')
+            .update({ estado: nuevoEstado, ...extraData })
+            .eq('id', planillaId);
+        if (error) throw error;
+        return { success: true };
+    } catch (error) {
+        console.error('Error al actualizar planilla:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Asignar / desasignar una factura de su planilla
+ * @param {string}  facturaId
+ * @param {boolean} asignada - true = asignada, false = suelta
+ */
+async function toggleAsignacionFactura(facturaId, asignada) {
+    try {
+        const { error } = await _supabase
+            .from('planilla_facturas')
+            .update({ asignada })
+            .eq('id', facturaId);
+        if (error) throw error;
+        return { success: true };
+    } catch (error) {
+        console.error('Error al toggle factura:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Obtener facturas sueltas (desasignadas) de una empresa
+ */
+async function obtenerFacturasSueltas(filtros = {}) {
+    try {
+        const razonSocial = await _getRazonSocialUsuario();
+        let query = _supabase
+            .from('planilla_facturas')
+            .select('*, planilla:planillas(no_planilla, fecha, zona)')
+            .eq('asignada', false)
+            .order('created_at', { ascending: false });
+
+        if (razonSocial) query = query.eq('razon_social', razonSocial.toUpperCase());
+        if (filtros.fecha) query = query.eq('fecha_entrega', filtros.fecha);
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return { success: true, data: data || [] };
+    } catch (error) {
+        console.error('Error al obtener facturas sueltas:', error);
+        return { success: false, data: [], error: error.message };
+    }
+}
+
+/**
+ * Eliminar una planilla y todas sus facturas (CASCADE en DB)
+ */
+async function eliminarPlanilla(planillaId) {
+    try {
+        const { error } = await _supabase.from('planillas').delete().eq('id', planillaId);
+        if (error) throw error;
+        return { success: true };
+    } catch (error) {
+        console.error('Error al eliminar planilla:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Obtener conteo de planillas por estado (para KPIs de cajera)
+ */
+async function obtenerKPIPlanillas() {
+    try {
+        const razonSocial = await _getRazonSocialUsuario();
+        const estados = ['TRANSITORIA', 'POR DESPACHAR', 'DESPACHADA', 'CUADRADA'];
+        const counts = {};
+
+        for (const estado of estados) {
+            let q = _supabase.from('planillas').select('*', { count: 'exact', head: true }).eq('estado', estado);
+            if (razonSocial) q = q.eq('razon_social', razonSocial.toUpperCase());
+            const { count } = await q;
+            counts[estado] = count || 0;
+        }
+        return { success: true, data: counts };
+    } catch (error) {
+        console.error('Error KPI planillas:', error);
+        return { success: false, data: {} };
+    }
+}
+
+// Agregar al objeto SupabaseClientAPI
+SupabaseClientAPI.planillas = {
+    getAll:               obtenerPlanillas,
+    create:               crearPlanillaConFacturas,
+    updateEstado:         actualizarEstadoPlanilla,
+    toggleFactura:        toggleAsignacionFactura,
+    getFacturasSueltas:   obtenerFacturasSueltas,
+    delete:               eliminarPlanilla,
+    getKPIs:              obtenerKPIPlanillas,
+};
+
+// Actualizar aliases globales
+window.supabaseClient  = SupabaseClientAPI;
+window.SupabaseClient  = SupabaseClientAPI;
+
+// ==========================================================
+// 📋 MÓDULO DE PROGRAMACIONES (pendientes de aprobación admin)
+// ==========================================================
+
+/**
+ * Crear una programación pendiente (NO crea flete, espera aprobación del admin)
+ */
+async function crearProgramacion(data) {
+    try {
+        const { data: sessionData } = await _supabase.auth.getSession();
+        const userId      = sessionData?.session?.user?.id;
+        const razonSocial = await _getRazonSocialUsuario() || 'TYM';
+        const userName    = await _getNombreUsuario()      || 'Programador';
+
+        const { data: prog, error } = await _supabase
+            .from('programaciones')
+            .insert([{
+                ...data,
+                estado:              'PENDIENTE',
+                razon_social:        razonSocial,
+                programado_por:      userName,
+                programado_por_id:   userId,
+            }])
+            .select()
+            .single();
+
+        if (error) throw error;
+        return { success: true, data: prog };
+    } catch (error) {
+        console.error('Error al crear programación:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Obtener programaciones filtradas por estado / fecha / empresa
+ */
+async function obtenerProgramaciones(filtros = {}) {
+    try {
+        const razonSocial = await _getRazonSocialUsuario();
+
+        let query = _supabase
+            .from('programaciones')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (razonSocial) query = query.eq('razon_social', razonSocial.toUpperCase());
+        if (filtros.estado)  query = query.eq('estado',  filtros.estado);
+        if (filtros.fecha)   query = query.eq('fecha',   filtros.fecha);
+        if (filtros.placa)   query = query.ilike('placa', `%${filtros.placa}%`);
+        if (filtros.proveedor) query = query.eq('proveedor', filtros.proveedor);
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return { success: true, data: data || [] };
+    } catch (error) {
+        console.error('Error al obtener programaciones:', error);
+        return { success: false, data: [], error: error.message };
+    }
+}
+
+/**
+ * Aprobar una programación → crea el flete real en la tabla `fletes`
+ * Retorna el flete creado
+ */
+async function aprobarProgramacion(programacionId) {
+    try {
+        const { data: sessionData } = await _supabase.auth.getSession();
+        const userId   = sessionData?.session?.user?.id;
+        const userName = await _getNombreUsuario() || 'Admin';
+        const rs       = await _getRazonSocialUsuario() || 'TYM';
+
+        // 1. Obtener la programación
+        const { data: prog, error: eGet } = await _supabase
+            .from('programaciones')
+            .select('*')
+            .eq('id', programacionId)
+            .single();
+        if (eGet) throw eGet;
+        if (!prog) throw new Error('Programación no encontrada');
+        if (prog.estado !== 'PENDIENTE') throw new Error(`La programación ya está ${prog.estado}`);
+
+        // 2. Crear el flete en la tabla fletes
+        const fletePayload = {
+            placa:                      prog.placa,
+            contratista:                prog.contratista,
+            proveedor:                  prog.proveedor,
+            zona:                       prog.zona,
+            dia:                        prog.dia,
+            fecha:                      prog.fecha,
+            poblacion:                  prog.poblacion,
+            auxiliares:                 prog.auxiliares,
+            no_auxiliares:              prog.no_auxiliares,
+            no_pedidos:                 prog.no_pedidos,
+            valor_ruta:                 prog.valor_ruta,
+            no_planilla:                prog.no_planilla,
+            facturas_adicionales:       prog.facturas_seleccionadas,
+            valor_adicional_negociacion: prog.valor_adicional_negociacion,
+            razon_adicional_negociacion: prog.razon_adicional_negociacion,
+            precio:                     prog.precio,
+            adicionales:                prog.adicionales || 'No',
+            razon_social:               rs,
+            user_id:                    userId,
+        };
+
+        const { data: flete, error: eFlete } = await _supabase
+            .from('fletes')
+            .insert([fletePayload])
+            .select()
+            .single();
+        if (eFlete) throw eFlete;
+
+        // 3. Marcar la programación como APROBADA y guardar referencia al flete
+        const { error: eUpd } = await _supabase
+            .from('programaciones')
+            .update({
+                estado:          'APROBADA',
+                flete_id:        flete.id,
+                revisado_por:    userName,
+                revisado_por_id: userId,
+                fecha_revision:  new Date().toISOString(),
+            })
+            .eq('id', programacionId);
+        if (eUpd) throw eUpd;
+
+        // 4. Actualizar la planilla a POR DESPACHAR si tiene planilla_id
+        if (prog.planilla_id) {
+            await _supabase
+                .from('planillas')
+                .update({
+                    estado:            'POR DESPACHAR',
+                    placa:             prog.placa,
+                    conductor:         prog.contratista,
+                    fecha_programacion: prog.fecha,
+                    programado_por:    userName,
+                })
+                .eq('id', prog.planilla_id);
+
+            // Marcar facturas deseleccionadas como asignada=false
+            if (prog.facturas_deseleccionadas) {
+                const ids = prog.facturas_deseleccionadas.split(',').map(s => s.trim()).filter(Boolean);
+                for (const fId of ids) {
+                    await _supabase
+                        .from('planilla_facturas')
+                        .update({ asignada: false })
+                        .eq('id', fId);
+                }
+            }
+        }
+
+        return { success: true, data: flete };
+    } catch (error) {
+        console.error('Error al aprobar programación:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Rechazar una programación con motivo
+ */
+async function rechazarProgramacion(programacionId, motivo) {
+    try {
+        const { data: sessionData } = await _supabase.auth.getSession();
+        const userId   = sessionData?.session?.user?.id;
+        const userName = await _getNombreUsuario() || 'Admin';
+
+        const { error } = await _supabase
+            .from('programaciones')
+            .update({
+                estado:          'RECHAZADA',
+                motivo_rechazo:  motivo || 'Sin motivo',
+                revisado_por:    userName,
+                revisado_por_id: userId,
+                fecha_revision:  new Date().toISOString(),
+            })
+            .eq('id', programacionId);
+
+        if (error) throw error;
+        return { success: true };
+    } catch (error) {
+        console.error('Error al rechazar programación:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Contar programaciones PENDIENTES (para badge en el nav)
+ */
+async function contarProgramacionesPendientes() {
+    try {
+        const razonSocial = await _getRazonSocialUsuario();
+        let q = _supabase
+            .from('programaciones')
+            .select('*', { count: 'exact', head: true })
+            .eq('estado', 'PENDIENTE');
+        if (razonSocial) q = q.eq('razon_social', razonSocial.toUpperCase());
+        const { count } = await q;
+        return count || 0;
+    } catch { return 0; }
+}
+
+/** Helper: obtener nombre del usuario actual */
+async function _getNombreUsuario() {
+    try {
+        const { data: sessionData } = await _supabase.auth.getSession();
+        const userId = sessionData?.session?.user?.id;
+        if (!userId) return null;
+        const { data } = await _supabase
+            .from('usuarios').select('nombre').eq('id', userId).single();
+        return data?.nombre || null;
+    } catch { return null; }
+}
+
+// Exponer en el objeto global
+SupabaseClientAPI.programaciones = {
+    create:          crearProgramacion,
+    getAll:          obtenerProgramaciones,
+    aprobar:         aprobarProgramacion,
+    rechazar:        rechazarProgramacion,
+    countPendientes: contarProgramacionesPendientes,
+};
+
+// Actualizar alias globales
+window.supabaseClient = SupabaseClientAPI;
+window.SupabaseClient = SupabaseClientAPI;

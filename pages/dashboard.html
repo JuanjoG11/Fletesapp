@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es" data-theme="dark">
 
 <head>
@@ -36,7 +36,7 @@
         let deferredPrompt;
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js?v=5')
+                navigator.serviceWorker.register('../sw.js?v=6')
                     .then(reg => console.log('Service Worker registrado', reg))
                     .catch(err => console.error('Error al registrar Service Worker', err));
             });
@@ -61,7 +61,8 @@
     </script>
 
     <script src="../js/supabase-client.js"></script>
-    <script src="../js/app.js?v=5" defer></script>
+    <script src="../js/app.js?v=6" defer></script>
+    <script src="../js/modules/planillas.js" defer></script>
 </head>
 
 <body>
@@ -96,6 +97,26 @@
             <!-- Tab Promedios por Placa (solo admin) -->
             <a class="nav-item" data-tab="promedios-placa" id="navPromedios" style="display:none;">
                 <i class="ri-bar-chart-grouped-line"></i> Promedios Placa
+            </a>
+
+            <!-- ── MÓDULO PLANILLAS ── -->
+            <!-- Carga de Planillas → página externa -->
+            <a class="nav-item" href="carga-planillas.html" id="navCargaPlanillas" style="display:none;">
+                <i class="ri-upload-cloud-2-line"></i> Carga Planillas
+            </a>
+            <!-- Programación → página externa -->
+            <a class="nav-item" href="programacion.html" id="navProgramacionPlanillas" style="display:none;">
+                <i class="ri-route-line"></i> Programación
+            </a>
+            <!-- Estado / Kanban → tab interno del dashboard -->
+            <a class="nav-item" data-tab="estado-planillas" id="navEstadoPlanillas" style="display:none;">
+                <i class="ri-kanban-view"></i> Estado Planillas
+                <span id="pl-badge-sueltas" style="display:none; background:#ef4444; color:#fff; border-radius:12px; font-size:0.7rem; font-weight:700; padding:1px 7px; margin-left:4px;"></span>
+            </a>
+            <!-- Aprobaciones de Programación (solo admin) -->
+            <a class="nav-item" data-tab="aprobaciones" id="navAprobaciones" style="display:none;">
+                <i class="ri-shield-check-line"></i> Aprobaciones
+                <span id="badge-aprobaciones" style="display:none; background:#f59e0b; color:#000; border-radius:12px; font-size:0.7rem; font-weight:800; padding:1px 7px; margin-left:4px;"></span>
             </a>
 
         </nav>
@@ -949,7 +970,346 @@
                     </div>
                 </div>
             </div>
-        </section>    </main>
+        </section>
+
+        <!-- Secciones Carga Planillas y Programación movidas a páginas externas -->
+        <!-- ================================================================
+             📊 SECCIÓN 3: ESTADO DE PLANILLAS / KANBAN (cajera_plan + admin)
+        ================================================================ -->
+        <section id="estado-planillas" class="tab-content fade-in">
+
+            <!-- ── KPIs de planillas ── -->
+            <div class="kpi-grid" style="margin-bottom:20px;">
+                <div class="card glass-card kpi-card" style="border-left-color:#f59e0b;">
+                    <div class="kpi-icon" style="color:#f59e0b;background:rgba(245,158,11,0.1);"><i class="ri-time-line"></i></div>
+                    <div class="kpi-info">
+                        <h3>Transitorias</h3>
+                        <p id="pl-kpi-transitoria" class="kpi-value" style="color:#f59e0b;">0</p>
+                    </div>
+                </div>
+                <div class="card glass-card kpi-card" style="border-left-color:#3b82f6;">
+                    <div class="kpi-icon" style="color:#3b82f6;background:rgba(59,130,246,0.1);"><i class="ri-send-plane-line"></i></div>
+                    <div class="kpi-info">
+                        <h3>Por Despachar</h3>
+                        <p id="pl-kpi-por-despachar" class="kpi-value" style="color:#3b82f6;">0</p>
+                    </div>
+                </div>
+                <div class="card glass-card kpi-card" style="border-left-color:#8b5cf6;">
+                    <div class="kpi-icon" style="color:#8b5cf6;background:rgba(139,92,246,0.1);"><i class="ri-truck-line"></i></div>
+                    <div class="kpi-info">
+                        <h3>Despachadas</h3>
+                        <p id="pl-kpi-despachada" class="kpi-value" style="color:#8b5cf6;">0</p>
+                    </div>
+                </div>
+                <div class="card glass-card kpi-card" style="border-left-color:#10b981;">
+                    <div class="kpi-icon" style="color:#10b981;background:rgba(16,185,129,0.1);"><i class="ri-checkbox-circle-line"></i></div>
+                    <div class="kpi-info">
+                        <h3>Cuadradas</h3>
+                        <p id="pl-kpi-cuadrada" class="kpi-value" style="color:#10b981;">0</p>
+                    </div>
+                </div>
+                <div class="card glass-card kpi-card">
+                    <div class="kpi-icon icon-blue"><i class="ri-file-list-3-line"></i></div>
+                    <div class="kpi-info">
+                        <h3>Total Planillas</h3>
+                        <p id="pl-kpi-total" class="kpi-value">0</p>
+                    </div>
+                </div>
+                <div class="card glass-card kpi-card">
+                    <div class="kpi-icon icon-green"><i class="ri-money-dollar-circle-line"></i></div>
+                    <div class="kpi-info">
+                        <h3>Valor Total</h3>
+                        <p id="pl-kpi-valor" class="kpi-value" style="font-size:1.2rem;">$ 0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── FILTROS ── -->
+            <div class="card glass-card" style="margin-bottom:20px;">
+                <div class="flex-header">
+                    <h2><i class="ri-filter-3-line"></i> Filtros</h2>
+                    <div class="filters">
+                        <input type="date" id="pl-filtro-fecha" class="input-modern" style="width:160px;">
+                        <select id="pl-filtro-estado" class="input-modern" style="width:180px;">
+                            <option value="">Todos los estados</option>
+                            <option value="TRANSITORIA">Transitoria</option>
+                            <option value="POR DESPACHAR">Por Despachar</option>
+                            <option value="DESPACHADA">Despachada</option>
+                            <option value="CUADRADA">Cuadrada</option>
+                        </select>
+                        <select id="pl-filtro-proveedor" class="input-modern" style="width:180px;">
+                            <option value="">Todos los proveedores</option>
+                            <option value="ALPINA">ALPINA</option>
+                            <option value="FLEISCHMANN">FLEISCHMANN</option>
+                            <option value="ZENU">ZENU</option>
+                        </select>
+                        <div style="position:relative;">
+                            <i class="ri-search-line" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);"></i>
+                            <input type="text" id="pl-filtro-busqueda" placeholder="Buscar planilla, placa..." class="input-modern" style="padding-left:32px; width:220px;">
+                        </div>
+                        <button class="btn btn-primary" onclick="cargarPlanillas()" style="height:40px;padding:0 16px;">
+                            <i class="ri-refresh-line"></i> Actualizar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── KANBAN DE ESTADOS ── -->
+            <h3 style="margin-bottom:16px; color:var(--text-muted); font-size:0.85rem; text-transform:uppercase; letter-spacing:1px;">
+                <i class="ri-layout-column-line"></i> Tablero de Estado de Planillas
+            </h3>
+            <div class="pl-kanban-board">
+
+                <!-- Columna TRANSITORIA -->
+                <div class="pl-kanban-col">
+                    <div class="pl-kanban-col-header" style="border-top-color:#f59e0b;">
+                        <span style="color:#f59e0b;"><i class="ri-time-line"></i> TRANSITORIA</span>
+                        <span class="pl-kanban-count" id="pl-cnt-transitoria">0</span>
+                    </div>
+                    <div class="pl-kanban-cards" id="pl-col-transitoria">
+                        <div class="pl-kanban-empty"><i class="ri-loader-4-line rotate"></i><span>Cargando...</span></div>
+                    </div>
+                </div>
+
+                <!-- Columna POR DESPACHAR -->
+                <div class="pl-kanban-col">
+                    <div class="pl-kanban-col-header" style="border-top-color:#3b82f6;">
+                        <span style="color:#3b82f6;"><i class="ri-send-plane-line"></i> POR DESPACHAR</span>
+                        <span class="pl-kanban-count" id="pl-cnt-por-despachar">0</span>
+                    </div>
+                    <div class="pl-kanban-cards" id="pl-col-por-despachar">
+                        <div class="pl-kanban-empty"><i class="ri-loader-4-line rotate"></i><span>Cargando...</span></div>
+                    </div>
+                </div>
+
+                <!-- Columna DESPACHADA -->
+                <div class="pl-kanban-col">
+                    <div class="pl-kanban-col-header" style="border-top-color:#8b5cf6;">
+                        <span style="color:#8b5cf6;"><i class="ri-truck-line"></i> DESPACHADA</span>
+                        <span class="pl-kanban-count" id="pl-cnt-despachada">0</span>
+                    </div>
+                    <div class="pl-kanban-cards" id="pl-col-despachada">
+                        <div class="pl-kanban-empty"><i class="ri-loader-4-line rotate"></i><span>Cargando...</span></div>
+                    </div>
+                </div>
+
+                <!-- Columna CUADRADA -->
+                <div class="pl-kanban-col">
+                    <div class="pl-kanban-col-header" style="border-top-color:#10b981;">
+                        <span style="color:#10b981;"><i class="ri-checkbox-circle-line"></i> CUADRADA</span>
+                        <span class="pl-kanban-count" id="pl-cnt-cuadrada">0</span>
+                    </div>
+                    <div class="pl-kanban-cards" id="pl-col-cuadrada">
+                        <div class="pl-kanban-empty"><i class="ri-loader-4-line rotate"></i><span>Cargando...</span></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ── TABLA RESUMEN ── -->
+            <div class="card glass-card" style="margin-top:24px;">
+                <div class="card-header flex-header">
+                    <h2><i class="ri-table-line"></i> Listado Detallado</h2>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No. Planilla</th>
+                                <th>Fecha</th>
+                                <th>Zona</th>
+                                <th>Proveedor</th>
+                                <th>Placa Asignada</th>
+                                <th style="text-align:center;">Facturas</th>
+                                <th>Valor Total</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pl-tabla-body">
+                            <tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">
+                                <i class="ri-loader-4-line rotate"></i> Cargando...
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ================================================================
+             ✅ SECCIÓN APROBACIONES (solo admin)
+             El admin revisa las programaciones PENDIENTES y las aprueba
+             o rechaza → al aprobar se crea el flete en la tabla fletes
+        ================================================================ -->
+        <section id="aprobaciones" class="tab-content fade-in">
+
+            <!-- KPIs rápidos -->
+            <div class="kpi-grid" style="margin-bottom:20px;">
+                <div class="card glass-card kpi-card" style="border-left-color:#f59e0b;">
+                    <div class="kpi-icon" style="color:#f59e0b;background:rgba(245,158,11,0.1);"><i class="ri-time-line"></i></div>
+                    <div class="kpi-info"><h3>Pendientes</h3><p id="apr-kpi-pendiente" class="kpi-value" style="color:#f59e0b;">0</p></div>
+                </div>
+                <div class="card glass-card kpi-card" style="border-left-color:#10b981;">
+                    <div class="kpi-icon" style="color:#10b981;background:rgba(16,185,129,0.1);"><i class="ri-checkbox-circle-line"></i></div>
+                    <div class="kpi-info"><h3>Aprobadas hoy</h3><p id="apr-kpi-aprobada" class="kpi-value" style="color:#10b981;">0</p></div>
+                </div>
+                <div class="card glass-card kpi-card" style="border-left-color:#ef4444;">
+                    <div class="kpi-icon" style="color:#ef4444;background:rgba(239,68,68,0.1);"><i class="ri-close-circle-line"></i></div>
+                    <div class="kpi-info"><h3>Rechazadas hoy</h3><p id="apr-kpi-rechazada" class="kpi-value" style="color:#ef4444;">0</p></div>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="card glass-card" style="margin-bottom:16px;">
+                <div class="flex-header">
+                    <h2><i class="ri-shield-check-line"></i> Programaciones para Revisión</h2>
+                    <div class="filters">
+                        <input type="date" id="apr-filtro-fecha" class="input-modern" style="width:155px;"
+                               onchange="cargarAprobaciones()">
+                        <select id="apr-filtro-estado" class="input-modern" style="width:180px;"
+                                onchange="cargarAprobaciones()">
+                            <option value="PENDIENTE">Pendientes</option>
+                            <option value="APROBADA">Aprobadas</option>
+                            <option value="RECHAZADA">Rechazadas</option>
+                            <option value="">Todas</option>
+                        </select>
+                        <select id="apr-filtro-proveedor" class="input-modern" style="width:170px;"
+                                onchange="cargarAprobaciones()">
+                            <option value="">Todos los proveedores</option>
+                            <option value="ALPINA">ALPINA</option>
+                            <option value="FLEISCHMANN">FLEISCHMANN</option>
+                            <option value="ZENU">ZENU</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="cargarAprobaciones()" style="height:38px;padding:0 14px;">
+                            <i class="ri-refresh-line"></i> Actualizar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de programaciones -->
+            <div class="card glass-card">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Placa</th>
+                                <th>Conductor</th>
+                                <th>Fecha</th>
+                                <th>Zona</th>
+                                <th>Población</th>
+                                <th>No. Planilla</th>
+                                <th style="text-align:center;">Pedidos</th>
+                                <th>Valor Ruta</th>
+                                <th>Flete</th>
+                                <th>Programado por</th>
+                                <th>Estado</th>
+                                <th style="width:140px;text-align:center;" class="admin-actions-col">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="apr-tabla-body">
+                            <tr><td colspan="12" style="text-align:center;padding:32px;color:var(--text-muted);">
+                                <i class="ri-loader-4-line rotate"></i> Cargando...
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+        </main>
+
+        <!-- ================================================================
+             MODAL DETALLE DE PLANILLA / FACTURAS
+        ================================================================ -->
+        <div id="pl-modal-overlay" class="modal-overlay">
+            <div class="modal-glass" style="max-width:820px;">
+                <div class="modal-header">
+                    <h2><i class="ri-file-list-2-line"></i> Detalle Planilla
+                        <span id="pl-modal-no-planilla" style="color:var(--primary);margin-left:8px;"></span>
+                    </h2>
+                    <button class="close-btn" onclick="cerrarModalPlanilla()"><i class="ri-close-line"></i></button>
+                </div>
+                <div class="modal-body">
+
+                    <!-- Cabecera info -->
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:20px; padding:16px; background:var(--bg-secondary); border-radius:12px; border:1px solid var(--glass-border);">
+                        <div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:2px;">FECHA</div>
+                            <div id="pl-modal-fecha" style="font-weight:600;"></div>
+                        </div>
+                        <div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:2px;">ZONA</div>
+                            <div id="pl-modal-zona" style="font-weight:600;"></div>
+                        </div>
+                        <div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:2px;">PROVEEDOR</div>
+                            <div id="pl-modal-proveedor" style="font-weight:600;"></div>
+                        </div>
+                        <div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:2px;">FACTURAS</div>
+                            <div id="pl-modal-total-fact" style="font-weight:700;color:var(--primary);"></div>
+                        </div>
+                        <div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:2px;">VALOR TOTAL</div>
+                            <div id="pl-modal-valor" class="price-cell" style="font-size:1rem;"></div>
+                        </div>
+                        <div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:2px;">ESTADO</div>
+                            <span id="pl-modal-estado-chip" class="pl-estado-chip"></span>
+                        </div>
+                    </div>
+
+                    <!-- Sección de programación (programador/admin) -->
+                    <div id="pl-modal-sec-prog" style="display:none; margin-bottom:20px; padding:16px; background:rgba(59,130,246,0.05); border:1px solid rgba(59,130,246,0.2); border-radius:12px;">
+                        <h4 style="margin-bottom:12px; color:var(--primary);"><i class="ri-truck-line"></i> Asignar a Ruta</h4>
+                        <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));">
+                            <div class="input-group">
+                                <label>Placa Vehículo</label>
+                                <input id="pl-modal-placa" placeholder="EJ: ABC123" oninput="this.value=this.value.toUpperCase()">
+                            </div>
+                            <div class="input-group">
+                                <label>Conductor (auto)</label>
+                                <input id="pl-modal-conductor" placeholder="Se autocompletará">
+                            </div>
+                        </div>
+                        <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+                            <button class="btn btn-primary" onclick="guardarProgramacionPlanilla()">
+                                <i class="ri-save-line"></i> Guardar Programación
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Resumen de facturas -->
+                    <div id="pl-modal-resumen-fact" style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:12px; font-size:0.85rem; font-weight:600;"></div>
+
+                    <!-- Tabla de facturas -->
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:60px;">Asig.</th>
+                                    <th>No. Factura</th>
+                                    <th>Fecha Entrega</th>
+                                    <th>Zona</th>
+                                    <th>Vlr Bruto</th>
+                                    <th>Vlr Factura</th>
+                                    <th>Valor Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pl-modal-facturas-body"></tbody>
+                        </table>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="cerrarModalPlanilla()">Cerrar</button>
+                </div>
+            </div>
+        </div>
+
+
 
     <!-- MODAL EDICIÓN -->
     <div id="modalEdicionFlete" class="modal-overlay">

@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carga de Planillas | FletesApp</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../js/supabase-client.js"></script>
+
+    <link rel="icon" type="image/png" href="../assets/img/pwa_logo.png?v=3">
+    <link rel="manifest" href="../manifest.json?v=3">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg:       #0f172a;
+            --surface:  #1e293b;
+            --border:   rgba(255,255,255,0.08);
+            --primary:  #3b82f6;
+            --success:  #10b981;
+            --warning:  #f59e0b;
+            --danger:   #ef4444;
+            --text:     #f8fafc;
+            --muted:    #94a3b8;
+            --blur:     blur(12px);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Header ───────────────────────────────── */
+        .page-header {
+            background: rgba(30,41,59,0.9);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: var(--blur);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        .header-left img { height: 34px; border-radius: 6px; }
+        .header-title { font-size: 1.05rem; font-weight: 700; }
+        .header-sub   { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+
+        .badge-role {
+            background: rgba(59,130,246,0.12);
+            color: var(--primary);
+            border: 1px solid rgba(59,130,246,0.25);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+        .btn-back, .btn-logout {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            transition: 0.15s;
+        }
+        .btn-back   { background: rgba(255,255,255,0.06); color: var(--muted); border: 1px solid var(--border); }
+        .btn-back:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+        .btn-logout { background: rgba(239,68,68,0.1); color: var(--danger); border: 1px solid rgba(239,68,68,0.25); }
+        .btn-logout:hover { background: rgba(239,68,68,0.18); }
+
+        /* ── Layout ───────────────────────────────── */
+        .page-body {
+            flex: 1;
+            padding: 28px 24px;
+            max-width: 1100px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+            background: linear-gradient(to right, var(--primary), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .page-desc { font-size: 0.85rem; color: var(--muted); margin-bottom: 24px; }
+
+        /* ── Cards ────────────────────────────────── */
+        .card {
+            background: rgba(30,41,59,0.85);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            backdrop-filter: var(--blur);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .card-header h2 {
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ── Drop Zone ────────────────────────────── */
+        .dropzone {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 48px 24px;
+            border: 2px dashed rgba(255,255,255,0.15);
+            border-radius: 14px;
+            background: rgba(59,130,246,0.02);
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+        }
+        .dropzone:hover, .dropzone.active {
+            border-color: var(--primary);
+            background: rgba(59,130,246,0.07);
+        }
+        .dz-icon { font-size: 3.2rem; color: #22c55e; }
+        .dz-title { font-size: 1.1rem; font-weight: 700; }
+        .dz-sub   { font-size: 0.85rem; color: var(--muted); }
+        .dz-hint  { font-size: 0.76rem; color: var(--muted); opacity: 0.7; margin-top: 4px; }
+
+        /* ── Select proveedor ─────────────────────── */
+        .form-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .form-row label { font-size: 0.85rem; color: var(--muted); font-weight: 600; }
+        select, input[type="date"] {
+            background: rgba(15,23,42,0.8);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 9px 14px;
+            border-radius: 9px;
+            font-family: inherit;
+            font-size: 0.88rem;
+            transition: 0.15s;
+            height: 38px;
+        }
+        select:focus, input:focus { outline: none; border-color: var(--primary); }
+
+        /* ── Preview ──────────────────────────────── */
+        .preview-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(34,197,94,0.07);
+            border: 1px solid rgba(34,197,94,0.2);
+            border-radius: 10px;
+            margin-bottom: 14px;
+            font-size: 0.83rem;
+            font-weight: 600;
+        }
+        .preview-info i { opacity: 0.75; margin-right: 4px; }
+
+        /* ── Table ────────────────────────────────── */
+        .table-wrap {
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            margin-top: 12px;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        thead th {
+            background: rgba(30,41,59,0.9);
+            padding: 12px 14px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--muted);
+            text-align: left;
+            letter-spacing: 0.5px;
+        }
+        tbody td {
+            padding: 12px 14px;
+            border-top: 1px solid var(--border);
+            font-size: 0.85rem;
+        }
+        tbody tr:hover { background: rgba(255,255,255,0.02); }
+        .price { font-weight: 700; color: var(--success); }
+
+        /* ── Badges / chips ───────────────────────── */
+        .badge-planilla {
+            background: rgba(59,130,246,0.12);
+            color: var(--primary);
+            border: 1px solid rgba(59,130,246,0.3);
+            padding: 2px 9px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.82rem;
+            font-family: monospace;
+        }
+        .estado-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            border: 1px solid;
+            text-transform: uppercase;
+        }
+
+        /* ── Buttons ──────────────────────────────── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px 18px;
+            border-radius: 9px;
+            font-weight: 600;
+            font-size: 0.88rem;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            transition: 0.15s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(59,130,246,0.35);
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(59,130,246,0.45); }
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+        .btn-danger { background: rgba(239,68,68,0.12); color: var(--danger); border: 1px solid rgba(239,68,68,0.25); }
+        .btn-danger:hover { background: rgba(239,68,68,0.2); }
+
+        .actions-row {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 12px;
+        }
+
+        /* ── Estado chips colores ─────────────────── */
+        .chip-transitoria  { background:rgba(245,158,11,0.12); color:#f59e0b; border-color:#f59e0b40; }
+        .chip-despachar    { background:rgba(59,130,246,0.12); color:#3b82f6; border-color:#3b82f640; }
+        .chip-despachada   { background:rgba(139,92,246,0.12); color:#8b5cf6; border-color:#8b5cf640; }
+        .chip-cuadrada     { background:rgba(16,185,129,0.12); color:#10b981; border-color:#10b98140; }
+
+        /* ── Progress bar ─────────────────────────── */
+        .progress-wrap { margin: 12px 0; }
+        .progress-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; }
+        .progress-bar {
+            height: 6px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--success));
+            border-radius: 99px;
+            transition: width 0.3s;
+            width: 0%;
+        }
+
+        /* ── Loading spinner ──────────────────────── */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 0.9s linear infinite; display: inline-block; }
+
+        /* ── Empty state ──────────────────────────── */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+            color: var(--muted);
+            gap: 8px;
+        }
+        .empty-state i { font-size: 2.4rem; opacity: 0.5; }
+        .empty-state p { font-size: 0.88rem; }
+
+        /* ── Responsive ───────────────────────────── */
+        @media (max-width: 600px) {
+            .page-body { padding: 16px 12px; }
+            .card { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header class="page-header">
+    <div class="header-left">
+        <img src="../assets/img/pwa_logo.png" alt="Logo">
+        <div>
+            <div class="header-title"><i class="ri-upload-cloud-2-line" style="color:#22c55e;margin-right:6px;"></i>Carga de Planillas</div>
+            <div class="header-sub">FletesApp · Módulo de carga masiva desde Excel</div>
+        </div>
+    </div>
+    <div class="header-right">
+        <span class="badge-role" id="userBadge">Cargando...</span>
+        <button class="btn-back" onclick="window.location.href='dashboard.html'">
+            <i class="ri-arrow-left-line"></i> Dashboard
+        </button>
+        <button class="btn-logout" onclick="doLogout()">
+            <i class="ri-logout-box-r-line"></i> Salir
+        </button>
+    </div>
+</header>
+
+<!-- ── Body ── -->
+<div class="page-body">
+
+    <h1 class="page-title">Carga de Planillas</h1>
+    <p class="page-desc">Sube el archivo Excel con las planillas y facturas. Se procesarán automáticamente agrupadas por número de planilla.</p>
+
+    <!-- ── Formulario de carga ── -->
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="ri-settings-3-line"></i> Configuración de carga</h2>
+        </div>
+        <div class="form-row" style="margin-bottom:20px;">
+            <label>Proveedor:</label>
+            <select id="cp-proveedor">
+                <option value="ALPINA">ALPINA</option>
+                <option value="FLEISCHMANN">FLEISCHMANN</option>
+                <option value="ALPINA-FLEISCHMANN">ALPINA-FLEISCHMANN</option>
+                <option value="ZENU">ZENU</option>
+            </select>
+        </div>
+
+        <!-- Drop Zone -->
+        <div class="dropzone" id="cp-dropzone">
+            <input type="file" id="cp-file-input" accept=".xlsx,.xls,.csv" style="display:none;">
+            <div class="dz-icon"><i class="ri-file-excel-2-line"></i></div>
+            <p class="dz-title">Arrastra tu archivo Excel aquí</p>
+            <p class="dz-sub">o haz clic para seleccionarlo &nbsp;·&nbsp; .xlsx &nbsp;·&nbsp; .xls &nbsp;·&nbsp; .csv</p>
+            <p class="dz-hint">
+                Columnas requeridas: <strong>Factura</strong> y <strong>Planilla</strong><br>
+                Opcionales: Fecha Entrega, Zona, Vlr Bruto, Vlr Factura, Valor Total
+            </p>
+        </div>
+
+        <!-- Preview (oculto hasta cargar archivo) -->
+        <div id="cp-preview" style="display:none; margin-top:20px;">
+            <div class="preview-info" id="cp-preview-info"></div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No. Planilla</th>
+                            <th>Fecha</th>
+                            <th>Zona</th>
+                            <th style="text-align:center;">Facturas</th>
+                            <th>Valor Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cp-preview-body"></tbody>
+                </table>
+            </div>
+
+            <div class="progress-wrap" id="cp-progress-wrap" style="display:none;">
+                <div class="progress-label" id="cp-progress-label">Procesando...</div>
+                <div class="progress-bar"><div class="progress-fill" id="cp-progress-fill"></div></div>
+            </div>
+
+            <div class="actions-row">
+                <button class="btn btn-secondary" onclick="cancelarCarga()">
+                    <i class="ri-close-line"></i> Cancelar
+                </button>
+                <button class="btn btn-primary" id="cp-btn-confirmar" onclick="confirmarCarga()">
+                    <i class="ri-check-line"></i> Confirmar Carga
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Historial de planillas cargadas ── -->
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="ri-history-line"></i> Planillas Cargadas</h2>
+            <div class="form-row">
+                <input type="date" id="cp-hist-fecha" onchange="cargarHistorial()">
+                <select id="cp-hist-estado" onchange="cargarHistorial()" style="width:180px;">
+                    <option value="">Todos los estados</option>
+                    <option value="TRANSITORIA">Transitoria</option>
+                    <option value="POR DESPACHAR">Por Despachar</option>
+                    <option value="DESPACHADA">Despachada</option>
+                    <option value="CUADRADA">Cuadrada</option>
+                </select>
+                <button class="btn btn-secondary" onclick="cargarHistorial()" style="height:38px;padding:0 12px;">
+                    <i class="ri-refresh-line"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>No. Planilla</th>
+                        <th>Fecha</th>
+                        <th>Zona</th>
+                        <th>Proveedor</th>
+                        <th style="text-align:center;">Facturas</th>
+                        <th>Valor Total</th>
+                        <th>Estado</th>
+                        <th>Cargado por</th>
+                        <th style="width:70px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="cp-historial-body">
+                    <tr><td colspan="9"><div class="empty-state">
+                        <i class="ri-loader-4-line spin"></i><p>Cargando...</p>
+                    </div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div><!-- /page-body -->
+
+<script>
+'use strict';
+
+const moneyFmt = new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
+const fmt = v => moneyFmt.format(v || 0);
+
+const ESTADO_META = {
+    'TRANSITORIA':   { cls:'chip-transitoria', icon:'ri-time-line'           },
+    'POR DESPACHAR': { cls:'chip-despachar',   icon:'ri-send-plane-line'     },
+    'DESPACHADA':    { cls:'chip-despachada',  icon:'ri-truck-line'          },
+    'CUADRADA':      { cls:'chip-cuadrada',    icon:'ri-checkbox-circle-line'},
+};
+
+let CP_GRUPOS    = null;   // datos parseados del Excel
+let CP_USER_ROLE = null;
+let CP_USER_NAME = null;
+
+/* ── Auth guard ─────────────────────────────────────────── */
+(async () => {
+    const { session, user } = await window.SupabaseClient.auth.getSession();
+    if (!session) { window.location.href = '../index.html'; return; }
+
+    CP_USER_ROLE = user?.rol || 'cargador';
+    CP_USER_NAME = user?.nombre || 'Usuario';
+
+    const badge = document.getElementById('userBadge');
+    if (badge) badge.textContent = `${CP_USER_NAME} · ${CP_USER_ROLE}`;
+
+    // Solo cargador y admin pueden acceder
+    if (!['admin','cargador'].includes(CP_USER_ROLE.toLowerCase())) {
+        window.location.href = 'dashboard.html';
+        return;
+    }
+
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('cp-hist-fecha').value = hoy;
+    await cargarHistorial();
+    setupDropzone();
+})();
+
+/* ── Logout ─────────────────────────────────────────────── */
+async function doLogout() {
+    await window.SupabaseClient.auth.logout();
+    window.location.href = '../index.html?logout=true';
+}
+
+/* ── Dropzone ───────────────────────────────────────────── */
+function setupDropzone() {
+    const dz    = document.getElementById('cp-dropzone');
+    const input = document.getElementById('cp-file-input');
+    if (!dz || !input) return;
+
+    dz.addEventListener('click', () => input.click());
+    dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('active'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('active'));
+    dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('active');
+        const f = e.dataTransfer.files[0];
+        if (f) procesarExcel(f);
+    });
+    input.addEventListener('change', e => {
+        const f = e.target.files[0];
+        if (f) procesarExcel(f);
+        input.value = '';
+    });
+}
+
+/* ── Parseo de Excel ────────────────────────────────────── */
+async function procesarExcel(file) {
+    if (!file.name.match(/\.(xlsx|xls|csv)$/i)) {
+        Swal.fire({ icon:'warning', title:'Archivo inválido', text:'Solo se aceptan .xlsx, .xls o .csv', background:'#1e293b', color:'#fff' });
+        return;
+    }
+
+    Swal.fire({ title:'Procesando archivo...', allowOutsideClick:false, didOpen:()=>Swal.showLoading(), background:'#1e293b', color:'#fff' });
+
+    try {
+        const buffer = await file.arrayBuffer();
+        const wb     = XLSX.read(buffer, { type:'array', cellDates:true });
+        const sheet  = wb.Sheets[wb.SheetNames[0]];
+        const rows   = XLSX.utils.sheet_to_json(sheet, { defval:'' });
+
+        if (!rows.length) throw new Error('El archivo está vacío o sin datos válidos.');
+
+        const colMap = detectarColumnas(rows[0]);
+        if (!colMap.factura || !colMap.planilla) throw new Error('No se encontraron columnas "Factura" y "Planilla".');
+
+        // Agrupar por planilla
+        const grupos = {};
+        rows.forEach(row => {
+            const noPlanilla = String(row[colMap.planilla] || '').trim();
+            const noFactura  = String(row[colMap.factura]  || '').trim();
+            if (!noPlanilla || !noFactura) return;
+
+            if (!grupos[noPlanilla]) grupos[noPlanilla] = { facturas:[], zona:'', fecha:'' };
+
+            const zona  = colMap.zona  ? String(row[colMap.zona]  || '').trim() : '';
+            const fecha = colMap.fecha ? parseFecha(row[colMap.fecha]) : '';
+
+            if (zona  && !grupos[noPlanilla].zona)  grupos[noPlanilla].zona  = zona;
+            if (fecha && !grupos[noPlanilla].fecha) grupos[noPlanilla].fecha = fecha;
+
+            grupos[noPlanilla].facturas.push({
+                no_factura:    noFactura,
+                fecha_entrega: fecha || grupos[noPlanilla].fecha,
+                zona:          zona  || grupos[noPlanilla].zona,
+                valor_bruto:   colMap.vlrBruto   ? parseFloat(String(row[colMap.vlrBruto]   || '0').replace(',','.')) : 0,
+                valor_factura: colMap.vlrFactura ? parseFloat(String(row[colMap.vlrFactura] || '0').replace(',','.')) : 0,
+                valor_total:   colMap.valorTotal ? parseFloat(String(row[colMap.valorTotal] || '0').replace(',','.')) : 0,
+            });
+        });
+
+        CP_GRUPOS = grupos;
+        mostrarPreview(grupos, file.name);
+        Swal.close();
+
+    } catch (err) {
+        console.error(err);
+        Swal.fire({ icon:'error', title:'Error al procesar', text:err.message, background:'#1e293b', color:'#fff' });
+    }
+}
+
+function detectarColumnas(row) {
+    const claves = Object.keys(row).map(k => ({ original:k, norm:k.toLowerCase().replace(/[\s_\-]/g,'') }));
+    const find = (...terms) => claves.find(c => terms.some(t => c.norm.includes(t)))?.original || null;
+    return {
+        factura:    find('factura','invoice','nrofactura'),
+        planilla:   find('planilla','nroplanilla','plan'),
+        fecha:      find('fechaentrega','fecha','date','entrega'),
+        zona:       find('zona','zone'),
+        vlrBruto:   find('vlrbruto','valorbruto','bruto','gross'),
+        vlrFactura: find('vlrfactura','valorfactura','facturado','neto'),
+        valorTotal: find('valortotal','total','valorttl'),
+    };
+}
+
+function parseFecha(val) {
+    if (!val) return '';
+    if (val instanceof Date) return val.toISOString().split('T')[0];
+    const s = String(val).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0,10);
+    const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    if (m) {
+        const y = m[3].length === 2 ? '20'+m[3] : m[3];
+        return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    }
+    return '';
+}
+
+function mostrarPreview(grupos, nombreArchivo) {
+    const keys    = Object.keys(grupos);
+    const totalFact = keys.reduce((s,k) => s + grupos[k].facturas.length, 0);
+
+    const infoEl = document.getElementById('cp-preview-info');
+    infoEl.innerHTML = `
+        <span><i class="ri-file-excel-2-line" style="color:#22c55e"></i> <strong>${nombreArchivo}</strong></span>
+        <span><i class="ri-file-list-3-line"></i> <strong>${keys.length}</strong> planillas detectadas</span>
+        <span><i class="ri-receipt-line"></i> <strong>${totalFact}</strong> facturas en total</span>`;
+
+    const tbody = document.getElementById('cp-preview-body');
+    tbody.innerHTML = keys.map(k => {
+        const g    = grupos[k];
+        const val  = g.facturas.reduce((s,f) => s + (f.valor_total || f.valor_factura || 0), 0);
+        return `<tr>
+            <td><span class="badge-planilla">${k}</span></td>
+            <td>${g.fecha || '—'}</td>
+            <td>${g.zona  || '—'}</td>
+            <td style="text-align:center;">${g.facturas.length}</td>
+            <td class="price">${fmt(val)}</td>
+        </tr>`;
+    }).join('');
+
+    document.getElementById('cp-dropzone').style.display  = 'none';
+    document.getElementById('cp-preview').style.display   = 'block';
+}
+
+function cancelarCarga() {
+    CP_GRUPOS = null;
+    document.getElementById('cp-preview').style.display  = 'none';
+    document.getElementById('cp-dropzone').style.display = 'flex';
+    document.getElementById('cp-progress-wrap').style.display = 'none';
+}
+
+async function confirmarCarga() {
+    if (!CP_GRUPOS) return;
+    const proveedor = document.getElementById('cp-proveedor').value;
+    const keys = Object.keys(CP_GRUPOS);
+
+    // Mostrar barra de progreso
+    document.getElementById('cp-progress-wrap').style.display = 'block';
+    document.getElementById('cp-btn-confirmar').disabled = true;
+    const progressFill  = document.getElementById('cp-progress-fill');
+    const progressLabel = document.getElementById('cp-progress-label');
+
+    let exitosas = 0, errores = 0;
+
+    for (let i = 0; i < keys.length; i++) {
+        const k = keys[i];
+        const g = CP_GRUPOS[k];
+        const pct = Math.round(((i+1)/keys.length)*100);
+        progressFill.style.width  = pct + '%';
+        progressLabel.textContent = `Procesando ${i+1}/${keys.length}: Planilla ${k}`;
+
+        const planillaData = {
+            no_planilla:  k,
+            fecha:        g.fecha || new Date().toISOString().split('T')[0],
+            zona:         g.zona  || '',
+            proveedor,
+            estado:       'TRANSITORIA',
+            cargado_por:  CP_USER_NAME,
+        };
+
+        const result = await window.SupabaseClient.planillas.create(planillaData, g.facturas);
+        if (result.success) exitosas++;
+        else { errores++; console.error('Error planilla', k, result.error); }
+    }
+
+    cancelarCarga();
+    await cargarHistorial();
+
+    Swal.fire({
+        icon: errores === 0 ? 'success' : 'warning',
+        title: errores === 0 ? '¡Carga completada!' : 'Carga con errores',
+        html: `<strong style="color:#10b981">${exitosas}</strong> planillas cargadas.
+               ${errores > 0 ? `<br><strong style="color:#ef4444">${errores}</strong> con errores (ver consola).` : ''}`,
+        background:'#1e293b', color:'#fff'
+    });
+}
+
+/* ── Historial ──────────────────────────────────────────── */
+async function cargarHistorial() {
+    const tbody  = document.getElementById('cp-historial-body');
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><i class="ri-loader-4-line spin"></i><p>Cargando...</p></div></td></tr>`;
+
+    const filtros = {};
+    const fFecha  = document.getElementById('cp-hist-fecha')?.value;
+    const fEstado = document.getElementById('cp-hist-estado')?.value;
+    if (fFecha)  filtros.fecha  = fFecha;
+    if (fEstado) filtros.estado = fEstado;
+
+    const result = await window.SupabaseClient.planillas.getAll(filtros);
+    if (!result.success) {
+        tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state" style="color:#ef4444"><i class="ri-error-warning-line"></i><p>Error al cargar</p></div></td></tr>`;
+        return;
+    }
+    if (result.data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><i class="ri-inbox-line"></i><p>Sin planillas para los filtros aplicados</p></div></td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = result.data.map(p => {
+        const meta = ESTADO_META[p.estado] || ESTADO_META['TRANSITORIA'];
+        return `<tr>
+            <td><span class="badge-planilla">${p.no_planilla}</span></td>
+            <td>${p.fecha || '—'}</td>
+            <td>${p.zona  || '—'}</td>
+            <td>${p.proveedor || '—'}</td>
+            <td style="text-align:center;">${p.total_facturas || 0}</td>
+            <td class="price">${fmt(p.valor_total)}</td>
+            <td><span class="estado-chip ${meta.cls}"><i class="${meta.icon}"></i> ${p.estado}</span></td>
+            <td style="color:var(--muted);font-size:0.8rem;">${p.cargado_por || '—'}</td>
+            <td style="text-align:center;">
+                <button onclick="eliminarPlanilla('${p.id}','${p.no_planilla}')"
+                        style="background:transparent;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;"
+                        title="Eliminar planilla">
+                    <i class="ri-delete-bin-line"></i>
+                </button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+async function eliminarPlanilla(id, noPlanilla) {
+    const c = await Swal.fire({
+        title:`¿Eliminar planilla ${noPlanilla}?`,
+        html:'Se eliminarán la planilla y todas sus facturas.<br><small style="color:#94a3b8">Irreversible.</small>',
+        icon:'warning', showCancelButton:true,
+        confirmButtonText:'Eliminar', cancelButtonText:'Cancelar',
+        confirmButtonColor:'#ef4444',
+        background:'#1e293b', color:'#fff'
+    });
+    if (!c.isConfirmed) return;
+    const r = await window.SupabaseClient.planillas.delete(id);
+    if (r.success) {
+        Swal.fire({ icon:'success', title:'Eliminada', timer:1500, showConfirmButton:false, background:'#1e293b', color:'#fff' });
+        cargarHistorial();
+    }
+}
+</script>
+</body>
+</html>

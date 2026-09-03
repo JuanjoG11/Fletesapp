@@ -1003,3 +1003,365 @@ tbody tr:hover {
     max-width: 400px;
     margin: auto;
 }
+
+/* ============================================================
+   📋 MÓDULO GESTIÓN DE PLANILLAS
+   Glassmorphism + Kanban + DropZone + Toggle switches
+============================================================ */
+
+/* ── Kanban Board ─────────────────────────────────────────── */
+.pl-kanban-board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+@media (max-width: 1200px) {
+    .pl-kanban-board { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+    .pl-kanban-board { grid-template-columns: 1fr; }
+}
+
+.pl-kanban-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-height: 300px;
+}
+
+.pl-kanban-col-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-top: 3px solid;
+    border-radius: 12px 12px 0 0;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    backdrop-filter: var(--backdrop-blur);
+}
+
+.pl-kanban-count {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--glass-border);
+    color: var(--text-main);
+    font-weight: 800;
+    font-size: 0.85rem;
+    padding: 2px 9px;
+    border-radius: 20px;
+    min-width: 28px;
+    text-align: center;
+}
+
+.pl-kanban-cards {
+    flex: 1;
+    background: var(--bg-secondary);
+    border: 1px solid var(--glass-border);
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 200px;
+    max-height: 520px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--glass-border) transparent;
+}
+
+.pl-kanban-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 32px 16px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    opacity: 0.6;
+    flex: 1;
+}
+
+.pl-kanban-empty i {
+    font-size: 1.8rem;
+}
+
+/* ── Card de Planilla ─────────────────────────────────────── */
+.pl-card {
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin: 0;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: default;
+}
+
+.pl-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+.pl-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.pl-badge-planilla {
+    background: rgba(59,130,246,0.12);
+    color: var(--primary);
+    border: 1px solid rgba(59,130,246,0.3);
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    font-family: monospace;
+    letter-spacing: 0.5px;
+}
+
+.pl-estado-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    border: 1px solid;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.pl-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.pl-info-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.pl-info-row i {
+    font-size: 0.9rem;
+    opacity: 0.7;
+    width: 14px;
+}
+
+.pl-info-row span {
+    color: var(--text-main);
+}
+
+.pl-facturas-sueltas-alert {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.25);
+    border-radius: 6px;
+    color: #ef4444;
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.pl-card-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--glass-border);
+}
+
+.pl-btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    border: 1px solid var(--glass-border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+.pl-btn-action:hover { background: rgba(255,255,255,0.06); color: var(--text-main); }
+
+.pl-btn-detail   { color: var(--primary);  border-color: rgba(59,130,246,0.3);  }
+.pl-btn-detail:hover  { background: rgba(59,130,246,0.1); color: var(--primary); }
+
+.pl-btn-avanzar  { color: #10b981; border-color: rgba(16,185,129,0.3); margin-left: auto; }
+.pl-btn-avanzar:hover { background: rgba(16,185,129,0.1); color: #10b981; }
+
+.pl-btn-retroceder { color: var(--text-muted); }
+.pl-btn-retroceder:hover { color: var(--warning); border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.06); }
+
+.pl-btn-eliminar { color: var(--danger); border-color: rgba(239,68,68,0.3); }
+.pl-btn-eliminar:hover { background: rgba(239,68,68,0.1); color: var(--danger); }
+
+/* ── Drop Zone de Excel ──────────────────────────────────── */
+.pl-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    border: 2px dashed var(--glass-border);
+    border-radius: 14px;
+    background: rgba(59,130,246,0.02);
+    cursor: pointer;
+    transition: 0.2s;
+    text-align: center;
+    gap: 8px;
+    min-height: 180px;
+}
+
+.pl-dropzone:hover,
+.pl-dz-active {
+    border-color: var(--primary) !important;
+    background: rgba(59,130,246,0.06) !important;
+}
+
+.pl-dz-icon {
+    font-size: 3rem;
+    color: #22c55e;
+    margin-bottom: 4px;
+}
+
+.pl-dz-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.pl-dz-sub {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.pl-dz-hint {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+    margin-top: 4px;
+}
+
+/* ── Preview Excel ───────────────────────────────────────── */
+.pl-preview-info {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(34,197,94,0.06);
+    border: 1px solid rgba(34,197,94,0.2);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.pl-preview-info i { opacity: 0.8; }
+
+/* ── Toggle Switch (asignar/desasignar factura) ──────────── */
+.pl-toggle-wrap {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.pl-toggle-wrap input {
+    display: none;
+    width: auto;
+}
+
+.pl-toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: rgba(239,68,68,0.25);
+    border: 1px solid rgba(239,68,68,0.4);
+    border-radius: 20px;
+    transition: 0.25s;
+}
+
+.pl-toggle-slider:before {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: #ef4444;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: 0.25s;
+}
+
+.pl-toggle-wrap input:checked + .pl-toggle-slider {
+    background: rgba(16,185,129,0.2);
+    border-color: rgba(16,185,129,0.4);
+}
+
+.pl-toggle-wrap input:checked + .pl-toggle-slider:before {
+    background: #10b981;
+    transform: translateX(16px);
+}
+
+/* ── Fila factura suelta ─────────────────────────────────── */
+.pl-fila-suelta {
+    background: rgba(239,68,68,0.04);
+}
+
+.pl-fila-suelta td {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* ── Animación rotar (loading) ───────────────────────────── */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+.rotate { animation: spin 1s linear infinite; }
+
+/* ── input-modern (alias compacto) ──────────────────────── */
+.input-modern {
+    background: var(--input-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-main);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: 0.2s;
+    height: 38px;
+}
+
+.input-modern:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}

@@ -51,12 +51,17 @@
     {
       "name": "Dashboard",
       "url": "pages/dashboard.html",
-      "icons": [
-        {
-          "src": "assets/img/pwa_logo.png",
-          "sizes": "192x192"
-        }
-      ]
+      "icons": [{ "src": "assets/img/pwa_logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Carga Planillas",
+      "url": "pages/carga-planillas.html",
+      "icons": [{ "src": "assets/img/pwa_logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Programación",
+      "url": "pages/programacion.html",
+      "icons": [{ "src": "assets/img/pwa_logo.png", "sizes": "192x192" }]
     }
   ]
 }

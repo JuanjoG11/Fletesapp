@@ -1,4 +1,4 @@
-// ==========================================================
+﻿// ==========================================================
 // 🔌 SUPABASE CLIENT - Singleton para Fletesapp
 // ==========================================================
 // Cliente de conexión a Supabase con funciones helper reutilizables
@@ -816,7 +816,7 @@ async function crearPlanillaConFacturas(planillaData, facturas = []) {
 /**
  * Actualizar estado de una planilla
  * @param {string} planillaId
- * @param {string} nuevoEstado - TRANSITORIA | POR DESPACHAR | DESPACHADA | CUADRADA
+ * @param {string} nuevoEstado - TRANSITORIA | DESPACHADA | CUADRADA
  * @param {object} extraData   - Campos adicionales a actualizar (ej. placa, conductor)
  */
 async function actualizarEstadoPlanilla(planillaId, nuevoEstado, extraData = {}) {
@@ -848,6 +848,26 @@ async function toggleAsignacionFactura(facturaId, asignada) {
         return { success: true };
     } catch (error) {
         console.error('Error al toggle factura:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Asignar / desasignar múltiples facturas en lote
+ * @param {string[]} facturaIds
+ * @param {boolean}  asignada
+ */
+async function toggleFacturasBatch(facturaIds, asignada) {
+    try {
+        if (!facturaIds || !facturaIds.length) return { success: true };
+        const { error } = await _supabase
+            .from('planilla_facturas')
+            .update({ asignada })
+            .in('id', facturaIds);
+        if (error) throw error;
+        return { success: true };
+    } catch (error) {
+        console.error('Error al toggle facturas en lote:', error);
         return { success: false, error: error.message };
     }
 }
@@ -896,7 +916,7 @@ async function eliminarPlanilla(planillaId) {
 async function obtenerKPIPlanillas() {
     try {
         const razonSocial = await _getRazonSocialUsuario();
-        const estados = ['TRANSITORIA', 'POR DESPACHAR', 'DESPACHADA', 'CUADRADA'];
+        const estados = ['TRANSITORIA', 'DESPACHADA', 'CUADRADA'];
         const counts = {};
 
         for (const estado of estados) {
@@ -918,6 +938,7 @@ SupabaseClientAPI.planillas = {
     create:               crearPlanillaConFacturas,
     updateEstado:         actualizarEstadoPlanilla,
     toggleFactura:        toggleAsignacionFactura,
+    toggleFacturasBatch:  toggleFacturasBatch,
     getFacturasSueltas:   obtenerFacturasSueltas,
     delete:               eliminarPlanilla,
     getKPIs:              obtenerKPIPlanillas,
@@ -1052,12 +1073,12 @@ async function aprobarProgramacion(programacionId) {
             .eq('id', programacionId);
         if (eUpd) throw eUpd;
 
-        // 4. Actualizar la planilla a POR DESPACHAR si tiene planilla_id
+        // 4. Actualizar la planilla a DESPACHADA si tiene planilla_id
         if (prog.planilla_id) {
             await _supabase
                 .from('planillas')
                 .update({
-                    estado:            'POR DESPACHAR',
+                    estado:            'DESPACHADA',
                     placa:             prog.placa,
                     conductor:         prog.contratista,
                     fecha_programacion: prog.fecha,

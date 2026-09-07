@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es" data-theme="dark">
 <head>
     <meta charset="UTF-8">
@@ -426,7 +426,6 @@
                 <select id="cp-hist-estado" onchange="cargarHistorial()" style="width:180px;">
                     <option value="">Todos los estados</option>
                     <option value="TRANSITORIA">Transitoria</option>
-                    <option value="POR DESPACHAR">Por Despachar</option>
                     <option value="DESPACHADA">Despachada</option>
                     <option value="CUADRADA">Cuadrada</option>
                 </select>
@@ -470,7 +469,6 @@ const fmt = v => moneyFmt.format(v || 0);
 
 const ESTADO_META = {
     'TRANSITORIA':   { cls:'chip-transitoria', icon:'ri-time-line'           },
-    'POR DESPACHAR': { cls:'chip-despachar',   icon:'ri-send-plane-line'     },
     'DESPACHADA':    { cls:'chip-despachada',  icon:'ri-truck-line'          },
     'CUADRADA':      { cls:'chip-cuadrada',    icon:'ri-checkbox-circle-line'},
 };

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es" data-theme="dark">
 
 <head>
@@ -987,13 +987,6 @@
                         <p id="pl-kpi-transitoria" class="kpi-value" style="color:#f59e0b;">0</p>
                     </div>
                 </div>
-                <div class="card glass-card kpi-card" style="border-left-color:#3b82f6;">
-                    <div class="kpi-icon" style="color:#3b82f6;background:rgba(59,130,246,0.1);"><i class="ri-send-plane-line"></i></div>
-                    <div class="kpi-info">
-                        <h3>Por Despachar</h3>
-                        <p id="pl-kpi-por-despachar" class="kpi-value" style="color:#3b82f6;">0</p>
-                    </div>
-                </div>
                 <div class="card glass-card kpi-card" style="border-left-color:#8b5cf6;">
                     <div class="kpi-icon" style="color:#8b5cf6;background:rgba(139,92,246,0.1);"><i class="ri-truck-line"></i></div>
                     <div class="kpi-info">
@@ -1019,7 +1012,6 @@
                         <select id="pl-filtro-estado" class="input-modern" style="width:180px;">
                             <option value="">Todos los estados</option>
                             <option value="TRANSITORIA">Transitoria</option>
-                            <option value="POR DESPACHAR">Por Despachar</option>
                             <option value="DESPACHADA">Despachada</option>
                             <option value="CUADRADA">Cuadrada</option>
                         </select>
@@ -1057,18 +1049,7 @@
                     </div>
                 </div>
 
-                <!-- Columna POR DESPACHAR -->
-                <div class="pl-kanban-col">
-                    <div class="pl-kanban-col-header" style="border-top-color:#3b82f6;">
-                        <span style="color:#3b82f6;"><i class="ri-send-plane-line"></i> POR DESPACHAR</span>
-                        <span class="pl-kanban-count" id="pl-cnt-por-despachar">0</span>
-                    </div>
-                    <div class="pl-kanban-cards" id="pl-col-por-despachar">
-                        <div class="pl-kanban-empty"><i class="ri-loader-4-line rotate"></i><span>Cargando...</span></div>
-                    </div>
-                </div>
-
-                <!-- Columna DESPACHADA -->
+                <!-- Columna DESPACHADA (directo desde TRANSITORIA al aprobar) -->
                 <div class="pl-kanban-col">
                     <div class="pl-kanban-col-header" style="border-top-color:#8b5cf6;">
                         <span style="color:#8b5cf6;"><i class="ri-truck-line"></i> DESPACHADA</span>
@@ -1333,15 +1314,30 @@
                         </div>
                     </div>
 
-                    <!-- Resumen de facturas -->
-                    <div id="pl-modal-resumen-fact" style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:12px; font-size:0.85rem; font-weight:600;"></div>
+                    <!-- Resumen y acciones de facturas -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+                        <div id="pl-modal-resumen-fact" style="display:flex; gap:16px; flex-wrap:wrap; font-size:0.85rem; font-weight:600;"></div>
+                        <div id="pl-modal-actions-fact" style="display:flex; gap:8px;">
+                            <button type="button" class="btn btn-secondary" onclick="marcarTodasFacturasModal(true)" style="height:32px; padding:0 12px; font-size:0.78rem;" title="Marcar todas las facturas como asignadas/cuadradas">
+                                <i class="ri-checkbox-line" style="color:#10b981;"></i> Marcar todas
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="marcarTodasFacturasModal(false)" style="height:32px; padding:0 12px; font-size:0.78rem;" title="Desmarcar todas las facturas">
+                                <i class="ri-checkbox-blank-line" style="color:#ef4444;"></i> Desmarcar todas
+                            </button>
+                        </div>
+                    </div>
 
                     <!-- Tabla de facturas -->
                     <div class="table-container">
                         <table>
                             <thead>
                                 <tr>
-                                    <th style="width:60px;">Asig.</th>
+                                    <th style="width:70px; text-align:center;">
+                                        <div style="display:flex; align-items:center; justify-content:center; gap:4px;">
+                                            <input type="checkbox" id="pl-modal-chk-all" title="Marcar/Desmarcar todas" onchange="marcarTodasFacturasModal(this.checked)" style="cursor:pointer; width:16px; height:16px; accent-color:#10b981;">
+                                            <span style="font-size:0.75rem;">Asig.</span>
+                                        </div>
+                                    </th>
                                     <th>No. Factura</th>
                                     <th>Fecha Entrega</th>
                                     <th>Zona</th>

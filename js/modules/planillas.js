@@ -1,4 +1,4 @@
-/* ==========================================================
+﻿/* ==========================================================
    📋 MÓDULO GESTIÓN DE PLANILLAS
    FletesApp — js/modules/planillas.js
    ==========================================================
@@ -18,11 +18,10 @@ let PL_ID_MODAL       = null; // Planilla abierta en modal
 let PL_ROLE           = null; // Rol del usuario ('admin'|'cargador'|'programador'|'cajera_plan')
 let PL_INITIALIZED    = false;
 
-const PL_ESTADOS = ['TRANSITORIA', 'POR DESPACHAR', 'DESPACHADA', 'CUADRADA'];
+const PL_ESTADOS = ['TRANSITORIA', 'DESPACHADA', 'CUADRADA'];
 
 const PL_ESTADO_META = {
     'TRANSITORIA':    { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)',  icon: 'ri-time-line',            label: 'TRANSITORIA'    },
-    'POR DESPACHAR':  { color: '#3b82f6', bg: 'rgba(59,130,246,0.12)',  icon: 'ri-send-plane-line',      label: 'POR DESPACHAR'  },
     'DESPACHADA':     { color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)', icon: 'ri-truck-line',            label: 'DESPACHADA'     },
     'CUADRADA':       { color: '#10b981', bg: 'rgba(16,185,129,0.12)', icon: 'ri-checkbox-circle-line',  label: 'CUADRADA'       },
 };
@@ -308,17 +307,19 @@ function _renderFacturasModal(facturas) {
     const tbody = document.getElementById('pl-modal-facturas-body');
     if (!tbody) return;
 
-    const canToggle = ['admin','programador'].includes(PL_ROLE);
+    const canToggle = ['admin','programador','cajera_plan','cajera','caja'].includes(PL_ROLE);
 
     if (facturas.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px;">
             Sin facturas registradas</td></tr>`;
+        const chkAll = document.getElementById('pl-modal-chk-all');
+        if (chkAll) { chkAll.checked = false; chkAll.indeterminate = false; }
         return;
     }
 
     tbody.innerHTML = facturas.map(f => `
         <tr id="frow-${f.id}" class="${f.asignada ? '' : 'pl-fila-suelta'}">
-            <td>
+            <td style="text-align:center;">
                 ${canToggle ? `<label class="pl-toggle-wrap">
                     <input type="checkbox" ${f.asignada ? 'checked' : ''} onchange="toggleFacturaUI('${f.id}', this.checked)">
                     <span class="pl-toggle-slider"></span>
@@ -332,15 +333,53 @@ function _renderFacturasModal(facturas) {
             <td class="price-cell">${fmt(f.valor_total)}</td>
         </tr>`).join('');
 
+    // Actualizar estado del checkbox principal del header
+    const chkAll = document.getElementById('pl-modal-chk-all');
+    if (chkAll) {
+        const asigCount = facturas.filter(f => f.asignada).length;
+        chkAll.checked = asigCount === facturas.length && facturas.length > 0;
+        chkAll.indeterminate = asigCount > 0 && asigCount < facturas.length;
+    }
+
     // Resumen al pie
-    const asig    = facturas.filter(f => f.asignada).length;
-    const sueltas = facturas.length - asig;
-    const elResumen = document.getElementById('pl-modal-resumen-fact');
+    const asig       = facturas.filter(f => f.asignada).length;
+    const sueltas    = facturas.length - asig;
+    const sumAsig    = facturas.filter(f => f.asignada).reduce((s,f) => s + (f.valor_total || 0), 0);
+    const sumSueltas = facturas.filter(f => !f.asignada).reduce((s,f) => s + (f.valor_total || 0), 0);
+    const elResumen  = document.getElementById('pl-modal-resumen-fact');
     if (elResumen) {
         elResumen.innerHTML = `
-            <span style="color:#10b981"><i class="ri-checkbox-circle-line"></i> ${asig} asignadas</span>
-            ${sueltas > 0 ? `<span style="color:#ef4444"><i class="ri-alert-line"></i> ${sueltas} sueltas</span>` : ''}
-            <span style="color:var(--text-muted)">Total: ${fmt(facturas.reduce((s,f)=>s+(f.valor_total||0),0))}</span>`;
+            <span style="color:#10b981"><i class="ri-checkbox-circle-line"></i> ${asig} asignadas (${fmt(sumAsig)})</span>
+            ${sueltas > 0 ? `<span style="color:#ef4444"><i class="ri-alert-line"></i> ${sueltas} sueltas (${fmt(sumSueltas)})</span>` : ''}
+            <span style="color:var(--text-muted)">Total planilla: ${fmt(facturas.reduce((s,f)=>s+(f.valor_total||0),0))}</span>`;
+    }
+}
+
+// ── Marcar / desmarcar todas las facturas en el modal de detalle ─
+async function marcarTodasFacturasModal(asignada) {
+    if (!PL_FACTURAS_MODAL || !PL_FACTURAS_MODAL.length) return;
+    const canToggle = ['admin','programador','cajera_plan','cajera','caja'].includes(PL_ROLE);
+    if (!canToggle) return;
+
+    const ids = PL_FACTURAS_MODAL.map(f => f.id);
+
+    // Actualizar en memoria local y UI de inmediato
+    PL_FACTURAS_MODAL.forEach(f => f.asignada = asignada);
+    _renderFacturasModal(PL_FACTURAS_MODAL);
+
+    // Actualizar en base de datos en lote
+    const res = await SupabaseClient.planillas.toggleFacturasBatch(ids, asignada);
+    if (!res.success) {
+        Swal.fire({ icon:'error', title:'Error', text:'No se pudo actualizar el estado de las facturas.', background:'#1e293b', color:'#fff' });
+        return;
+    }
+
+    // Actualizar cache de la planilla y tarjeta en kanban
+    const planilla = PL_CACHE.find(p => p.id === PL_ID_MODAL);
+    if (planilla && planilla.planilla_facturas) {
+        planilla.planilla_facturas.forEach(f => f.asignada = asignada);
+        const cardEl = document.getElementById(`plcard-${PL_ID_MODAL}`);
+        if (cardEl) cardEl.outerHTML = _cardPlanilla(planilla);
     }
 }
 
@@ -385,36 +424,116 @@ async function cambiarEstadoPlanilla(planillaId, nuevoEstado) {
     // ── Flujo especial para CUADRADA: la cajera confirma el cuadre ──
     if (nuevoEstado === 'CUADRADA') {
         const moneyFmtC = new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
-        const factAsig  = planilla.planilla_facturas?.filter(f => f.asignada).length || 0;
-        const factTotal = planilla.planilla_facturas?.length || 0;
-        const haySueltas = factTotal > factAsig;
+        const facturas  = (planilla.planilla_facturas || []).map(f => ({ ...f }));
+
+        // Estado local de los checks: por defecto true si no está desasignada
+        const estadoChecks = {};
+        facturas.forEach(f => {
+            estadoChecks[f.id] = f.asignada !== false;
+        });
+
+        const calcularTotalesModal = () => {
+            let cantCuadradas = 0;
+            let sumCuadradas = 0;
+            let cantNoCuadradas = 0;
+            let sumNoCuadradas = 0;
+            const noCuadradasList = [];
+
+            facturas.forEach(f => {
+                const val = parseFloat(f.valor_total || 0);
+                if (estadoChecks[f.id]) {
+                    cantCuadradas++;
+                    sumCuadradas += val;
+                } else {
+                    cantNoCuadradas++;
+                    sumNoCuadradas += val;
+                    noCuadradasList.push(f);
+                }
+            });
+
+            return { cantCuadradas, sumCuadradas, cantNoCuadradas, sumNoCuadradas, noCuadradasList };
+        };
 
         const { value: formValues, isConfirmed } = await Swal.fire({
             title: '📋 Cuadre de Planilla',
+            width: '740px',
             html: `
-                <div style="text-align:left;font-size:0.88rem;">
-                    <div style="padding:10px 14px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;margin-bottom:16px;">
-                        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-                            <span><i class="ri-file-list-2-line"></i> Planilla: <strong style="font-family:monospace;">${planilla.no_planilla}</strong></span>
+                <div style="text-align:left;font-size:0.86rem;">
+                    <div style="padding:12px 14px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:10px;margin-bottom:14px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                            <span><i class="ri-file-list-2-line"></i> Planilla: <strong style="font-family:monospace;font-size:0.95rem;">${planilla.no_planilla}</strong></span>
                             <span><i class="ri-calendar-line"></i> ${planilla.fecha || '—'}</span>
                             ${planilla.placa ? `<span><i class="ri-truck-line"></i> <strong>${planilla.placa}</strong></span>` : ''}
-                            <span style="color:#10b981;"><i class="ri-money-dollar-circle-line"></i> <strong>${moneyFmtC.format(planilla.valor_total)}</strong></span>
+                            <span style="color:#10b981;font-weight:700;"><i class="ri-money-dollar-circle-line"></i> ${moneyFmtC.format(planilla.valor_total)}</span>
                         </div>
-                        ${haySueltas ? `
-                        <div style="margin-top:8px;padding:6px 10px;background:rgba(245,158,11,0.1);border-radius:6px;color:#f59e0b;font-size:0.8rem;">
-                            <i class="ri-alert-line"></i> ${factTotal - factAsig} factura(s) sin asignar en esta planilla
-                        </div>` : ''}
+                    </div>
+
+                    <!-- Barra de herramientas: Marcar / Desmarcar todas -->
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+                        <label style="font-size:0.75rem;font-weight:700;color:#94a3b8;text-transform:uppercase;display:flex;align-items:center;gap:6px;">
+                            <i class="ri-file-check-line" style="color:#10b981;font-size:1rem;"></i> Facturas a verificar (${facturas.length})
+                        </label>
+                        <div style="display:flex;gap:8px;">
+                            <button type="button" id="swal-btn-marcar-todas" style="padding:5px 12px;font-size:0.75rem;background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.35);border-radius:6px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:4px;">
+                                <i class="ri-checkbox-line"></i> Marcar todas
+                            </button>
+                            <button type="button" id="swal-btn-desmarcar-todas" style="padding:5px 12px;font-size:0.75rem;background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.35);border-radius:6px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:4px;">
+                                <i class="ri-checkbox-blank-line"></i> Desmarcar todas
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Lista de facturas interactiva -->
+                    <div id="swal-facturas-list" style="max-height:210px;overflow-y:auto;background:#0b1324;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:6px;margin-bottom:12px;">
+                        ${facturas.length === 0 ? '<div style="text-align:center;padding:16px;color:#94a3b8;">Sin facturas registradas en esta planilla</div>' :
+                          facturas.map(f => {
+                            const isChecked = estadoChecks[f.id];
+                            return `
+                            <div class="swal-fact-row" id="swal-frow-${f.id}" data-id="${f.id}"
+                                 style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;margin-bottom:4px;border-radius:6px;background:${isChecked ? 'rgba(16,185,129,0.06)' : 'rgba(239,68,68,0.06)'};border:1px solid ${isChecked ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'};transition:0.15s;">
+                                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;flex-grow:1;margin:0;">
+                                    <input type="checkbox" class="swal-fact-chk" data-id="${f.id}" ${isChecked ? 'checked' : ''} style="width:16px;height:16px;accent-color:#10b981;cursor:pointer;">
+                                    <span style="font-family:monospace;font-weight:700;font-size:0.88rem;color:${isChecked ? '#f8fafc' : '#94a3b8'};">
+                                        ${f.no_factura}
+                                    </span>
+                                    ${f.zona ? `<span style="font-size:0.72rem;color:#64748b;background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px;">${f.zona}</span>` : ''}
+                                </label>
+                                <div style="display:flex;align-items:center;gap:10px;">
+                                    <span class="swal-status-badge" style="font-size:0.72rem;padding:2px 7px;border-radius:4px;font-weight:600;background:${isChecked ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'};color:${isChecked ? '#10b981' : '#ef4444'};">
+                                        ${isChecked ? 'Cuadra' : 'No cuadra'}
+                                    </span>
+                                    <span style="font-weight:700;font-size:0.9rem;color:${isChecked ? '#10b981' : '#ef4444'};font-family:monospace;min-width:90px;text-align:right;">
+                                        ${moneyFmtC.format(f.valor_total || 0)}
+                                    </span>
+                                </div>
+                            </div>`;
+                        }).join('')}
+                    </div>
+
+                    <!-- Resumen en vivo de Cuadre -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+                        <div style="padding:10px 12px;background:rgba(16,185,129,0.09);border:1px solid rgba(16,185,129,0.25);border-radius:8px;">
+                            <div style="font-size:0.7rem;color:#94a3b8;text-transform:uppercase;font-weight:600;">Facturas Cuadradas (<span id="swal-cnt-cuadradas">0</span>)</div>
+                            <div id="swal-total-cuadradas" style="font-size:1.1rem;font-weight:800;color:#10b981;margin-top:2px;">$ 0</div>
+                        </div>
+                        <div style="padding:10px 12px;background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.22);border-radius:8px;">
+                            <div style="font-size:0.7rem;color:#94a3b8;text-transform:uppercase;font-weight:600;">No Cuadradas / Desmarcadas (<span id="swal-cnt-nocuadradas">0</span>)</div>
+                            <div id="swal-total-nocuadradas" style="font-size:1.1rem;font-weight:800;color:#ef4444;margin-top:2px;">$ 0</div>
+                        </div>
                     </div>
 
                     <div style="margin-bottom:12px;">
-                        <label style="display:block;margin-bottom:5px;color:#94a3b8;font-size:0.78rem;font-weight:600;">
-                            VALOR RECIBIDO (confirmación) <span style="color:#ef4444;">*</span>
+                        <label style="display:flex;justify-content:space-between;margin-bottom:5px;color:#94a3b8;font-size:0.78rem;font-weight:600;">
+                            <span>VALOR RECIBIDO (confirmación) <span style="color:#ef4444;">*</span></span>
+                            <span id="swal-btn-auto-val" style="font-size:0.74rem;color:#10b981;cursor:pointer;font-weight:600;" title="Restaurar al total de facturas cuadradas">
+                                <i class="ri-magic-line"></i> Reajustar al total cuadrado
+                            </span>
                         </label>
                         <input id="swal-valor-cuadre" type="text"
                                placeholder="${moneyFmtC.format(planilla.valor_total)}"
-                               style="width:100%;padding:10px 14px;background:#0f172a;border:1px solid rgba(16,185,129,0.3);
-                                      color:#10b981;border-radius:8px;font-size:1rem;font-weight:700;
-                                      font-family:inherit;outline:none;">
+                               style="width:100%;padding:10px 14px;background:#0f172a;border:1px solid rgba(16,185,129,0.35);
+                                      color:#10b981;border-radius:8px;font-size:1.05rem;font-weight:700;
+                                      font-family:inherit;outline:none;box-sizing:border-box;">
                     </div>
 
                     <div>
@@ -422,11 +541,11 @@ async function cambiarEstadoPlanilla(planillaId, nuevoEstado) {
                             OBSERVACIÓN (opcional)
                         </label>
                         <textarea id="swal-obs-cuadre" rows="2"
-                                  placeholder="Ej: Recibido completo, faltó factura 737xxx..."
+                                  placeholder="Ej: Recibido completo..."
                                   style="width:100%;padding:8px 12px;background:#0f172a;
                                          border:1px solid rgba(255,255,255,0.08);color:#f8fafc;
                                          border-radius:8px;font-family:inherit;font-size:0.85rem;
-                                         resize:vertical;outline:none;"></textarea>
+                                         resize:vertical;outline:none;box-sizing:border-box;"></textarea>
                     </div>
                 </div>`,
             showCancelButton: true,
@@ -435,6 +554,111 @@ async function cambiarEstadoPlanilla(planillaId, nuevoEstado) {
             confirmButtonColor: '#10b981',
             background: '#1e293b', color: '#fff',
             focusConfirm: false,
+            didOpen: () => {
+                const valInput = document.getElementById('swal-valor-cuadre');
+                const obsInput = document.getElementById('swal-obs-cuadre');
+                let userEditedObs = false;
+
+                obsInput?.addEventListener('input', () => { userEditedObs = true; });
+
+                const refrescarVista = (actualizarInputValor = true) => {
+                    const { cantCuadradas, sumCuadradas, cantNoCuadradas, sumNoCuadradas, noCuadradasList } = calcularTotalesModal();
+
+                    const elCntC = document.getElementById('swal-cnt-cuadradas');
+                    const elTotC = document.getElementById('swal-total-cuadradas');
+                    const elCntN = document.getElementById('swal-cnt-nocuadradas');
+                    const elTotN = document.getElementById('swal-total-nocuadradas');
+                    if (elCntC) elCntC.textContent = cantCuadradas;
+                    if (elTotC) elTotC.textContent = moneyFmtC.format(sumCuadradas);
+                    if (elCntN) elCntN.textContent = cantNoCuadradas;
+                    if (elTotN) elTotN.textContent = moneyFmtC.format(sumNoCuadradas);
+
+                    if (actualizarInputValor && valInput) {
+                        valInput.value = moneyFmtC.format(sumCuadradas);
+                    }
+
+                    if (!userEditedObs && obsInput) {
+                        if (noCuadradasList.length > 0) {
+                            const desc = noCuadradasList.map(f => `#${f.no_factura} (${moneyFmtC.format(f.valor_total || 0)})`).join(', ');
+                            obsInput.value = `No cuadraron ${noCuadradasList.length} factura(s): ${desc}`;
+                        } else {
+                            obsInput.value = 'Cuadre completo sin novedades.';
+                        }
+                    }
+                };
+
+                // Listeners checks
+                document.querySelectorAll('.swal-fact-chk').forEach(chk => {
+                    chk.addEventListener('change', (e) => {
+                        const fid = e.target.getAttribute('data-id');
+                        const isChecked = e.target.checked;
+                        estadoChecks[fid] = isChecked;
+
+                        const row = document.getElementById(`swal-frow-${fid}`);
+                        if (row) {
+                            row.style.background = isChecked ? 'rgba(16,185,129,0.06)' : 'rgba(239,68,68,0.06)';
+                            row.style.borderColor = isChecked ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)';
+                            const badge = row.querySelector('.swal-status-badge');
+                            if (badge) {
+                                badge.textContent = isChecked ? 'Cuadra' : 'No cuadra';
+                                badge.style.background = isChecked ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
+                                badge.style.color = isChecked ? '#10b981' : '#ef4444';
+                            }
+                        }
+                        refrescarVista(true);
+                    });
+                });
+
+                // Marcar todas
+                document.getElementById('swal-btn-marcar-todas')?.addEventListener('click', () => {
+                    facturas.forEach(f => estadoChecks[f.id] = true);
+                    document.querySelectorAll('.swal-fact-chk').forEach(c => {
+                        c.checked = true;
+                        const fid = c.getAttribute('data-id');
+                        const row = document.getElementById(`swal-frow-${fid}`);
+                        if (row) {
+                            row.style.background = 'rgba(16,185,129,0.06)';
+                            row.style.borderColor = 'rgba(16,185,129,0.2)';
+                            const badge = row.querySelector('.swal-status-badge');
+                            if (badge) {
+                                badge.textContent = 'Cuadra';
+                                badge.style.background = 'rgba(16,185,129,0.15)';
+                                badge.style.color = '#10b981';
+                            }
+                        }
+                    });
+                    refrescarVista(true);
+                });
+
+                // Desmarcar todas
+                document.getElementById('swal-btn-desmarcar-todas')?.addEventListener('click', () => {
+                    facturas.forEach(f => estadoChecks[f.id] = false);
+                    document.querySelectorAll('.swal-fact-chk').forEach(c => {
+                        c.checked = false;
+                        const fid = c.getAttribute('data-id');
+                        const row = document.getElementById(`swal-frow-${fid}`);
+                        if (row) {
+                            row.style.background = 'rgba(239,68,68,0.06)';
+                            row.style.borderColor = 'rgba(239,68,68,0.2)';
+                            const badge = row.querySelector('.swal-status-badge');
+                            if (badge) {
+                                badge.textContent = 'No cuadra';
+                                badge.style.background = 'rgba(239,68,68,0.15)';
+                                badge.style.color = '#ef4444';
+                            }
+                        }
+                    });
+                    refrescarVista(true);
+                });
+
+                // Botón reajustar al total cuadrado
+                document.getElementById('swal-btn-auto-val')?.addEventListener('click', () => {
+                    const { sumCuadradas } = calcularTotalesModal();
+                    if (valInput) valInput.value = moneyFmtC.format(sumCuadradas);
+                });
+
+                refrescarVista(true);
+            },
             preConfirm: () => {
                 const valStr  = document.getElementById('swal-valor-cuadre')?.value || '';
                 const obs     = document.getElementById('swal-obs-cuadre')?.value?.trim() || '';
@@ -443,11 +667,30 @@ async function cambiarEstadoPlanilla(planillaId, nuevoEstado) {
                     Swal.showValidationMessage('Ingresa el valor recibido para confirmar el cuadre');
                     return false;
                 }
-                return { valorRecibido: valNum, observacion: obs };
+                const cuadradasIds = [];
+                const noCuadradasIds = [];
+                facturas.forEach(f => {
+                    if (estadoChecks[f.id]) cuadradasIds.push(f.id);
+                    else noCuadradasIds.push(f.id);
+                });
+                return { valorRecibido: valNum, observacion: obs, cuadradasIds, noCuadradasIds };
             },
         });
 
         if (!isConfirmed || !formValues) return;
+
+        // Actualizar estado de las facturas en base de datos en lote
+        if (formValues.noCuadradasIds?.length > 0) {
+            await SupabaseClient.planillas.toggleFacturasBatch(formValues.noCuadradasIds, false);
+        }
+        if (formValues.cuadradasIds?.length > 0) {
+            await SupabaseClient.planillas.toggleFacturasBatch(formValues.cuadradasIds, true);
+        }
+
+        // Actualizar estado en memoria local de las facturas
+        (planilla.planilla_facturas || []).forEach(f => {
+            f.asignada = !formValues.noCuadradasIds.includes(f.id);
+        });
 
         // Guardar cuadre con los datos extra
         const result = await SupabaseClient.planillas.updateEstado(planillaId, 'CUADRADA', {
@@ -466,19 +709,29 @@ async function cambiarEstadoPlanilla(planillaId, nuevoEstado) {
 
         const moneyFmtC2 = new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
         planilla.estado = 'CUADRADA';
+        planilla.valor_cuadrado = formValues.valorRecibido;
+        planilla.cuadrado_por   = window.CURRENT_SESSION?.profile?.nombre || 'Cajera';
+        planilla.obs_cuadre     = formValues.observacion || null;
+        planilla.fecha_cuadre   = new Date().toISOString().split('T')[0];
+
         _renderKanban(PL_CACHE);
         _renderTabla(PL_CACHE);
         await _actualizarKPIs();
+        if (typeof cargarResumenCuadre === 'function') {
+            await cargarResumenCuadre();
+        }
 
+        const noCuadTot = formValues.noCuadradasIds?.length || 0;
         Swal.fire({
             icon: 'success',
             title: '✅ Planilla Cuadrada',
             html: `<strong>${planilla.no_planilla}</strong> cuadrada correctamente.<br>
                    <span style="color:#10b981;font-weight:700;">
                        ${moneyFmtC2.format(formValues.valorRecibido)}
-                   </span> recibidos.
-                   ${formValues.observacion ? `<br><small style="color:#94a3b8;">${formValues.observacion}</small>` : ''}`,
-            timer: 2500, showConfirmButton: false,
+                   </span> recibidos.<br>
+                   ${noCuadTot > 0 ? `<small style="color:#ef4444;">${noCuadTot} factura(s) marcada(s) como no cuadradas/sueltas.</small><br>` : ''}
+                   ${formValues.observacion ? `<small style="color:#94a3b8;">"${formValues.observacion}"</small>` : ''}`,
+            timer: 3000, showConfirmButton: true, confirmButtonText: 'Listo',
             background: '#1e293b', color: '#fff'
         });
         return;
@@ -535,7 +788,7 @@ async function guardarProgramacionPlanilla() {
         conductorFinal = res?.data?.conductor || '';
     }
 
-    const result = await SupabaseClient.planillas.updateEstado(PL_ID_MODAL, 'POR DESPACHAR', {
+    const result = await SupabaseClient.planillas.updateEstado(PL_ID_MODAL, 'DESPACHADA', {
         placa:            placa,
         conductor:        conductorFinal,
         fecha_programacion: new Date().toISOString().split('T')[0],
@@ -552,7 +805,7 @@ async function guardarProgramacionPlanilla() {
     if (planilla) {
         planilla.placa     = placa;
         planilla.conductor = conductorFinal;
-        planilla.estado    = 'POR DESPACHAR';
+        planilla.estado    = 'DESPACHADA';
     }
 
     cerrarModalPlanilla();
@@ -562,7 +815,7 @@ async function guardarProgramacionPlanilla() {
 
     Swal.fire({
         icon: 'success', title: '¡Programado!',
-        html: `Planilla asignada a <strong>${placa}</strong>. Estado: <strong>POR DESPACHAR</strong>`,
+        html: `Planilla asignada a <strong>${placa}</strong>. Estado: <strong>DESPACHADA</strong>`,
         timer: 2000, showConfirmButton: false, background: '#1e293b', color: '#fff'
     });
 }
@@ -881,6 +1134,7 @@ window.cerrarModalPlanilla        = cerrarModalPlanilla;
 window.cambiarEstadoPlanilla      = cambiarEstadoPlanilla;
 window.eliminarPlanillaUI         = eliminarPlanillaUI;
 window.toggleFacturaUI            = toggleFacturaUI;
+window.marcarTodasFacturasModal   = marcarTodasFacturasModal;
 window.reasignarFactura           = reasignarFactura;
 window.guardarProgramacionPlanilla= guardarProgramacionPlanilla;
 window.procesarArchivoExcel       = procesarArchivoExcel;

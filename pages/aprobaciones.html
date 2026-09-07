@@ -1,0 +1,841 @@
+﻿
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aprobaciones | FletesApp</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../js/supabase-client.js"></script>
+    <!-- app.js para reutilizar zonas, precios, auxiliares y cálculos -->
+    <script src="../js/app.js?v=6" defer></script>
+
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" type="image/png" href="../assets/img/pwa_logo.png?v=3">
+
+    <style>
+        body { display: flex; flex-direction: column; overflow-x: hidden; }
+
+        /* ── Header ── */
+        .page-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 24px;
+            background: var(--glass-bg);
+            border-bottom: 1px solid var(--glass-border);
+            backdrop-filter: var(--backdrop-blur);
+            position: sticky; top: 0; z-index: 100;
+            gap: 12px; flex-wrap: wrap;
+        }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        .header-left img { height: 32px; border-radius: 6px; }
+        .header-title { font-size: 1rem; font-weight: 700; }
+        .header-sub   { font-size: 0.7rem; color: var(--text-muted); }
+        .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .btn-back {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600;
+            cursor: pointer; border: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.04); color: var(--text-muted); font-family: inherit; transition: 0.15s;
+        }
+        .btn-back:hover { background: rgba(255,255,255,0.09); color: var(--text-main); }
+        .btn-logout-sm {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 7px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 600;
+            cursor: pointer; background: rgba(239,68,68,0.1); color: #ef4444;
+            border: 1px solid rgba(239,68,68,0.25); font-family: inherit; transition: 0.15s;
+        }
+        .btn-logout-sm:hover { background: rgba(239,68,68,0.18); }
+
+        /* ── Layout ── */
+        .page-body { flex: 1; padding: 24px; max-width: 1300px; margin: 0 auto; width: 100%; }
+
+        .page-title {
+            font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px;
+            background: linear-gradient(to right, #f59e0b, #fff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .page-desc { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px; }
+
+        /* ── KPIs ── */
+        .kpi-strip {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px; margin-bottom: 20px;
+        }
+        .kpi-item {
+            background: var(--glass-bg); border: 1px solid var(--glass-border);
+            border-radius: 12px; padding: 14px 18px; backdrop-filter: var(--backdrop-blur);
+        }
+        .kpi-label { font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 4px; }
+        .kpi-value { font-size: 1.6rem; font-weight: 800; }
+
+        /* ── Cards de programación ── */
+        .prog-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 16px;
+            margin-top: 8px;
+        }
+        .prog-card {
+            background: var(--glass-bg); border: 1px solid var(--glass-border);
+            border-radius: 14px; padding: 18px;
+            backdrop-filter: var(--backdrop-blur);
+            transition: 0.15s;
+            border-left: 4px solid #f59e0b;
+        }
+        .prog-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .prog-card.aprobada { border-left-color: #10b981; opacity: 0.7; }
+        .prog-card.rechazada { border-left-color: #ef4444; opacity: 0.7; }
+
+        .prog-card-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 12px; gap: 8px; flex-wrap: wrap;
+        }
+        .prog-placa {
+            background: #fbbf24; color: #000; border: 2px solid #000;
+            padding: 2px 10px; border-radius: 5px; font-weight: 800;
+            font-family: monospace; font-size: 0.9rem; letter-spacing: 1px;
+        }
+        .prog-estado-chip {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 10px; border-radius: 20px; font-size: 0.72rem;
+            font-weight: 700; border: 1px solid; text-transform: uppercase;
+        }
+
+        .prog-info-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+            margin-bottom: 12px; font-size: 0.82rem;
+        }
+        .prog-info-item .lbl { color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; margin-bottom: 1px; }
+        .prog-info-item .val { font-weight: 600; }
+
+        .prog-planillas-row {
+            display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;
+        }
+        .prog-planilla-badge {
+            background: rgba(59,130,246,0.1); color: var(--primary);
+            border: 1px solid rgba(59,130,246,0.25);
+            padding: 2px 8px; border-radius: 5px; font-family: monospace;
+            font-size: 0.78rem; font-weight: 700;
+        }
+
+        .prog-facturas-preview {
+            font-size: 0.75rem; color: var(--text-muted);
+            background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);
+            border-radius: 6px; padding: 6px 10px; margin-bottom: 12px;
+            max-height: 52px; overflow: hidden; line-height: 1.6;
+        }
+
+        .prog-card-actions {
+            display: flex; gap: 8px; flex-wrap: wrap;
+            padding-top: 12px; border-top: 1px solid var(--glass-border);
+        }
+        .btn-editar {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600;
+            cursor: pointer; background: rgba(59,130,246,0.1); color: var(--primary);
+            border: 1px solid rgba(59,130,246,0.25); font-family: inherit; transition: 0.15s; flex: 1;
+        }
+        .btn-editar:hover { background: rgba(59,130,246,0.2); }
+        .btn-aprobar {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700;
+            cursor: pointer; background: linear-gradient(135deg,#10b981,#059669);
+            color: #fff; border: none; font-family: inherit; transition: 0.15s; flex: 1;
+            box-shadow: 0 3px 10px rgba(16,185,129,0.3);
+        }
+        .btn-aprobar:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(16,185,129,0.4); }
+        .btn-rechazar {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 7px 12px; border-radius: 8px; font-size: 0.82rem; font-weight: 600;
+            cursor: pointer; background: rgba(239,68,68,0.1); color: #ef4444;
+            border: 1px solid rgba(239,68,68,0.25); font-family: inherit; transition: 0.15s;
+        }
+        .btn-rechazar:hover { background: rgba(239,68,68,0.2); }
+
+        /* ── Modal de edición ── */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+            display: none; align-items: center; justify-content: center;
+            z-index: 1000; backdrop-filter: blur(4px);
+        }
+        .modal-overlay.visible { display: flex; }
+        .modal-glass {
+            background: rgba(30,41,59,0.97); border: 1px solid var(--glass-border);
+            border-radius: 18px; width: 100%; max-width: 860px; max-height: 93vh;
+            overflow-y: auto; box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+        }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 18px 24px; border-bottom: 1px solid var(--glass-border);
+            position: sticky; top: 0; background: rgba(30,41,59,0.98); z-index: 10;
+        }
+        .modal-header h2 { font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .modal-body { padding: 24px; }
+        .modal-footer {
+            padding: 16px 24px; border-top: 1px solid var(--glass-border);
+            display: flex; justify-content: space-between; align-items: center; gap: 10px;
+            position: sticky; bottom: 0; background: rgba(30,41,59,0.98);
+        }
+        .close-btn { background: transparent; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer; }
+        .close-btn:hover { color: var(--text-main); }
+
+        .edit-section-title {
+            font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1px; color: var(--primary); margin: 20px 0 12px;
+            padding-bottom: 8px; border-bottom: 1px solid rgba(59,130,246,0.2);
+            display: flex; align-items: center; gap: 6px;
+        }
+
+        /* ── Empty state ── */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 0.9s linear infinite; display: inline-block; }
+        .empty-state {
+            display: flex; flex-direction: column; align-items: center;
+            padding: 48px; color: var(--text-muted); gap: 10px;
+        }
+        .empty-state i { font-size: 2.5rem; opacity: 0.4; }
+
+        /* ── Tabs ── */
+        .page-tabs {
+            display: flex; gap: 0; background: var(--bg-secondary);
+            border: 1px solid var(--glass-border); border-radius: 10px;
+            padding: 4px; margin-bottom: 20px; width: fit-content;
+        }
+        .page-tab {
+            padding: 8px 20px; border-radius: 7px; font-size: 0.85rem; font-weight: 600;
+            cursor: pointer; border: none; background: transparent;
+            color: var(--text-muted); font-family: inherit; transition: 0.15s;
+        }
+        .page-tab.active { background: #f59e0b; color: #000; box-shadow: 0 2px 8px rgba(245,158,11,0.3); }
+
+        @media (max-width: 640px) { .page-body { padding: 14px 10px; } .prog-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header class="page-header">
+    <div class="header-left">
+        <img src="../assets/img/pwa_logo.png" alt="Logo">
+        <div>
+            <div class="header-title"><i class="ri-shield-check-line" style="color:#f59e0b;margin-right:6px;"></i>Aprobaciones</div>
+            <div class="header-sub">FletesApp · Revisión y aprobación de programaciones</div>
+        </div>
+    </div>
+    <div class="header-right">
+        <span class="badge" id="companyBadge">TYM</span>
+        <span class="badge" id="userRoleBadge">Aprobador</span>
+        <button class="btn-back" onclick="window.location.href='dashboard.html'">
+            <i class="ri-arrow-left-line"></i> Dashboard
+        </button>
+        <button class="btn-logout-sm" onclick="doLogout()">
+            <i class="ri-logout-box-r-line"></i> Salir
+        </button>
+    </div>
+</header>
+
+<!-- ── Body ── -->
+<div class="page-body">
+
+    <h1 class="page-title">Aprobaciones de Programaciones</h1>
+    <p class="page-desc">Revisa cada programación, edita los datos si es necesario, luego aprueba para crear el flete o rechaza con un motivo.</p>
+
+    <!-- KPIs -->
+    <div class="kpi-strip">
+        <div class="kpi-item" style="border-left: 3px solid #f59e0b;">
+            <div class="kpi-label">Pendientes</div>
+            <div class="kpi-value" id="apr-kpi-pend" style="color:#f59e0b;">0</div>
+        </div>
+        <div class="kpi-item" style="border-left: 3px solid #10b981;">
+            <div class="kpi-label">Aprobadas hoy</div>
+            <div class="kpi-value" id="apr-kpi-apro" style="color:#10b981;">0</div>
+        </div>
+        <div class="kpi-item" style="border-left: 3px solid #ef4444;">
+            <div class="kpi-label">Rechazadas hoy</div>
+            <div class="kpi-value" id="apr-kpi-rech" style="color:#ef4444;">0</div>
+        </div>
+        <div class="kpi-item" style="border-left: 3px solid var(--glass-border);">
+            <div class="kpi-label">Total hoy</div>
+            <div class="kpi-value" id="apr-kpi-tot">0</div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="page-tabs">
+        <button class="page-tab active" id="tabPend" onclick="filtrarEstado('PENDIENTE')">
+            <i class="ri-time-line"></i> Pendientes
+            <span id="badge-pend" style="background:#f59e0b;color:#000;border-radius:12px;font-size:0.7rem;font-weight:800;padding:1px 7px;margin-left:4px;"></span>
+        </button>
+        <button class="page-tab" id="tabApro" onclick="filtrarEstado('APROBADA')">
+            <i class="ri-checkbox-circle-line"></i> Aprobadas
+        </button>
+        <button class="page-tab" id="tabRech" onclick="filtrarEstado('RECHAZADA')">
+            <i class="ri-close-circle-line"></i> Rechazadas
+        </button>
+        <button class="page-tab" id="tabTodas" onclick="filtrarEstado('')">
+            <i class="ri-list-check"></i> Todas
+        </button>
+    </div>
+
+    <!-- Filtro fecha -->
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+        <input type="date" id="apr-fecha" class="input-modern" style="width:160px;" onchange="cargarProgramaciones()">
+        <select id="apr-proveedor" class="input-modern" style="width:175px;" onchange="cargarProgramaciones()">
+            <option value="">Todos los proveedores</option>
+            <option value="ALPINA">ALPINA</option>
+            <option value="FLEISCHMANN">FLEISCHMANN</option>
+            <option value="ZENU">ZENU</option>
+        </select>
+        <button class="btn-back" onclick="cargarProgramaciones()" style="height:38px;padding:0 14px;">
+            <i class="ri-refresh-line"></i> Actualizar
+        </button>
+    </div>
+
+    <!-- Grid de cards -->
+    <div id="apr-grid" class="prog-grid">
+        <div class="empty-state" style="grid-column:1/-1;">
+            <i class="ri-loader-4-line spin"></i><p>Cargando programaciones...</p>
+        </div>
+    </div>
+
+</div><!-- /page-body -->
+
+<!-- ================================================================
+     MODAL DE EDICIÓN + APROBACIÓN
+================================================================ -->
+<div id="modal-editar" class="modal-overlay">
+    <div class="modal-glass">
+        <div class="modal-header">
+            <h2><i class="ri-edit-line" style="color:#f59e0b;"></i> Editar y Aprobar Programación
+                <span id="modal-placa-title" style="background:#fbbf24;color:#000;border:2px solid #000;padding:1px 8px;border-radius:4px;font-family:monospace;font-size:0.85rem;margin-left:6px;"></span>
+            </h2>
+            <button class="close-btn" onclick="cerrarModal()"><i class="ri-close-line"></i></button>
+        </div>
+        <div class="modal-body">
+
+            <!-- Info de quién programó -->
+            <div id="modal-info-prog" style="padding:10px 14px;background:rgba(255,255,255,0.03);border:1px solid var(--glass-border);border-radius:8px;margin-bottom:16px;font-size:0.82rem;color:var(--text-muted);display:flex;flex-wrap:wrap;gap:16px;"></div>
+
+            <!-- SECCIÓN 1: Datos del vehículo -->
+            <div class="edit-section-title"><i class="ri-truck-line"></i> Vehículo y Ruta</div>
+            <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">
+                <div class="input-group">
+                    <label>Placa</label>
+                    <input id="modal-placa" oninput="this.value=this.value.toUpperCase().replace('-','')">
+                </div>
+                <div class="input-group">
+                    <label>Conductor (Auto)</label>
+                    <input id="modal-contratista" readonly class="input-readonly">
+                </div>
+                <div class="input-group">
+                    <label>Proveedor</label>
+                    <select id="modal-proveedor" onchange="actualizarZonasPorProveedor('modal-')">
+                        <option value="" disabled selected>Seleccione...</option>
+                        <option>ALPINA</option>
+                        <option>FLEISCHMANN</option>
+                        <option>ALPINA-FLEISCHMANN</option>
+                        <option>ZENU</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Zona</label>
+                    <div id="modal-zona-container" class="select-checkbox-container">
+                        <div style="padding:10px;color:#666;">Seleccione Proveedor primero</div>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Fecha</label>
+                    <input id="modal-fecha" type="date" onchange="actualizarDiaPorFecha('modal-')">
+                </div>
+                <div class="input-group">
+                    <label>Día</label>
+                    <select id="modal-dia">
+                        <option value="" disabled selected>Seleccione...</option>
+                        <option>Lunes</option><option>Martes</option><option>Miercoles</option>
+                        <option>Jueves</option><option>Viernes</option><option>Sabado</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Población</label>
+                    <select id="modal-poblacion" onchange="calcularTotal('modal-')">
+                        <option value="" disabled selected>Seleccione Población</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Auxiliar(es)</label>
+                    <select id="modal-auxiliares" onchange="handleAuxiliarExtraChange('modal-')">
+                        <option value="" disabled selected>Seleccione...</option>
+                    </select>
+                </div>
+                <div id="modal-auxiliares_extra_container" class="input-group" style="display:none;">
+                    <label>Auxiliar Extra</label>
+                    <input id="modal-auxiliares_extra" placeholder="Escriba el nombre...">
+                </div>
+                <div class="input-group">
+                    <label>Cant. Auxiliares</label>
+                    <select id="modal-no_auxiliares" onchange="calcularTotal('modal-')">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: Valores -->
+            <div class="edit-section-title" style="margin-top:20px;"><i class="ri-money-dollar-circle-line"></i> Valores del Flete</div>
+            <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">
+                <div class="input-group">
+                    <label>No. Pedidos</label>
+                    <input id="modal-no_pedidos" type="number" min="0">
+                </div>
+                <div class="input-group">
+                    <label>Valor Ruta</label>
+                    <input id="modal-valor_ruta" class="money-input" placeholder="$ 0">
+                </div>
+                <div class="input-group">
+                    <label>Adicional Negociado</label>
+                    <input id="modal-valor_adicional" class="money-input" placeholder="$ 0">
+                </div>
+                <div class="input-group">
+                    <label>Total Flete (Auto)</label>
+                    <input id="modal-total_flete" readonly class="input-total">
+                </div>
+                <div class="input-group">
+                    <label>Participación %</label>
+                    <input id="modal-porcentaje_ruta" readonly style="font-weight:bold;">
+                </div>
+            </div>
+            <div class="input-group" style="margin-top:12px;">
+                <label>Razón del Adicional</label>
+                <textarea id="modal-razon_adicional" rows="2"
+                    style="width:100%;padding:10px;background:var(--input-bg);border:1px solid var(--glass-border);
+                           color:var(--text-main);border-radius:8px;font-family:inherit;font-size:0.88rem;resize:vertical;"
+                    placeholder="Motivo del adicional negociado (si aplica)..."></textarea>
+            </div>
+
+            <!-- SECCIÓN 3: Planilla y Facturas (solo lectura) -->
+            <div class="edit-section-title" style="margin-top:20px;"><i class="ri-file-list-2-line"></i> Planillas y Facturas</div>
+            <div id="modal-planillas-info" style="margin-bottom:10px;"></div>
+            <div id="modal-facturas-preview" style="font-size:0.8rem;color:var(--text-muted);padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--glass-border);border-radius:8px;line-height:1.8;max-height:80px;overflow:hidden;"></div>
+
+        </div>
+        <div class="modal-footer">
+            <button class="btn-rechazar" onclick="rechazarDesdeModal()">
+                <i class="ri-close-circle-line"></i> Rechazar
+            </button>
+            <div style="display:flex;gap:10px;">
+                <button class="btn-back" onclick="cerrarModal()">Cancelar</button>
+                <button class="btn-aprobar" onclick="aprobarDesdeModal()">
+                    <i class="ri-checkbox-circle-line"></i> Guardar y Aprobar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+'use strict';
+
+const moneyFmt = new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
+const fmt      = v => moneyFmt.format(v || 0);
+const parseMon = s => parseFloat(String(s || '0').replace(/[^0-9]/g, '')) || 0;
+
+let APR_DATA      = [];
+let APR_ESTADO    = 'PENDIENTE';
+let APR_MODAL_ID  = null;
+let APR_USER_NAME = '';
+let APR_USER_RS   = 'TYM';
+
+/* ── Auth guard ─────────────────────────────────────────── */
+(async () => {
+    const { session, user } = await window.SupabaseClient.auth.getSession();
+    if (!session) { window.location.href = '../index.html'; return; }
+
+    const role = (user?.rol || 'aprobador').toLowerCase();
+    APR_USER_NAME = user?.nombre || 'Aprobador';
+    APR_USER_RS   = (user?.razon_social || 'TYM').toUpperCase();
+
+    if (!['admin', 'aprobador'].includes(role)) {
+        window.location.href = 'dashboard.html';
+        return;
+    }
+
+    window.PG_RAZON_SOCIAL_OVERRIDE = APR_USER_RS;
+
+    const companyBadge = document.getElementById('companyBadge');
+    const roleBadge    = document.getElementById('userRoleBadge');
+    if (companyBadge) companyBadge.textContent = APR_USER_RS;
+    if (roleBadge)    roleBadge.textContent    = `${APR_USER_NAME} · ${role === 'admin' ? 'Administrador' : 'Aprobador'}`;
+
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('apr-fecha').value = hoy;
+    await cargarProgramaciones();
+
+    // Inicializar las funciones de app.js para el modal (zonas, auxiliares, cálculos)
+    setTimeout(() => {
+        if (typeof buscarConductorPorPlaca   === 'function') buscarConductorPorPlaca('modal-placa', 'modal-contratista');
+        if (typeof setupCalculators          === 'function') setupCalculators('modal-');
+        if (typeof actualizarListaAuxiliares === 'function') actualizarListaAuxiliares('modal-');
+    }, 500);
+})();
+
+async function doLogout() {
+    await window.SupabaseClient.auth.logout();
+    window.location.href = '../index.html?logout=true';
+}
+
+/* ── Cargar programaciones ──────────────────────────────── */
+async function cargarProgramaciones() {
+    const grid = document.getElementById('apr-grid');
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="ri-loader-4-line spin"></i><p>Cargando...</p></div>`;
+
+    const filtros = {};
+    if (APR_ESTADO)  filtros.estado    = APR_ESTADO;
+    const fFecha  = document.getElementById('apr-fecha')?.value;
+    const fProv   = document.getElementById('apr-proveedor')?.value;
+    if (fFecha) filtros.fecha     = fFecha;
+    if (fProv)  filtros.proveedor = fProv;
+
+    const result = await window.SupabaseClient.programaciones.getAll(filtros);
+
+    if (!result.success) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;color:#ef4444;"><i class="ri-error-warning-line"></i><p>Error al cargar</p></div>`;
+        return;
+    }
+
+    APR_DATA = result.data;
+    actualizarKPIs(result.data);
+    renderCards(result.data);
+}
+
+function filtrarEstado(estado) {
+    APR_ESTADO = estado;
+    // Actualizar tabs
+    document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
+    const map = { 'PENDIENTE': 'tabPend', 'APROBADA': 'tabApro', 'RECHAZADA': 'tabRech', '': 'tabTodas' };
+    document.getElementById(map[estado])?.classList.add('active');
+    cargarProgramaciones();
+}
+
+/* ── KPIs ───────────────────────────────────────────────── */
+function actualizarKPIs(data) {
+    const hoy  = document.getElementById('apr-fecha')?.value || new Date().toISOString().split('T')[0];
+    const pend = data.filter(p => p.estado === 'PENDIENTE').length;
+    const apro = data.filter(p => p.estado === 'APROBADA').length;
+    const rech = data.filter(p => p.estado === 'RECHAZADA').length;
+
+    document.getElementById('apr-kpi-pend').textContent = pend;
+    document.getElementById('apr-kpi-apro').textContent = apro;
+    document.getElementById('apr-kpi-rech').textContent = rech;
+    document.getElementById('apr-kpi-tot').textContent  = data.length;
+
+    const badge = document.getElementById('badge-pend');
+    if (badge) { badge.textContent = pend > 0 ? pend : ''; badge.style.display = pend > 0 ? 'inline' : 'none'; }
+}
+
+/* ── Render cards ───────────────────────────────────────── */
+function renderCards(data) {
+    const grid = document.getElementById('apr-grid');
+    if (data.length === 0) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+            <i class="ri-inbox-line"></i><p>Sin programaciones para los filtros aplicados</p>
+        </div>`;
+        return;
+    }
+
+    const ESTADO_META = {
+        'PENDIENTE': { color:'#f59e0b', bg:'rgba(245,158,11,0.12)', icon:'ri-time-line' },
+        'APROBADA':  { color:'#10b981', bg:'rgba(16,185,129,0.12)', icon:'ri-checkbox-circle-line' },
+        'RECHAZADA': { color:'#ef4444', bg:'rgba(239,68,68,0.12)',  icon:'ri-close-circle-line' },
+    };
+
+    grid.innerHTML = data.map(p => {
+        const meta    = ESTADO_META[p.estado] || ESTADO_META['PENDIENTE'];
+        const isPend  = p.estado === 'PENDIENTE';
+        const planillas = (p.no_planilla || '').split(',').map(s => s.trim()).filter(Boolean);
+        const motivoEl  = p.motivo_rechazo
+            ? `<div style="padding:6px 10px;background:rgba(239,68,68,0.08);border-radius:6px;color:#ef4444;font-size:0.78rem;margin-bottom:10px;"><i class="ri-information-line"></i> ${p.motivo_rechazo}</div>` : '';
+
+        return `<div class="prog-card ${p.estado.toLowerCase()}" id="pcard-${p.id}">
+            <div class="prog-card-header">
+                <span class="prog-placa">${p.placa || '—'}</span>
+                <span class="prog-estado-chip" style="background:${meta.bg};color:${meta.color};border-color:${meta.color}40;">
+                    <i class="${meta.icon}"></i> ${p.estado}
+                </span>
+            </div>
+
+            <div class="prog-info-grid">
+                <div class="prog-info-item">
+                    <div class="lbl">Conductor</div>
+                    <div class="val">${p.contratista || '—'}</div>
+                </div>
+                <div class="prog-info-item">
+                    <div class="lbl">Fecha</div>
+                    <div class="val">${p.fecha || '—'} · ${p.dia || ''}</div>
+                </div>
+                <div class="prog-info-item">
+                    <div class="lbl">Población</div>
+                    <div class="val">${p.poblacion || '—'}</div>
+                </div>
+                <div class="prog-info-item">
+                    <div class="lbl">Zona</div>
+                    <div class="val">${p.zona || '—'}</div>
+                </div>
+                <div class="prog-info-item">
+                    <div class="lbl">Pedidos</div>
+                    <div class="val">${p.no_pedidos || 0}</div>
+                </div>
+                <div class="prog-info-item">
+                    <div class="lbl">Total Flete</div>
+                    <div class="val" style="color:#10b981;font-weight:700;">${fmt(p.precio)}</div>
+                </div>
+            </div>
+
+            <div class="prog-planillas-row">
+                ${planillas.map(pl => `<span class="prog-planilla-badge">${pl}</span>`).join('')}
+            </div>
+
+            ${p.facturas_seleccionadas ? `<div class="prog-facturas-preview">
+                <i class="ri-receipt-line"></i> ${p.facturas_seleccionadas}
+            </div>` : ''}
+
+            ${motivoEl}
+
+            <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:10px;">
+                Programado por: ${p.programado_por || '—'}
+                ${p.revisado_por ? ` · Revisado por: ${p.revisado_por}` : ''}
+            </div>
+
+            <div class="prog-card-actions">
+                ${isPend ? `
+                <button class="btn-editar" onclick="abrirModal('${p.id}')">
+                    <i class="ri-edit-line"></i> Editar y aprobar
+                </button>
+                <button class="btn-rechazar" onclick="rechazarDirecto('${p.id}','${(p.placa||'')}','${(p.no_planilla||'')}')">
+                    <i class="ri-close-circle-line"></i>
+                </button>` : `
+                <button class="btn-editar" onclick="abrirModal('${p.id}')">
+                    <i class="ri-eye-line"></i> Ver detalle
+                </button>`}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+/* ── Modal de edición ───────────────────────────────────── */
+function abrirModal(progId) {
+    const p = APR_DATA.find(x => x.id === progId);
+    if (!p) return;
+    APR_MODAL_ID = progId;
+
+    // Cabecera
+    document.getElementById('modal-placa-title').textContent = p.placa || '—';
+
+    // Info del programador
+    const infoEl = document.getElementById('modal-info-prog');
+    if (infoEl) infoEl.innerHTML = `
+        <span><i class="ri-user-line"></i> Programado por: <strong>${p.programado_por || '—'}</strong></span>
+        <span><i class="ri-calendar-line"></i> ${p.created_at ? new Date(p.created_at).toLocaleString('es-CO') : '—'}</span>
+        <span><i class="ri-store-2-line"></i> ${p.proveedor || '—'}</span>`;
+
+    // Llenar campos editables
+    document.getElementById('modal-placa').value             = p.placa       || '';
+    document.getElementById('modal-contratista').value       = p.contratista || '';
+    document.getElementById('modal-proveedor').value         = p.proveedor   || 'ALPINA';
+    document.getElementById('modal-fecha').value             = p.fecha       || '';
+    document.getElementById('modal-dia').value               = p.dia         || 'Lunes';
+    document.getElementById('modal-no_pedidos').value        = p.no_pedidos  || 0;
+    document.getElementById('modal-valor_ruta').value        = fmt(p.valor_ruta || 0);
+    document.getElementById('modal-valor_adicional').value  = fmt(p.valor_adicional_negociacion || 0);
+    document.getElementById('modal-razon_adicional').value  = p.razon_adicional_negociacion || '';
+
+    // Actualizar zonas dinámicas según proveedor (app.js)
+    if (typeof actualizarZonasPorProveedor === 'function') {
+        actualizarZonasPorProveedor('modal-');
+        // Marcar las zonas que venían en la programación
+        setTimeout(() => {
+            const zonas = (p.zona || '').split(',').map(z => z.trim());
+            const container = document.getElementById('modal-zona-container');
+            if (container) {
+                container.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+                    chk.checked = zonas.includes(chk.value);
+                });
+            }
+            // Actualizar poblaciones y precio
+            if (typeof actualizarPoblaciones === 'function') actualizarPoblaciones('modal-');
+            // Seleccionar población guardada
+            setTimeout(() => {
+                const pobEl = document.getElementById('modal-poblacion');
+                if (pobEl && p.poblacion) pobEl.value = p.poblacion;
+                if (typeof calcularTotal === 'function') calcularTotal('modal-');
+            }, 100);
+        }, 200);
+    }
+
+    // Auxiliar — seleccionar el valor guardado
+    setTimeout(() => {
+        const auxEl = document.getElementById('modal-auxiliares');
+        if (auxEl && p.auxiliares) {
+            // Buscar si el auxiliar está en el select
+            for (const opt of auxEl.options) {
+                if (opt.value === p.auxiliares || p.auxiliares.startsWith(opt.value)) {
+                    auxEl.value = opt.value;
+                    break;
+                }
+            }
+        }
+        if (document.getElementById('modal-no_auxiliares'))
+            document.getElementById('modal-no_auxiliares').value = p.no_auxiliares || 1;
+    }, 300);
+
+    // Planillas (solo lectura)
+    const planillas = (p.no_planilla || '').split(',').map(s => s.trim()).filter(Boolean);
+    const planEl = document.getElementById('modal-planillas-info');
+    if (planEl) planEl.innerHTML = planillas.map(pl =>
+        `<span style="background:rgba(59,130,246,0.1);color:var(--primary);border:1px solid rgba(59,130,246,0.25);padding:2px 9px;border-radius:5px;font-family:monospace;font-size:0.82rem;font-weight:700;margin-right:6px;">${pl}</span>`
+    ).join('');
+
+    // Facturas (solo lectura)
+    const factEl = document.getElementById('modal-facturas-preview');
+    if (factEl) factEl.textContent = p.facturas_seleccionadas || 'Sin facturas registradas';
+
+    // Ocultar botón aprobar si ya no está PENDIENTE
+    const btnApr = document.querySelector('.btn-aprobar');
+    const btnRec = document.querySelector('.btn-rechazar');
+    if (p.estado !== 'PENDIENTE') {
+        if (btnApr) btnApr.style.display = 'none';
+        if (btnRec) btnRec.style.display = 'none';
+        // Campos de solo lectura
+        document.querySelectorAll('#modal-editar input, #modal-editar select, #modal-editar textarea')
+            .forEach(el => { el.readOnly = true; el.disabled = true; });
+    } else {
+        if (btnApr) btnApr.style.display = 'inline-flex';
+        if (btnRec) btnRec.style.display = 'inline-flex';
+        document.querySelectorAll('#modal-editar input, #modal-editar select, #modal-editar textarea')
+            .forEach(el => { el.readOnly = false; el.disabled = false; });
+        // Estos siempre readonly
+        document.getElementById('modal-total_flete').readOnly = true;
+    }
+
+    document.getElementById('modal-editar').classList.add('visible');
+}
+
+function cerrarModal() {
+    document.getElementById('modal-editar').classList.remove('visible');
+    APR_MODAL_ID = null;
+}
+
+/* ── Autocomplete conductor en el modal ─────────────────── */
+let _condTimer;
+/* ── Aprobar desde modal (guardando ediciones) ──────────── */
+async function aprobarDesdeModal() {
+    if (!APR_MODAL_ID) return;
+
+    const placa = document.getElementById('modal-placa')?.value?.trim().toUpperCase();
+    if (!placa) {
+        Swal.fire({ icon:'warning', title:'Placa requerida', background:'#1e293b', color:'#fff' });
+        return;
+    }
+
+    const cambios = {
+        placa,
+        contratista:                 document.getElementById('modal-contratista')?.value?.trim()   || '',
+        proveedor:                   document.getElementById('modal-proveedor')?.value             || 'ALPINA',
+        // Zona: leer de los checkboxes del container (igual que app.js)
+        zona: Array.from(
+            document.querySelectorAll('#modal-zona-container input[type="checkbox"]:checked')
+        ).map(c => c.value).join(', ') || document.querySelector('#modal-zona-container input:checked')?.value || '',
+        fecha:                       document.getElementById('modal-fecha')?.value                 || '',
+        dia:                         document.getElementById('modal-dia')?.value                   || '',
+        poblacion:                   document.getElementById('modal-poblacion')?.value?.trim()     || '',
+        auxiliares:                  document.getElementById('modal-auxiliares')?.value?.trim()    || '',
+        no_auxiliares:               parseInt(document.getElementById('modal-no_auxiliares')?.value || '1'),
+        no_pedidos:                  parseInt(document.getElementById('modal-no_pedidos')?.value   || '0'),
+        valor_ruta:                  parseMon(document.getElementById('modal-valor_ruta')?.value),
+        valor_adicional_negociacion: parseMon(document.getElementById('modal-valor_adicional')?.value),
+        razon_adicional_negociacion: document.getElementById('modal-razon_adicional')?.value?.trim() || '',
+        precio:                      parseMon(document.getElementById('modal-total_flete')?.value),
+    };
+
+    const c = await Swal.fire({
+        title: '¿Aprobar esta programación?',
+        html: `Se crearán los fletes para <strong>${placa}</strong>.<br>
+               <small style="color:#94a3b8;">Los cambios que hiciste se guardarán antes de aprobar.</small>`,
+        icon: 'question', showCancelButton: true,
+        confirmButtonText: '<i class="ri-checkbox-circle-line"></i> Sí, aprobar',
+        cancelButtonText:  'Cancelar',
+        confirmButtonColor: '#10b981',
+        background: '#1e293b', color: '#fff'
+    });
+    if (!c.isConfirmed) return;
+
+    Swal.fire({ title: 'Procesando...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
+
+    // 1. Guardar cambios
+    const editResult = await window.SupabaseClient.programaciones.actualizar(APR_MODAL_ID, cambios);
+    if (!editResult.success) {
+        Swal.fire({ icon:'error', title:'Error al guardar cambios', text: editResult.error, background:'#1e293b', color:'#fff' });
+        return;
+    }
+
+    // 2. Aprobar → crea el flete
+    const aprResult = await window.SupabaseClient.programaciones.aprobar(APR_MODAL_ID);
+    if (!aprResult.success) {
+        Swal.fire({ icon:'error', title:'Error al aprobar', text: aprResult.error, background:'#1e293b', color:'#fff' });
+        return;
+    }
+
+    cerrarModal();
+    await cargarProgramaciones();
+
+    Swal.fire({
+        icon: 'success', title: '¡Flete creado!',
+        html: `Programación de <strong>${placa}</strong> aprobada.<br>El flete ya está en el sistema.`,
+        timer: 2500, showConfirmButton: false, background: '#1e293b', color: '#fff'
+    });
+}
+
+/* ── Rechazar desde el modal ────────────────────────────── */
+async function rechazarDesdeModal() {
+    const p = APR_DATA.find(x => x.id === APR_MODAL_ID);
+    if (!p) return;
+    cerrarModal();
+    await rechazarDirecto(p.id, p.placa, p.no_planilla);
+}
+
+async function rechazarDirecto(progId, placa, noPlanilla) {
+    const { value: motivo, isConfirmed } = await Swal.fire({
+        title: 'Rechazar programación',
+        html: `<p style="color:#94a3b8;font-size:0.88rem;margin-bottom:10px;">
+                   Placa: <strong style="color:#fff;">${placa}</strong> &nbsp;·&nbsp;
+                   Planilla: <strong style="color:var(--primary);">${noPlanilla}</strong>
+               </p>
+               <textarea id="motivo-rech" placeholder="Motivo del rechazo..."
+                   style="width:100%;padding:10px;background:#0f172a;border:1px solid rgba(255,255,255,0.1);
+                          color:#fff;border-radius:8px;font-family:inherit;font-size:0.88rem;min-height:80px;resize:vertical;"></textarea>`,
+        showCancelButton: true,
+        confirmButtonText: '<i class="ri-close-circle-line"></i> Rechazar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#ef4444',
+        background: '#1e293b', color: '#fff',
+        preConfirm: () => document.getElementById('motivo-rech')?.value?.trim() || 'Sin motivo especificado',
+    });
+    if (!isConfirmed) return;
+
+    const result = await window.SupabaseClient.programaciones.rechazar(progId, motivo);
+    if (!result.success) {
+        Swal.fire({ icon:'error', title:'Error', text: result.error, background:'#1e293b', color:'#fff' });
+        return;
+    }
+    await cargarProgramaciones();
+    Swal.fire({ icon:'info', title:'Rechazada', text:'El programador será notificado.',
+        timer:1800, showConfirmButton:false, background:'#1e293b', color:'#fff' });
+}
+</script>
+</body>
+</html>

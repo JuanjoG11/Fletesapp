@@ -1152,3 +1152,30 @@ SupabaseClientAPI.programaciones = {
 // Actualizar alias globales
 window.supabaseClient = SupabaseClientAPI;
 window.SupabaseClient = SupabaseClientAPI;
+
+// ==========================================================
+// ✏️  EDICIÓN DE PROGRAMACIONES (rol aprobador)
+// ==========================================================
+
+/**
+ * Actualizar campos de una programación PENDIENTE antes de aprobarla
+ */
+async function actualizarProgramacion(programacionId, cambios) {
+    try {
+        const { error } = await _supabase
+            .from('programaciones')
+            .update({ ...cambios, updated_at: new Date().toISOString() })
+            .eq('id', programacionId)
+            .eq('estado', 'PENDIENTE'); // solo se pueden editar las PENDIENTE
+        if (error) throw error;
+        return { success: true };
+    } catch (error) {
+        console.error('Error al actualizar programación:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// Agregar al objeto global
+SupabaseClientAPI.programaciones.actualizar = actualizarProgramacion;
+window.supabaseClient = SupabaseClientAPI;
+window.SupabaseClient = SupabaseClientAPI;

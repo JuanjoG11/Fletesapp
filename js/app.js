@@ -530,6 +530,10 @@ async function checkAuth() {
         if (btnExportarExcel) btnExportarExcel.style.display = 'none';
         if (btnExportarPDF)   btnExportarPDF.style.display   = 'inline-flex';
         if (headerAccionesFletes) headerAccionesFletes.style.display = 'table-cell';
+    } else if (role === 'aprobador') {
+        // PERFIL APROBADOR: redirigir a su página standalone
+        window.location.href = 'aprobaciones.html';
+        return;
     } else if (role === 'cajera_plan') {
         // PERFIL CAJERA PLANILLAS: solo ve Estado Planillas (kanban) en el dashboard
         if (navFletes)    navFletes.style.display    = 'none';

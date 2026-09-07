@@ -150,6 +150,18 @@
                     localStorage.setItem('userId', resultado.user.id);
                     localStorage.setItem('userName', resultado.user.nombre);
 
+                    // Destino según rol
+                    const rol = (resultado.user.rol || 'operario').toLowerCase();
+                    const destinos = {
+                        'cargador':    'pages/carga-planillas.html',
+                        'programador': 'pages/programacion.html',
+                        'cajera_plan': 'pages/dashboard.html',
+                        'caja':        'pages/dashboard.html',
+                        'admin':       'pages/dashboard.html',
+                        'operario':    'pages/dashboard.html',
+                    };
+                    const destino = destinos[rol] || 'pages/dashboard.html';
+
                     Swal.fire({
                         icon: 'success',
                         title: '¡Bienvenido!',
@@ -159,7 +171,7 @@
                         background: '#1e293b',
                         color: '#fff'
                     }).then(() => {
-                        window.location.href = 'pages/dashboard.html';
+                        window.location.href = destino;
                     });
                 } else {
                     Swal.fire({

@@ -496,8 +496,11 @@ let CP_USER_NAME = null;
         return;
     }
 
+    // Setear override para que obtenerPlanillas use la razon_social correcta
+    window.PG_RAZON_SOCIAL_OVERRIDE = (user?.razon_social || 'TYM').toUpperCase();
+
     const hoy = new Date().toISOString().split('T')[0];
-    document.getElementById('cp-hist-fecha').value = hoy;
+    // NO pre-llenamos la fecha del historial → muestra todas las planillas
     await cargarHistorial();
     setupDropzone();
 })();
@@ -680,6 +683,9 @@ async function confirmarCarga() {
     }
 
     cancelarCarga();
+    // Limpiar filtro de fecha para mostrar todas las planillas recién cargadas
+    const fechaFiltro = document.getElementById('cp-hist-fecha');
+    if (fechaFiltro) fechaFiltro.value = '';
     await cargarHistorial();
 
     Swal.fire({

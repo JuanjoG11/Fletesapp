@@ -735,7 +735,7 @@ window.supabaseClient.cerrarSesion = cerrarSesion;
  */
 async function obtenerPlanillas(filtros = {}) {
     try {
-        const razonSocial = await _getRazonSocialUsuario();
+        const razonSocial = window.PG_RAZON_SOCIAL_OVERRIDE || await _getRazonSocialUsuario();
         let query = _supabase
             .from('planillas')
             .select(`*, planilla_facturas(id, no_factura, valor_bruto, valor_factura, valor_total, asignada, zona, fecha_entrega)`)
@@ -769,7 +769,7 @@ async function crearPlanillaConFacturas(planillaData, facturas = []) {
     try {
         const { data: sessionData } = await _supabase.auth.getSession();
         const userId = sessionData?.session?.user?.id;
-        const razonSocial = await _getRazonSocialUsuario() || 'TYM';
+        const razonSocial = window.PG_RAZON_SOCIAL_OVERRIDE || await _getRazonSocialUsuario() || 'TYM';
 
         // 1. Insertar cabecera
         const { data: planilla, error: errP } = await _supabase
@@ -857,7 +857,7 @@ async function toggleAsignacionFactura(facturaId, asignada) {
  */
 async function obtenerFacturasSueltas(filtros = {}) {
     try {
-        const razonSocial = await _getRazonSocialUsuario();
+        const razonSocial = window.PG_RAZON_SOCIAL_OVERRIDE || await _getRazonSocialUsuario();
         let query = _supabase
             .from('planilla_facturas')
             .select('*, planilla:planillas(no_planilla, fecha, zona)')

@@ -210,6 +210,63 @@
             cursor: default;
         }
 
+        /* ── Chips de planillas acumuladas ─────────────────── */
+        .pg-planillas-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin-top: 12px;
+            min-height: 32px;
+            align-items: center;
+        }
+        .pg-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px 4px 12px;
+            background: rgba(59,130,246,0.12);
+            border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--primary);
+            font-family: monospace;
+            transition: 0.15s;
+        }
+        .pg-chip:hover { background: rgba(59,130,246,0.2); }
+        .pg-chip-del {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: rgba(239,68,68,0.2);
+            color: #ef4444;
+            font-size: 0.7rem;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            transition: 0.15s;
+            padding: 0;
+        }
+        .pg-chip-del:hover { background: rgba(239,68,68,0.4); }
+        .pg-chips-empty {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        .pg-chips-resumen {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            padding: 8px 12px;
+            background: rgba(59,130,246,0.05);
+            border-radius: 8px;
+            margin-top: 8px;
+            font-size: 0.8rem;
+        }
+        .pg-chips-resumen span { display: flex; align-items: center; gap: 5px; }
+
         /* ── Factura ya programada en otra ruta ── */
         .factura-ya-programada {
             opacity: 0.55;
@@ -316,19 +373,23 @@
     ════════════════════════════════════════════════════ -->
     <div id="view-crear">
 
-        <!-- ── Panel selector de planilla ── -->
+        <!-- ── Panel selector de planilla (multi-planilla) ── -->
         <div class="planilla-selector-panel">
-            <h3><i class="ri-file-list-2-line"></i> Selección de Planilla</h3>
+            <h3><i class="ri-file-list-2-line"></i> Selección de Planillas
+                <span style="font-size:0.75rem;color:var(--text-muted);font-weight:400;margin-left:8px;">
+                    — puedes agregar más de una planilla al mismo flete
+                </span>
+            </h3>
 
             <div class="planilla-select-row">
                 <div class="input-group" style="margin:0;">
-                    <label>Fecha de entrega</label>
+                    <label>Filtrar por fecha (opcional)</label>
                     <input type="date" id="pg-fecha-planilla" onchange="cargarPlanillasDelDia()">
                 </div>
                 <div class="input-group" style="margin:0;">
-                    <label>Planilla disponible</label>
-                    <select id="pg-select-planilla" onchange="onSeleccionarPlanilla(this.value)">
-                        <option value="">— Selecciona una planilla —</option>
+                    <label>Agregar planilla</label>
+                    <select id="pg-select-planilla" onchange="agregarPlanilla(this.value); this.value=''">
+                        <option value="">— Selecciona para agregar —</option>
                     </select>
                 </div>
                 <button class="btn btn-secondary" onclick="cargarPlanillasDelDia()" style="height:44px;padding:0 14px;font-size:0.83rem;">
@@ -336,34 +397,26 @@
                 </button>
             </div>
 
-            <!-- Info de la planilla seleccionada -->
-            <div class="planilla-seleccionada-info" id="pg-planilla-info">
-                <div class="psi-item">
-                    <div class="psi-lbl">Planilla</div>
-                    <div class="psi-val" id="psi-no-planilla">—</div>
+            <!-- Chips de planillas acumuladas -->
+            <div style="margin-top:12px;">
+                <div style="font-size:0.75rem;color:var(--text-muted);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">
+                    Planillas en este flete
                 </div>
-                <div class="psi-item">
-                    <div class="psi-lbl">Zona</div>
-                    <div class="psi-val" id="psi-zona">—</div>
+                <div class="pg-planillas-chips" id="pg-chips-container">
+                    <span class="pg-chips-empty">Ninguna planilla seleccionada aún</span>
                 </div>
-                <div class="psi-item">
-                    <div class="psi-lbl">Proveedor</div>
-                    <div class="psi-val" id="psi-proveedor">—</div>
-                </div>
-                <div class="psi-item">
-                    <div class="psi-lbl">Total facturas</div>
-                    <div class="psi-val" id="psi-total-fact">—</div>
-                </div>
-                <div class="psi-item">
-                    <div class="psi-lbl">Valor total</div>
-                    <div class="psi-val" id="psi-valor" style="color:#10b981;">—</div>
+                <!-- Resumen acumulado cuando hay ≥1 planilla -->
+                <div class="pg-chips-resumen" id="pg-chips-resumen" style="display:none;">
+                    <span><i class="ri-file-list-2-line" style="color:var(--primary);"></i> <strong id="pg-chips-count">0</strong> planillas</span>
+                    <span><i class="ri-receipt-line"></i> <strong id="pg-chips-facturas">0</strong> facturas disponibles</span>
+                    <span><i class="ri-money-dollar-circle-line" style="color:#10b981;"></i> <strong id="pg-chips-valor">$ 0</strong> valor total</span>
                 </div>
             </div>
 
-            <!-- Lista de facturas de la planilla -->
+            <!-- Lista de facturas acumuladas de todas las planillas seleccionadas -->
             <div class="facturas-panel" id="pg-facturas-panel">
                 <div class="facturas-panel-header">
-                    <h4><i class="ri-receipt-line"></i> Facturas de la planilla — selecciona las que van en esta ruta</h4>
+                    <h4><i class="ri-receipt-line"></i> Facturas de las planillas — selecciona las que van en esta ruta</h4>
                     <div class="facturas-panel-actions">
                         <button class="btn-fact-action" onclick="seleccionarTodasFacturas(true)">
                             <i class="ri-checkbox-multiple-line"></i> Todas
@@ -526,6 +579,88 @@
     </div><!-- /view-crear -->
 
     <!-- ════════════════════════════════════════════════════
+         FACTURAS SUELTAS (siempre visible en esta página)
+         Facturas que quedaron pendientes de otra programación
+    ════════════════════════════════════════════════════ -->
+    <div class="card glass-card" id="pg-sueltas-card" style="margin-top:0; border-left: 3px solid #ef4444;">
+        <div class="card-header" style="padding-bottom:12px; margin-bottom:12px;">
+            <h2 style="color:#ef4444; font-size:0.95rem;">
+                <i class="ri-alert-line"></i> Facturas Sueltas
+                <span style="font-size:0.75rem; color:var(--text-muted); font-weight:400; margin-left:8px;">
+                    — deseleccionadas de su planilla, disponibles para otra ruta
+                </span>
+                <span id="pg-sueltas-count" style="display:none; background:#ef4444; color:#fff; border-radius:12px; font-size:0.7rem; font-weight:800; padding:1px 8px; margin-left:6px;"></span>
+            </h2>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <input type="date" id="pg-sueltas-fecha" class="input-modern" style="width:150px; height:34px; font-size:0.82rem;"
+                       onchange="cargarSueltasProg()">
+                <button class="btn btn-secondary" onclick="cargarSueltasProg()" style="height:34px;padding:0 10px;font-size:0.8rem;">
+                    <i class="ri-refresh-line"></i>
+                </button>
+            </div>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>No. Factura</th>
+                        <th>Fecha Entrega</th>
+                        <th>Zona</th>
+                        <th>Valor Total</th>
+                        <th>Planilla Origen</th>
+                        <th style="width:120px;text-align:center;">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="pg-sueltas-body">
+                    <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted);">
+                        <i class="ri-loader-4-line" style="animation:spin 0.9s linear infinite;display:inline-block;"></i> Cargando...
+                    </td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ── Modal Replanillar ── -->
+    <div id="modal-replanillar" class="modal-overlay">
+        <div class="modal-glass" style="max-width:500px;">
+            <div class="modal-header">
+                <h2><i class="ri-reply-line" style="color:#f59e0b;"></i> Replanillar Factura</h2>
+                <button class="close-btn" onclick="cerrarModalReplanillar()"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="modal-body">
+                <!-- Info de la factura -->
+                <div style="padding:12px 16px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:10px;margin-bottom:20px;">
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;">FACTURA A REPLANILLAR</div>
+                    <div id="rpl-factura-info" style="font-size:0.9rem;font-weight:600;"></div>
+                </div>
+
+                <!-- Selector de fecha de destino -->
+                <div class="input-group" style="margin-bottom:16px;">
+                    <label>Fecha de entrega destino</label>
+                    <input type="date" id="rpl-fecha-destino" onchange="cargarPlanillasDestino()">
+                </div>
+
+                <!-- Selector de planilla destino -->
+                <div class="input-group" style="margin-bottom:8px;">
+                    <label>Planilla de destino</label>
+                    <select id="rpl-select-planilla" style="width:100%;">
+                        <option value="">— Selecciona la fecha primero —</option>
+                    </select>
+                </div>
+                <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:20px;">
+                    <i class="ri-information-line"></i> Solo se muestran planillas con facturas disponibles.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModalReplanillar()">Cancelar</button>
+                <button class="btn btn-primary" onclick="confirmarReplanillar()" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
+                    <i class="ri-reply-line"></i> Confirmar Replanillar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════
          VISTA 2: LISTADO DE PROGRAMACIONES
     ════════════════════════════════════════════════════ -->
     <div id="view-listado">
@@ -587,9 +722,10 @@
 /* ─────────────────────────────────────────────────────────
    Estado local del módulo de programación
 ──────────────────────────────────────────────────────────── */
-let PG_PLANILLAS_HOY  = [];   // planillas del día seleccionado
-let PG_PLANILLA_SEL   = null; // objeto planilla actualmente seleccionada
-let PG_FACTURAS_SEL   = new Set(); // IDs de facturas marcadas
+let PG_PLANILLAS_HOY   = [];        // todas las planillas disponibles del día
+let PG_PLANILLA_SEL    = null;      // última planilla seleccionada (alias compat.)
+let PG_PLANILLAS_ACUM  = [];        // ARRAY de planillas acumuladas al flete
+let PG_FACTURAS_SEL    = new Set(); // IDs de facturas marcadas (de todas las planillas)
 
 const moneyFmt = new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
 const fmt = v => moneyFmt.format(v || 0);
@@ -598,26 +734,73 @@ const fmt = v => moneyFmt.format(v || 0);
    Inicialización (se ejecuta después de que app.js cargue)
 ──────────────────────────────────────────────────────────── */
 window.addEventListener('load', async () => {
-    // app.js expone checkAuth — la usamos para el auth guard
-    if (typeof checkAuth === 'function') {
-        await checkAuth();
-        // Si el rol no tiene acceso, checkAuth ya redirige
+    // Auth guard propio (no usar checkAuth de app.js — está diseñado para el dashboard)
+    const { session, user } = await window.SupabaseClient.auth.getSession();
+    if (!session) { window.location.href = '../index.html'; return; }
+
+    const role     = (user?.rol || 'programador').toLowerCase();
+    const userName = user?.nombre || 'Usuario';
+    const rs       = user?.razon_social || 'TYM';
+
+    // Solo programador y admin pueden acceder
+    if (!['admin', 'programador'].includes(role)) {
+        window.location.href = 'dashboard.html';
+        return;
     }
 
-    // Fecha de hoy por defecto
-    const hoy = new Date().toISOString().split('T')[0];
-    document.getElementById('pg-fecha-planilla').value = hoy;
-    document.getElementById('pg-list-fecha').value = hoy;
+    // Actualizar badges del header
+    const companyBadge = document.getElementById('companyBadge');
+    const roleBadge    = document.getElementById('userRoleBadge');
+    if (companyBadge) companyBadge.textContent = rs;
+    if (roleBadge)    roleBadge.textContent    = `${userName} · ${role === 'admin' ? 'Administrador' : 'Programador'}`;
 
-    // Cargar planillas del día
-    await cargarPlanillasDelDia();
+    // Setear variables globales que usa app.js internamente
+    window.CURRENT_ROLE         = role;
+    window.CURRENT_RAZON_SOCIAL = rs.toUpperCase();
+
+    // Forzar proveedores TYM después de que app.js haya podido sobrescribirlos
+    // (app.js con defer puede cambiar el select si detecta razon_social TAT)
+    setTimeout(() => {
+        const provEl = document.getElementById('proveedor');
+        if (provEl && rs.toUpperCase() === 'TYM') {
+            const valorActual = provEl.value;
+            provEl.innerHTML = `
+                <option value="" disabled selected>Seleccione...</option>
+                <option value="ALPINA">ALPINA</option>
+                <option value="FLEISCHMANN">FLEISCHMANN</option>
+                <option value="ALPINA-FLEISCHMANN">ALPINA-FLEISCHMANN</option>
+                <option value="ZENU">ZENU</option>
+            `;
+            if (valorActual) provEl.value = valorActual;
+        }
+    }, 400);
+
+    // Fecha de hoy por defecto (solo para los filtros de listado y sueltas)
+    const hoy = new Date().toISOString().split('T')[0];
+    // El selector de planillas NO filtra por fecha → muestra todas disponibles
+    document.getElementById('pg-list-fecha').value     = hoy;
+    document.getElementById('pg-sueltas-fecha').value  = hoy;
+
+    // Cargar planillas del día y facturas sueltas
+    // Pasar razon_social directamente para evitar timing issues con _getRazonSocialUsuario
+    window.PG_RAZON_SOCIAL_OVERRIDE = rs.toUpperCase();
+    await Promise.all([cargarPlanillasDelDia(), cargarSueltasProg()]);
 
     // Sobrescribir el botón de guardar para usar nuestra versión
     const btn = document.getElementById('btnGestionarFlete');
     if (btn) {
-        btn.replaceWith(btn.cloneNode(true)); // eliminar listeners previos
+        btn.replaceWith(btn.cloneNode(true));
         document.getElementById('btnGestionarFlete').addEventListener('click', guardarFleteProgramacion);
     }
+
+    // Activar autocompletado de conductor al escribir la placa
+    if (typeof buscarConductorPorPlaca === 'function') {
+        buscarConductorPorPlaca('placa', 'contratista');
+    }
+
+    // Activar cálculos del formulario
+    if (typeof setupCalculators === 'function') setupCalculators('');
+    if (typeof actualizarListaAuxiliares === 'function') actualizarListaAuxiliares('');
 });
 
 /* ─────────────────────────────────────────────────────────
@@ -714,62 +897,127 @@ async function cargarPlanillasDelDia() {
 }
 
 /* ─────────────────────────────────────────────────────────
-   Al seleccionar una planilla en el dropdown
+   MULTI-PLANILLA: agregar / quitar / renderizar chips
 ──────────────────────────────────────────────────────────── */
+
+// Alias de compatibilidad — algunas llamadas antiguas lo usan
 function onSeleccionarPlanilla(planillaId) {
-    if (!planillaId) {
-        // Limpiar
-        PG_PLANILLA_SEL = null;
-        PG_FACTURAS_SEL.clear();
-        document.getElementById('pg-planilla-info').classList.remove('visible');
-        document.getElementById('pg-facturas-panel').classList.remove('visible');
-        document.getElementById('no_planilla').value = '';
-        document.getElementById('no_planilla').classList.remove('planilla-no-lock');
-        document.getElementById('facturas_adicionales').value = '';
+    if (planillaId) agregarPlanilla(planillaId);
+}
+
+function agregarPlanilla(planillaId) {
+    if (!planillaId) return;
+
+    // Evitar duplicados
+    if (PG_PLANILLAS_ACUM.find(p => p.id === planillaId)) {
+        Swal.fire({ icon:'info', title:'Ya agregada',
+            text:'Esta planilla ya está incluida en el flete.',
+            timer:1500, showConfirmButton:false,
+            background:'#1e293b', color:'#fff' });
         return;
     }
 
     const planilla = PG_PLANILLAS_HOY.find(p => p.id === planillaId);
     if (!planilla) return;
 
-    PG_PLANILLA_SEL = planilla;
-    PG_FACTURAS_SEL.clear();
+    PG_PLANILLAS_ACUM.push(planilla);
+    PG_PLANILLA_SEL = planilla; // alias compat.
 
-    // Mostrar info de la planilla
-    const todasFacts   = planilla.planilla_facturas || [];
-    const pendientes   = todasFacts.filter(f => f.asignada).length;
-    const yaAsignadas  = todasFacts.length - pendientes;
-
-    document.getElementById('psi-no-planilla').textContent = planilla.no_planilla;
-    document.getElementById('psi-zona').textContent        = planilla.zona       || '—';
-    document.getElementById('psi-proveedor').textContent   = planilla.proveedor  || '—';
-    document.getElementById('psi-total-fact').textContent  =
-        `${pendientes} disponibles / ${todasFacts.length} total` +
-        (yaAsignadas > 0 ? ` (${yaAsignadas} ya programadas)` : '');
-    document.getElementById('psi-valor').textContent       = fmt(planilla.valor_total);
-    document.getElementById('pg-planilla-info').classList.add('visible');
-
-    // Llenar el campo No. Planilla del formulario
-    const noPlEl = document.getElementById('no_planilla');
-    noPlEl.value = planilla.no_planilla;
-    noPlEl.classList.add('planilla-no-lock');
-
-    // Auto-rellenar proveedor si el formulario lo tiene vacío
-    const provEl = document.getElementById('proveedor');
-    if (provEl && planilla.proveedor && !provEl.value) {
-        provEl.value = planilla.proveedor;
-        if (typeof actualizarZonasPorProveedor === 'function') actualizarZonasPorProveedor();
+    // Auto-rellenar proveedor / fecha del formulario con la primera planilla
+    if (PG_PLANILLAS_ACUM.length === 1) {
+        const provEl = document.getElementById('proveedor');
+        if (provEl && planilla.proveedor && !provEl.value) {
+            provEl.value = planilla.proveedor;
+            if (typeof actualizarZonasPorProveedor === 'function') actualizarZonasPorProveedor();
+        }
+        const fechaEl = document.getElementById('fecha');
+        if (fechaEl && planilla.fecha && !fechaEl.value) {
+            fechaEl.value = planilla.fecha;
+            if (typeof actualizarDiaPorFecha === 'function') actualizarDiaPorFecha('');
+        }
     }
 
-    // Auto-rellenar fecha
-    const fechaEl = document.getElementById('fecha');
-    if (fechaEl && planilla.fecha && !fechaEl.value) {
-        fechaEl.value = planilla.fecha;
-        if (typeof actualizarDiaPorFecha === 'function') actualizarDiaPorFecha('');
+    _renderChips();
+    _renderTodasFacturas();
+}
+
+function quitarPlanilla(planillaId) {
+    // Quitar la planilla del array
+    PG_PLANILLAS_ACUM = PG_PLANILLAS_ACUM.filter(p => p.id !== planillaId);
+    PG_PLANILLA_SEL   = PG_PLANILLAS_ACUM[PG_PLANILLAS_ACUM.length - 1] || null;
+
+    // Quitar del Set las facturas que pertenecían a esa planilla
+    const planilla = PG_PLANILLAS_HOY.find(p => p.id === planillaId);
+    if (planilla) {
+        (planilla.planilla_facturas || []).forEach(f => PG_FACTURAS_SEL.delete(f.id));
     }
 
-    // Renderizar facturas
-    renderFacturas(planilla.planilla_facturas || []);
+    _renderChips();
+    _renderTodasFacturas();
+}
+
+function _renderChips() {
+    const container  = document.getElementById('pg-chips-container');
+    const resumen    = document.getElementById('pg-chips-resumen');
+    const noPlEl     = document.getElementById('no_planilla');
+    if (!container) return;
+
+    if (PG_PLANILLAS_ACUM.length === 0) {
+        container.innerHTML = '<span class="pg-chips-empty">Ninguna planilla seleccionada aún</span>';
+        if (resumen)   resumen.style.display   = 'none';
+        if (noPlEl)  { noPlEl.value = ''; noPlEl.classList.remove('planilla-no-lock'); }
+        document.getElementById('pg-facturas-panel').classList.remove('visible');
+        document.getElementById('facturas_adicionales').value = '';
+        return;
+    }
+
+    // Renderizar chips
+    container.innerHTML = PG_PLANILLAS_ACUM.map(p => `
+        <span class="pg-chip">
+            ${p.no_planilla}
+            <span style="color:var(--text-muted);font-size:0.7rem;font-weight:400;font-family:sans-serif;">
+                ${p.zona ? `· ${p.zona}` : ''}
+            </span>
+            <button class="pg-chip-del" onclick="quitarPlanilla('${p.id}')" title="Quitar planilla ${p.no_planilla}">
+                ✕
+            </button>
+        </span>`).join('');
+
+    // Actualizar campo no_planilla del formulario
+    const noPlanillasStr = PG_PLANILLAS_ACUM.map(p => p.no_planilla).join(', ');
+    if (noPlEl) {
+        noPlEl.value = noPlanillasStr;
+        noPlEl.classList.add('planilla-no-lock');
+    }
+
+    // Actualizar resumen de chips
+    const totalFacts    = PG_PLANILLAS_ACUM.reduce((s, p) =>
+        s + (p.planilla_facturas || []).filter(f => f.asignada).length, 0);
+    const valorTotal    = PG_PLANILLAS_ACUM.reduce((s, p) => s + (p.valor_total || 0), 0);
+
+    if (resumen) {
+        resumen.style.display = 'flex';
+        const elCount  = document.getElementById('pg-chips-count');
+        const elFacts  = document.getElementById('pg-chips-facturas');
+        const elValor  = document.getElementById('pg-chips-valor');
+        if (elCount) elCount.textContent = PG_PLANILLAS_ACUM.length;
+        if (elFacts) elFacts.textContent = totalFacts;
+        if (elValor) elValor.textContent = fmt(valorTotal);
+    }
+}
+
+/* ─────────────────────────────────────────────────────────
+   Renderizar TODAS las facturas de TODAS las planillas acumuladas
+──────────────────────────────────────────────────────────── */
+function _renderTodasFacturas() {
+    // Aplanar facturas de todas las planillas, marcando de cuál vienen
+    const todasFacturas = PG_PLANILLAS_ACUM.flatMap(p =>
+        (p.planilla_facturas || []).map(f => ({
+            ...f,
+            _planillaNo: p.no_planilla,  // para mostrar origen en la lista
+        }))
+    );
+    renderFacturas(todasFacturas);
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -807,7 +1055,7 @@ function renderFacturas(facturas) {
                        onclick="event.stopPropagation(); toggleFacturaItemChk('${f.id}', this.checked)">
                 <div class="factura-item-info">
                     <div class="factura-item-num">${f.no_factura}</div>
-                    <div class="factura-item-sub">${f.zona || '—'} · ${f.fecha_entrega || ''}</div>
+                    <div class="factura-item-sub">${f.zona || '—'} · ${f.fecha_entrega || ''}${f._planillaNo ? ` · <span style="color:var(--primary);font-family:monospace;">${f._planillaNo}</span>` : ''}</div>
                 </div>
                 <div class="factura-item-val">${fmt(f.valor_total)}</div>
             </label>`;
@@ -850,20 +1098,26 @@ function toggleFacturaItemChk(id, checked) {
 }
 
 function seleccionarTodasFacturas(todas) {
-    // Solo opera sobre las facturas DISPONIBLES (asignada = true)
-    const facturas = PG_PLANILLA_SEL?.planilla_facturas || [];
-    const disponibles = facturas.filter(f => f.asignada);
-    disponibles.forEach(f => {
+    // Operar sobre TODAS las facturas disponibles de TODAS las planillas acumuladas
+    const todasFacturas = PG_PLANILLAS_ACUM.flatMap(p =>
+        (p.planilla_facturas || []).filter(f => f.asignada)
+    );
+    todasFacturas.forEach(f => {
         const chk = document.getElementById(`chk-${f.id}`);
         const lbl = document.getElementById(`fi-${f.id}`);
         if (chk) chk.checked = todas;
-        if (todas) { PG_FACTURAS_SEL.add(f.id); lbl?.classList.add('checked'); }
+        if (todas) { PG_FACTURAS_SEL.add(f.id);    lbl?.classList.add('checked'); }
         else        { PG_FACTURAS_SEL.delete(f.id); lbl?.classList.remove('checked'); }
     });
-    actualizarResumenFacturas(facturas);
+    actualizarResumenFacturas(todasFacturas);
 }
 
 function actualizarResumenFacturas(facturas) {
+    // facturas puede ser el array aplanado pasado directamente,
+    // o lo recalculamos desde el acumulado si no se pasa
+    if (!facturas) {
+        facturas = PG_PLANILLAS_ACUM.flatMap(p => p.planilla_facturas || []);
+    }
     const disponibles  = facturas.filter(f => f.asignada);
     const yaProg       = facturas.filter(f => !f.asignada);
     const sel          = PG_FACTURAS_SEL.size;
@@ -905,13 +1159,15 @@ function actualizarResumenFacturas(facturas) {
 async function guardarFleteProgramacion() {
 
     // ── Validaciones básicas ──────────────────────────────
-    const noPlEl = document.getElementById('no_planilla');
-    if (!noPlEl?.value?.trim()) {
+    if (PG_PLANILLAS_ACUM.length === 0) {
         Swal.fire({ icon:'warning', title:'Planilla requerida',
-            text:'Selecciona una planilla antes de guardar.',
+            text:'Agrega al menos una planilla antes de guardar.',
             background:'#1e293b', color:'#fff' });
         return;
     }
+
+    const noPlEl = document.getElementById('no_planilla');
+    const noPlanilla = noPlEl?.value?.trim() || PG_PLANILLAS_ACUM.map(p => p.no_planilla).join(', ');
 
     const placa = document.getElementById('placa')?.value?.trim().toUpperCase();
     if (!placa) {
@@ -932,7 +1188,7 @@ async function guardarFleteProgramacion() {
     }
 
     // ── Advertir si no hay facturas seleccionadas ─────────
-    if (PG_PLANILLA_SEL && PG_FACTURAS_SEL.size === 0) {
+    if (PG_PLANILLAS_ACUM.length > 0 && PG_FACTURAS_SEL.size === 0) {
         const c = await Swal.fire({
             icon:'question', title:'Sin facturas seleccionadas',
             text:'No marcaste ninguna factura. ¿Continuar de todas formas?',
@@ -951,7 +1207,7 @@ async function guardarFleteProgramacion() {
     const auxNombre  = document.getElementById('auxiliares')?.value || '';
     const auxExtra   = document.getElementById('auxiliares_extra')?.value?.trim() || '';
     const auxFinal   = auxExtra ? `${auxNombre}, ${auxExtra}` : auxNombre;
-    const noPlanilla = noPlEl.value.trim();
+    // noPlanilla ya declarado arriba (multi-planilla)
     const factsSelStr = document.getElementById('facturas_adicionales')?.value || '';
 
     // Zona (checkboxes)
@@ -971,12 +1227,26 @@ async function guardarFleteProgramacion() {
     const precioStr = document.getElementById('total_flete')?.value || '0';
     const precio    = parseFloat(precioStr.replace(/[^0-9]/g, '')) || 0;
 
-    // ── IDs de facturas deseleccionadas (pendientes para otra ruta) ──
-    const todasFact = PG_PLANILLA_SEL?.planilla_facturas || [];
-    const deseleccionadasIds = todasFact
-        .filter(f => f.asignada && !PG_FACTURAS_SEL.has(f.id))
-        .map(f => f.id)
-        .join(',');
+    // ── IDs de facturas deseleccionadas (de TODAS las planillas acumuladas) ──
+    // Se marcan asignada=false EN ESTE MOMENTO para que el selector
+    // las muestre como pendientes si otra programación las necesita
+    const todasFactsAcum = PG_PLANILLAS_ACUM.flatMap(p => p.planilla_facturas || []);
+    const deseleccionadas = todasFactsAcum.filter(f => f.asignada && !PG_FACTURAS_SEL.has(f.id));
+    const deseleccionadasIds = deseleccionadas.map(f => f.id).join(',');
+
+    if (deseleccionadas.length > 0) {
+        Swal.fire({ title: `Liberando ${deseleccionadas.length} factura(s) para otras rutas...`,
+            allowOutsideClick: false, didOpen: () => Swal.showLoading(),
+            background: '#1e293b', color: '#fff' });
+        for (const f of deseleccionadas) {
+            await window.SupabaseClient.planillas.toggleFactura(f.id, false);
+        }
+        Swal.close();
+    }
+
+    // IDs y números de TODAS las planillas acumuladas
+    const planillasIds  = PG_PLANILLAS_ACUM.map(p => p.id).join(',');
+    const noPlanillasStr = PG_PLANILLAS_ACUM.map(p => p.no_planilla).join(', ');
 
     // ── Armar el payload ──────────────────────────────────
     const payload = {
@@ -991,13 +1261,13 @@ async function guardarFleteProgramacion() {
         no_auxiliares:               noAux,
         no_pedidos:                  noPedidos,
         valor_ruta:                  valorRuta,
-        no_planilla:                 noPlanilla,
+        no_planilla:                 noPlanillasStr,   // "23492, 23493"
         facturas_seleccionadas:      factsSelStr,
         facturas_deseleccionadas:    deseleccionadasIds,
         valor_adicional_negociacion: adicional,
         razon_adicional_negociacion: razonAdic,
         precio,
-        planilla_id:                 PG_PLANILLA_SEL?.id || null,
+        planilla_id:                 PG_PLANILLAS_ACUM[0]?.id || null,  // principal = primera
         programado_por:              window.CURRENT_SESSION?.profile?.nombre || 'Programador',
     };
 
@@ -1016,24 +1286,38 @@ async function guardarFleteProgramacion() {
     Swal.fire({
         icon: 'success',
         title: '¡Programación guardada!',
-        html: `La programación para <strong>${placa}</strong> — planilla <strong>${noPlanilla}</strong><br>
-               quedó <strong style="color:#f59e0b;">PENDIENTE de aprobación</strong> por el administrador.`,
+        html: `La programación para <strong>${placa}</strong><br>
+               Planillas: <strong style="color:var(--primary);font-family:monospace;">${noPlanillasStr}</strong><br>
+               quedó <strong style="color:#f59e0b;">PENDIENTE de aprobación</strong> por el administrador.
+               ${deseleccionadas.length > 0
+                   ? `<br><small style="color:#94a3b8;margin-top:6px;display:block;">
+                      <i class="ri-alert-line" style="color:#f59e0b;"></i>
+                      ${deseleccionadas.length} factura(s) quedaron pendientes para otra ruta.</small>`
+                   : ''}`,
         background: '#1e293b', color: '#fff',
         confirmButtonText: 'OK'
     });
 
     limpiarFormularioProg();
+    // Actualizar la sección de facturas sueltas
+    await cargarSueltasProg();
 }
 
 /* ─────────────────────────────────────────────────────────
    Limpiar formulario
 ──────────────────────────────────────────────────────────── */
 function limpiarFormularioProg() {
-    // Limpiar selector de planilla
-    document.getElementById('pg-select-planilla').value = '';
-    onSeleccionarPlanilla('');
+    // Resetear array de planillas acumuladas
+    PG_PLANILLAS_ACUM = [];
+    PG_PLANILLA_SEL   = null;
+    PG_FACTURAS_SEL.clear();
 
-    // Refrescar planillas
+    // Limpiar select y chips
+    const selectEl = document.getElementById('pg-select-planilla');
+    if (selectEl) selectEl.value = '';
+    _renderChips();
+
+    // Refrescar planillas disponibles
     cargarPlanillasDelDia();
 
     // La limpieza del formulario de flete la maneja limpiarFormulario de app.js
@@ -1096,6 +1380,194 @@ async function cargarListadoProgramaciones() {
             </td>
         </tr>`;
     }).join('');
+}
+
+/* ─────────────────────────────────────────────────────────
+   Facturas sueltas con botón "Replanillar"
+──────────────────────────────────────────────────────────── */
+let RPL_FACTURA_ACTIVA = null; // objeto factura que se está replanillando
+
+async function cargarSueltasProg() {
+    const tbody = document.getElementById('pg-sueltas-body');
+    const badge = document.getElementById('pg-sueltas-count');
+    if (!tbody) return;
+
+    const fecha  = document.getElementById('pg-sueltas-fecha')?.value || '';
+    const result = await window.SupabaseClient.planillas.getFacturasSueltas(fecha ? { fecha } : {});
+
+    if (!result.success || result.data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--text-muted);">
+            <i class="ri-checkbox-circle-line" style="color:#10b981;"></i>
+            Sin facturas sueltas${fecha ? ' para esta fecha' : ''}
+        </td></tr>`;
+        if (badge) badge.style.display = 'none';
+        return;
+    }
+
+    if (badge) { badge.textContent = result.data.length; badge.style.display = 'inline-flex'; }
+
+    const moneyF2 = new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
+
+    tbody.innerHTML = result.data.map(f => `
+        <tr id="fsuelta-${f.id}">
+            <td><strong style="font-family:monospace;">${f.no_factura}</strong></td>
+            <td>${f.fecha_entrega || '—'}</td>
+            <td>${f.zona || '—'}</td>
+            <td style="font-weight:700;color:#10b981;">${moneyF2.format(f.valor_total)}</td>
+            <td>
+                <span style="background:rgba(59,130,246,0.08);color:var(--primary);
+                             border:1px solid rgba(59,130,246,0.2);padding:1px 7px;
+                             border-radius:5px;font-family:monospace;font-size:0.75rem;font-weight:700;">
+                    ${f.planilla?.no_planilla || '—'}
+                </span>
+            </td>
+            <td style="text-align:center;">
+                <button onclick="abrirModalReplanillar(${JSON.stringify({
+                    id: f.id,
+                    no_factura: f.no_factura,
+                    fecha_entrega: f.fecha_entrega || '',
+                    zona: f.zona || '',
+                    valor_total: f.valor_total || 0,
+                    planilla_origen: f.planilla?.no_planilla || '—',
+                    planilla_id: f.planilla_id || ''
+                }).replace(/"/g,'&quot;')})"
+                    style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.08));
+                           border:1px solid rgba(245,158,11,0.35);color:#f59e0b;
+                           padding:5px 10px;border-radius:7px;font-size:0.76rem;font-weight:700;
+                           cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;
+                           transition:0.15s;"
+                    onmouseover="this.style.background='rgba(245,158,11,0.22)'"
+                    onmouseout="this.style.background='linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.08))'">
+                    <i class="ri-reply-line"></i> Replanillar
+                </button>
+            </td>
+        </tr>`).join('');
+}
+
+/* ─────────────────────────────────────────────────────────
+   Modal de Replanillar
+──────────────────────────────────────────────────────────── */
+function abrirModalReplanillar(factura) {
+    RPL_FACTURA_ACTIVA = factura;
+
+    const moneyF3 = new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
+    const infoEl  = document.getElementById('rpl-factura-info');
+    if (infoEl) {
+        infoEl.innerHTML = `
+            <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:4px;">
+                <span><i class="ri-receipt-line"></i> <strong>${factura.no_factura}</strong></span>
+                ${factura.zona ? `<span><i class="ri-map-pin-line"></i> ${factura.zona}</span>` : ''}
+                ${factura.fecha_entrega ? `<span><i class="ri-calendar-line"></i> ${factura.fecha_entrega}</span>` : ''}
+                <span style="color:#10b981;"><i class="ri-money-dollar-circle-line"></i>
+                    <strong>${moneyF3.format(factura.valor_total)}</strong>
+                </span>
+                <span style="color:var(--text-muted);font-size:0.8rem;">
+                    Origen: <strong>${factura.planilla_origen}</strong>
+                </span>
+            </div>`;
+    }
+
+    // Pre-llenar fecha con la fecha de entrega de la factura o hoy
+    const fechaDest = document.getElementById('rpl-fecha-destino');
+    if (fechaDest) {
+        fechaDest.value = factura.fecha_entrega || new Date().toISOString().split('T')[0];
+        cargarPlanillasDestino();
+    }
+
+    document.getElementById('modal-replanillar').classList.add('visible');
+}
+
+function cerrarModalReplanillar() {
+    RPL_FACTURA_ACTIVA = null;
+    document.getElementById('modal-replanillar').classList.remove('visible');
+    document.getElementById('rpl-select-planilla').innerHTML = '<option value="">— Selecciona la fecha primero —</option>';
+}
+
+async function cargarPlanillasDestino() {
+    const fecha    = document.getElementById('rpl-fecha-destino')?.value || '';
+    const selectEl = document.getElementById('rpl-select-planilla');
+    if (!selectEl || !fecha) return;
+
+    selectEl.innerHTML = '<option value="">Cargando...</option>';
+
+    const result = await window.SupabaseClient.planillas.getAll({ fecha });
+
+    if (!result.success || result.data.length === 0) {
+        selectEl.innerHTML = '<option value="" disabled>Sin planillas para esta fecha</option>';
+        return;
+    }
+
+    // Filtrar planillas que tengan al menos 1 factura disponible
+    // y que NO sean la planilla de origen de la factura suelta
+    const disponibles = result.data.filter(p => {
+        const facts     = p.planilla_facturas || [];
+        const tieneDisp = facts.some(f => f.asignada);
+        const noEsOrigen = p.id !== RPL_FACTURA_ACTIVA?.planilla_id;
+        return tieneDisp && noEsOrigen;
+    });
+
+    selectEl.innerHTML = '<option value="">— Selecciona una planilla —</option>';
+
+    if (disponibles.length === 0) {
+        selectEl.innerHTML += '<option value="" disabled>Sin planillas disponibles para esta fecha</option>';
+        return;
+    }
+
+    disponibles.forEach(p => {
+        const facts   = (p.planilla_facturas || []).filter(f => f.asignada).length;
+        const total   = (p.planilla_facturas || []).length;
+        selectEl.innerHTML += `<option value="${p.id}" data-no="${p.no_planilla}">
+            [${p.no_planilla}] ${p.zona || ''} · ${facts}/${total} fact · ${p.proveedor}
+        </option>`;
+    });
+}
+
+async function confirmarReplanillar() {
+    const factura   = RPL_FACTURA_ACTIVA;
+    const selectEl  = document.getElementById('rpl-select-planilla');
+    const planillaId = selectEl?.value;
+    const noPlanilla = selectEl?.options[selectEl.selectedIndex]?.dataset?.no || planillaId;
+
+    if (!factura || !planillaId) {
+        Swal.fire({ icon:'warning', title:'Selecciona una planilla',
+            text:'Debes elegir la planilla de destino.',
+            background:'#1e293b', color:'#fff' });
+        return;
+    }
+
+    Swal.fire({ title: 'Replanillando...', allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
+
+    try {
+        // 1. Actualizar el planilla_id de la factura suelta → nueva planilla
+        const { error: eUpd } = await window.SupabaseClient.supabase
+            .from('planilla_facturas')
+            .update({
+                planilla_id: planillaId,
+                asignada:    true           // vuelve a estar disponible en la nueva planilla
+            })
+            .eq('id', factura.id);
+
+        if (eUpd) throw eUpd;
+
+        cerrarModalReplanillar();
+        await cargarSueltasProg();
+        await cargarPlanillasDelDia();
+
+        Swal.fire({
+            icon: 'success',
+            title: '¡Factura replanillada!',
+            html: `Factura <strong>${factura.no_factura}</strong> movida a planilla <strong style="color:var(--primary);">${noPlanilla}</strong>.<br>
+                   <small style="color:#94a3b8;">Ya aparece disponible para ser programada en esa ruta.</small>`,
+            timer: 2500, showConfirmButton: false,
+            background: '#1e293b', color: '#fff'
+        });
+
+    } catch (err) {
+        console.error('Error al replanillar:', err);
+        Swal.fire({ icon:'error', title:'Error', text: err.message,
+            background:'#1e293b', color:'#fff' });
+    }
 }
 
 /* ─────────────────────────────────────────────────────────

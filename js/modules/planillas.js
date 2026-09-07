@@ -127,6 +127,25 @@ function _cardPlanilla(p) {
     const siguienteEstado = PL_ESTADOS[PL_ESTADOS.indexOf(p.estado) + 1] || null;
     const anteriorEstado  = PL_ESTADOS[PL_ESTADOS.indexOf(p.estado) - 1] || null;
 
+    // Datos de cuadre (si ya está CUADRADA)
+    const esCuadrada = p.estado === 'CUADRADA';
+    const infoCuadre = esCuadrada && p.valor_cuadrado
+        ? `<div style="margin-top:8px; padding:7px 10px; background:rgba(16,185,129,0.08);
+                       border:1px solid rgba(16,185,129,0.2); border-radius:7px;">
+               <div style="font-size:0.7rem; color:#94a3b8; text-transform:uppercase; margin-bottom:3px;">
+                   Cuadre confirmado
+               </div>
+               <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px;">
+                   <span style="color:#10b981; font-weight:700; font-size:0.85rem;">
+                       ${fmt(p.valor_cuadrado)}
+                   </span>
+                   ${p.cuadrado_por ? `<span style="font-size:0.75rem; color:#94a3b8;">${p.cuadrado_por}</span>` : ''}
+               </div>
+               ${p.obs_cuadre ? `<div style="font-size:0.75rem; color:#94a3b8; margin-top:3px; font-style:italic;">
+                   "${p.obs_cuadre}"</div>` : ''}
+           </div>`
+        : '';
+
     return `
     <div class="pl-card glass-card" id="plcard-${p.id}" data-id="${p.id}" data-estado="${p.estado}">
         <div class="pl-card-header">
@@ -139,7 +158,16 @@ function _cardPlanilla(p) {
         <div class="pl-card-info">
             <div class="pl-info-row"><i class="ri-calendar-line"></i> <span>${p.fecha || '—'}</span></div>
             ${p.zona ? `<div class="pl-info-row"><i class="ri-map-pin-line"></i> <span>${p.zona}</span></div>` : ''}
-            ${p.placa ? `<div class="pl-info-row"><i class="ri-truck-line"></i> <span class="badge-plate" style="font-size:0.75rem;">${p.placa}</span> ${p.conductor ? `<span style="font-size:0.8rem;color:var(--text-muted);">${p.conductor}</span>` : ''}</div>` : ''}
+            ${p.placa
+                ? `<div class="pl-info-row">
+                       <i class="ri-truck-line"></i>
+                       <span class="badge-plate" style="font-size:0.75rem;">${p.placa}</span>
+                       ${p.conductor ? `<span style="font-size:0.8rem;color:var(--text-muted);">${p.conductor}</span>` : ''}
+                   </div>`
+                : `<div class="pl-info-row" style="color:#f59e0b;">
+                       <i class="ri-alert-line"></i> <span style="font-size:0.8rem;">Sin vehículo asignado</span>
+                   </div>`}
+            ${p.poblacion ? `<div class="pl-info-row"><i class="ri-map-2-line"></i> <span style="font-size:0.8rem;">${p.poblacion}</span></div>` : ''}
             <div class="pl-info-row"><i class="ri-file-list-3-line"></i>
                 <span>${factAsig} / ${factTotal} facturas asignadas</span>
             </div>
@@ -153,6 +181,8 @@ function _cardPlanilla(p) {
         <div class="pl-facturas-sueltas-alert">
             <i class="ri-alert-line"></i> ${factTotal - factAsig} factura(s) suelta(s)
         </div>` : ''}
+
+        ${infoCuadre}
 
         <div class="pl-card-actions">
             <button class="pl-btn-action pl-btn-detail" onclick="abrirDetallePlanilla('${p.id}')" title="Ver facturas">
@@ -345,12 +375,117 @@ async function toggleFacturaUI(facturaId, asignada) {
 }
 
 // ── Cambio de estado ───────────────────────────────────────
+// ── Cambio de estado ───────────────────────────────────────
 async function cambiarEstadoPlanilla(planillaId, nuevoEstado) {
     const planilla = PL_CACHE.find(p => p.id === planillaId);
     if (!planilla) return;
 
     const meta = PL_ESTADO_META[nuevoEstado];
-    const confirm = await Swal.fire({
+
+    // ── Flujo especial para CUADRADA: la cajera confirma el cuadre ──
+    if (nuevoEstado === 'CUADRADA') {
+        const moneyFmtC = new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
+        const factAsig  = planilla.planilla_facturas?.filter(f => f.asignada).length || 0;
+        const factTotal = planilla.planilla_facturas?.length || 0;
+        const haySueltas = factTotal > factAsig;
+
+        const { value: formValues, isConfirmed } = await Swal.fire({
+            title: '📋 Cuadre de Planilla',
+            html: `
+                <div style="text-align:left;font-size:0.88rem;">
+                    <div style="padding:10px 14px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;margin-bottom:16px;">
+                        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                            <span><i class="ri-file-list-2-line"></i> Planilla: <strong style="font-family:monospace;">${planilla.no_planilla}</strong></span>
+                            <span><i class="ri-calendar-line"></i> ${planilla.fecha || '—'}</span>
+                            ${planilla.placa ? `<span><i class="ri-truck-line"></i> <strong>${planilla.placa}</strong></span>` : ''}
+                            <span style="color:#10b981;"><i class="ri-money-dollar-circle-line"></i> <strong>${moneyFmtC.format(planilla.valor_total)}</strong></span>
+                        </div>
+                        ${haySueltas ? `
+                        <div style="margin-top:8px;padding:6px 10px;background:rgba(245,158,11,0.1);border-radius:6px;color:#f59e0b;font-size:0.8rem;">
+                            <i class="ri-alert-line"></i> ${factTotal - factAsig} factura(s) sin asignar en esta planilla
+                        </div>` : ''}
+                    </div>
+
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block;margin-bottom:5px;color:#94a3b8;font-size:0.78rem;font-weight:600;">
+                            VALOR RECIBIDO (confirmación) <span style="color:#ef4444;">*</span>
+                        </label>
+                        <input id="swal-valor-cuadre" type="text"
+                               placeholder="${moneyFmtC.format(planilla.valor_total)}"
+                               style="width:100%;padding:10px 14px;background:#0f172a;border:1px solid rgba(16,185,129,0.3);
+                                      color:#10b981;border-radius:8px;font-size:1rem;font-weight:700;
+                                      font-family:inherit;outline:none;">
+                    </div>
+
+                    <div>
+                        <label style="display:block;margin-bottom:5px;color:#94a3b8;font-size:0.78rem;font-weight:600;">
+                            OBSERVACIÓN (opcional)
+                        </label>
+                        <textarea id="swal-obs-cuadre" rows="2"
+                                  placeholder="Ej: Recibido completo, faltó factura 737xxx..."
+                                  style="width:100%;padding:8px 12px;background:#0f172a;
+                                         border:1px solid rgba(255,255,255,0.08);color:#f8fafc;
+                                         border-radius:8px;font-family:inherit;font-size:0.85rem;
+                                         resize:vertical;outline:none;"></textarea>
+                    </div>
+                </div>`,
+            showCancelButton: true,
+            confirmButtonText: '<i class="ri-checkbox-circle-line"></i> Confirmar Cuadre',
+            cancelButtonText:  'Cancelar',
+            confirmButtonColor: '#10b981',
+            background: '#1e293b', color: '#fff',
+            focusConfirm: false,
+            preConfirm: () => {
+                const valStr  = document.getElementById('swal-valor-cuadre')?.value || '';
+                const obs     = document.getElementById('swal-obs-cuadre')?.value?.trim() || '';
+                const valNum  = parseFloat(valStr.replace(/[^0-9]/g, '')) || 0;
+                if (!valStr.trim()) {
+                    Swal.showValidationMessage('Ingresa el valor recibido para confirmar el cuadre');
+                    return false;
+                }
+                return { valorRecibido: valNum, observacion: obs };
+            },
+        });
+
+        if (!isConfirmed || !formValues) return;
+
+        // Guardar cuadre con los datos extra
+        const result = await SupabaseClient.planillas.updateEstado(planillaId, 'CUADRADA', {
+            cuadrado_por:    window.CURRENT_SESSION?.profile?.nombre || 'Cajera',
+            valor_cuadrado:  formValues.valorRecibido,
+            obs_cuadre:      formValues.observacion || null,
+            fecha_cuadre:    new Date().toISOString().split('T')[0],
+        });
+
+        if (!result.success) {
+            Swal.fire({ icon:'error', title:'Error al cuadrar',
+                text: result.error || 'No se pudo registrar el cuadre.',
+                background:'#1e293b', color:'#fff' });
+            return;
+        }
+
+        const moneyFmtC2 = new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
+        planilla.estado = 'CUADRADA';
+        _renderKanban(PL_CACHE);
+        _renderTabla(PL_CACHE);
+        await _actualizarKPIs();
+
+        Swal.fire({
+            icon: 'success',
+            title: '✅ Planilla Cuadrada',
+            html: `<strong>${planilla.no_planilla}</strong> cuadrada correctamente.<br>
+                   <span style="color:#10b981;font-weight:700;">
+                       ${moneyFmtC2.format(formValues.valorRecibido)}
+                   </span> recibidos.
+                   ${formValues.observacion ? `<br><small style="color:#94a3b8;">${formValues.observacion}</small>` : ''}`,
+            timer: 2500, showConfirmButton: false,
+            background: '#1e293b', color: '#fff'
+        });
+        return;
+    }
+
+    // ── Flujo normal para los demás estados ────────────────
+    const confirmStd = await Swal.fire({
         title: `¿Cambiar a ${nuevoEstado}?`,
         html: `Planilla <strong>${planilla.no_planilla}</strong> pasará a estado <strong style="color:${meta.color}">${nuevoEstado}</strong>`,
         icon: 'question',
@@ -360,7 +495,7 @@ async function cambiarEstadoPlanilla(planillaId, nuevoEstado) {
         background: '#1e293b', color: '#fff',
         confirmButtonColor: meta.color,
     });
-    if (!confirm.isConfirmed) return;
+    if (!confirmStd.isConfirmed) return;
 
     const result = await SupabaseClient.planillas.updateEstado(planillaId, nuevoEstado);
     if (!result.success) {
@@ -368,7 +503,6 @@ async function cambiarEstadoPlanilla(planillaId, nuevoEstado) {
         return;
     }
 
-    // Actualizar cache
     planilla.estado = nuevoEstado;
     _renderKanban(PL_CACHE);
     _renderTabla(PL_CACHE);
@@ -779,8 +913,13 @@ async function inicializarModuloProgramacion() {
 async function inicializarModuloEstado() {
     PL_ROLE = (window.CURRENT_ROLE || 'cajera_plan').toLowerCase();
     const hoy = new Date().toISOString().split('T')[0];
+
     const fFecha = document.getElementById('pl-filtro-fecha');
     if (fFecha && !fFecha.value) fFecha.value = hoy;
+
+    // Pre-llenar la fecha del resumen de cuadre con hoy
+    const fCuadre = document.getElementById('pl-cuadre-fecha');
+    if (fCuadre && !fCuadre.value) fCuadre.value = hoy;
 
     // Bind filtros del kanban
     document.getElementById('pl-filtro-estado')?.addEventListener('change',    cargarPlanillas);
@@ -789,6 +928,11 @@ async function inicializarModuloEstado() {
     document.getElementById('pl-filtro-busqueda')?.addEventListener('input',   _debounce(cargarPlanillas, 350));
 
     await cargarPlanillas();
+
+    // Si es cajera, cargar también el resumen del día automáticamente
+    if (['cajera_plan', 'admin'].includes(PL_ROLE)) {
+        await cargarResumenCuadre();
+    }
 }
 
 // ── Carga del historial en tab "Carga Planillas" ──────────
@@ -1177,3 +1321,147 @@ window.cargarAprobaciones          = cargarAprobaciones;
 window.aprobarProgramacionAdmin    = aprobarProgramacionAdmin;
 window.rechazarProgramacionAdmin   = rechazarProgramacionAdmin;
 window.verDetalleProgramacion      = verDetalleProgramacion;
+
+// ==========================================================
+// 📊 RESUMEN DIARIO DE CUADRE
+// ==========================================================
+
+async function cargarResumenCuadre() {
+    // Leer fecha — si está vacía usar hoy
+    const fechaEl = document.getElementById('pl-cuadre-fecha');
+    if (fechaEl && !fechaEl.value) {
+        fechaEl.value = new Date().toISOString().split('T')[0];
+    }
+    const fecha = fechaEl?.value || new Date().toISOString().split('T')[0];
+
+    // Mostrar loading
+    const emptyEl = document.getElementById('pl-cuadre-empty');
+    const tablaWrap = document.getElementById('pl-cuadre-tabla-wrap');
+    const totalesEl = document.getElementById('pl-cuadre-totales');
+    const btnExport = document.getElementById('pl-btn-export-cuadre');
+
+    if (emptyEl) emptyEl.innerHTML = `<i class="ri-loader-4-line rotate" style="font-size:1.6rem;"></i><p style="margin-top:8px;">Cargando cuadres del ${fecha}...</p>`;
+    if (tablaWrap) tablaWrap.style.display = 'none';
+    if (totalesEl) totalesEl.style.display = 'none';
+    if (btnExport) btnExport.style.display = 'none';
+
+    // Consultar planillas CUADRADAS de esa fecha
+    const result = await SupabaseClient.planillas.getAll({ estado: 'CUADRADA', fecha });
+
+    if (!result.success) {
+        if (emptyEl) emptyEl.innerHTML = `<i class="ri-error-warning-line" style="font-size:2rem;color:#ef4444;"></i><p style="color:#ef4444;margin-top:8px;">Error al cargar el resumen.</p>`;
+        return;
+    }
+
+    const cuadradas = result.data;
+
+    if (cuadradas.length === 0) {
+        if (emptyEl) {
+            emptyEl.style.display = 'block';
+            emptyEl.innerHTML = `<i class="ri-inbox-line" style="font-size:2rem;opacity:0.4;"></i><p style="margin-top:8px;">Sin planillas cuadradas para el ${fecha}</p>`;
+        }
+        return;
+    }
+
+    // Calcular totales
+    const totalEsperado = cuadradas.reduce((s, p) => s + (parseFloat(p.valor_total)    || 0), 0);
+    const totalRecibido = cuadradas.reduce((s, p) => s + (parseFloat(p.valor_cuadrado) || 0), 0);
+    const diferencia    = totalRecibido - totalEsperado;
+
+    // Actualizar KPI cards
+    const fmtR = new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
+
+    const el = (id) => document.getElementById(id);
+    if (el('pl-cuadre-count'))    el('pl-cuadre-count').textContent    = cuadradas.length;
+    if (el('pl-cuadre-esperado')) el('pl-cuadre-esperado').textContent = fmtR.format(totalEsperado);
+    if (el('pl-cuadre-recibido')) el('pl-cuadre-recibido').textContent = fmtR.format(totalRecibido);
+
+    const difEl = el('pl-cuadre-diferencia');
+    const difCard = el('pl-cuadre-diff-card');
+    if (difEl) {
+        difEl.textContent = (diferencia >= 0 ? '+' : '') + fmtR.format(diferencia);
+        difEl.style.color  = diferencia === 0 ? '#10b981' : diferencia > 0 ? '#3b82f6' : '#ef4444';
+    }
+    if (difCard) {
+        difCard.style.background   = diferencia === 0
+            ? 'rgba(16,185,129,0.07)' : diferencia > 0
+            ? 'rgba(59,130,246,0.07)' : 'rgba(239,68,68,0.07)';
+        difCard.style.borderColor  = diferencia === 0
+            ? 'rgba(16,185,129,0.2)' : diferencia > 0
+            ? 'rgba(59,130,246,0.2)' : 'rgba(239,68,68,0.2)';
+    }
+
+    // Renderizar tabla
+    const tbody = el('pl-cuadre-body');
+    if (tbody) {
+        tbody.innerHTML = cuadradas.map(p => {
+            const esperado  = parseFloat(p.valor_total)    || 0;
+            const recibido  = parseFloat(p.valor_cuadrado) || 0;
+            const diff      = recibido - esperado;
+            const diffColor = diff === 0 ? '#10b981' : diff > 0 ? '#3b82f6' : '#ef4444';
+            const diffStr   = (diff >= 0 ? '+' : '') + fmtR.format(diff);
+
+            return `<tr>
+                <td><span class="badge-plate" style="font-size:0.75rem;">${p.no_planilla}</span></td>
+                <td style="font-size:0.82rem;">${p.zona || '—'}</td>
+                <td>${p.placa ? `<span class="badge-plate" style="font-size:0.7rem;">${p.placa}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
+                <td style="font-size:0.82rem;color:var(--text-muted);">${p.conductor || '—'}</td>
+                <td style="text-align:right; font-weight:600;">${fmtR.format(esperado)}</td>
+                <td style="text-align:right; font-weight:700; color:#10b981;">${fmtR.format(recibido)}</td>
+                <td style="text-align:right; font-weight:700; color:${diffColor};">${diffStr}</td>
+                <td style="font-size:0.78rem; color:var(--text-muted);">${p.cuadrado_por || '—'}</td>
+                <td style="font-size:0.78rem; color:var(--text-muted); font-style:italic; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+                    title="${(p.obs_cuadre || '').replace(/"/g,'&quot;')}">${p.obs_cuadre || '—'}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    // Mostrar todo
+    if (emptyEl)   emptyEl.style.display = 'none';
+    if (totalesEl) totalesEl.style.display = 'block';
+    if (tablaWrap) tablaWrap.style.display = 'block';
+    if (btnExport) btnExport.style.display = 'inline-flex';
+
+    // Guardar referencia para exportar
+    window._CUADRE_DATA = cuadradas;
+}
+
+function exportarResumenCuadre() {
+    const data = window._CUADRE_DATA;
+    if (!data || !data.length) return;
+
+    if (typeof XLSX === 'undefined') {
+        Swal.fire({ icon:'warning', title:'XLSX no disponible', background:'#1e293b', color:'#fff' });
+        return;
+    }
+
+    const fmtN = (v) => parseFloat(v) || 0;
+    const rows = data.map(p => ({
+        'No. Planilla':    p.no_planilla,
+        'Fecha':           p.fecha,
+        'Zona':            p.zona || '',
+        'Placa':           p.placa || '',
+        'Conductor':       p.conductor || '',
+        'Valor Esperado':  fmtN(p.valor_total),
+        'Valor Recibido':  fmtN(p.valor_cuadrado),
+        'Diferencia':      fmtN(p.valor_cuadrado) - fmtN(p.valor_total),
+        'Cuadrado por':    p.cuadrado_por || '',
+        'Observación':     p.obs_cuadre || '',
+        'Fecha Cuadre':    p.fecha_cuadre || '',
+    }));
+
+    const wb  = XLSX.utils.book_new();
+    const ws  = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [
+        {wch:12},{wch:12},{wch:10},{wch:9},{wch:24},
+        {wch:16},{wch:16},{wch:14},{wch:18},{wch:30},{wch:13}
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, 'Cuadre');
+
+    const fechaStr = document.getElementById('pl-cuadre-fecha')?.value || 'hoy';
+    XLSX.writeFile(wb, `Cuadre_Planillas_${fechaStr}.xlsx`);
+}
+
+// Exponer globalmente
+window.cargarResumenCuadre    = cargarResumenCuadre;
+window.exportarResumenCuadre  = exportarResumenCuadre;

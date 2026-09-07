@@ -542,11 +542,17 @@ async function checkAuth() {
         if (navEstadoCP) navEstadoCP.style.display = 'flex';
         if (btnExportarExcel) btnExportarExcel.style.display = 'none';
         if (btnExportarPDF)   btnExportarPDF.style.display   = 'none';
-        // Ir directo al kanban de estado
+        // Ir directo al kanban de estado e inicializar el módulo
         document.getElementById("inicio")?.classList.remove("visible");
         document.getElementById("estado-planillas")?.classList.add("visible");
         document.querySelectorAll(".nav-item[data-tab]").forEach(n =>
             n.classList.toggle("active", n.dataset.tab === 'estado-planillas'));
+        // Inicializar el kanban una vez que app.js y planillas.js estén cargados
+        setTimeout(() => {
+            if (typeof inicializarModuloEstado === 'function') {
+                inicializarModuloEstado();
+            }
+        }, 300);
     } else if (role === 'caja') {
         // PERFIL CAJA: solo ve la pantalla de impresión de planillas, nada más
         // Ocultar toda la navegación
@@ -607,7 +613,7 @@ async function checkAuth() {
 
     // Explicitly show Dashboard for standard users (since we hid it by default in HTML)
     const inicioSection = document.getElementById("inicio");
-    if (inicioSection && role !== 'caja') {
+    if (inicioSection && !['caja', 'cargador', 'cajera_plan'].includes(role)) {
         inicioSection.classList.add("visible");
     }
 
@@ -4669,6 +4675,15 @@ window.limpiarBaseDeDatosProduction = async function () {
 // 🚀 INIT - DOM LOADED
 // ==========================================================
 document.addEventListener("DOMContentLoaded", async () => {
+    // Solo ejecutar la lógica del dashboard si estamos en dashboard.html
+    // programacion.html y carga-planillas.html tienen su propio init
+    const isDashboard = !!document.getElementById('inicio') || !!document.querySelector('.sidebar');
+    if (!isDashboard) {
+        console.log("🚀 FletesApp cargado en modo standalone (no dashboard)");
+        setupTheme();
+        return;
+    }
+
     try {
         console.log("🚀 FletesApp Inicializando con Supabase...");
 

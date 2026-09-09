@@ -150,10 +150,9 @@ function _cardPlanilla(p) {
                    <span style="color:#10b981; font-weight:700; font-size:0.85rem;">
                        ${fmt(p.valor_cuadrado)}
                    </span>
-                   ${p.cuadrado_por ? `<span style="font-size:0.75rem; color:#94a3b8;">${p.cuadrado_por}</span>` : ''}
+                   ${p.cuadrado_por ? `<span style="font-size:0.95rem; color:#ffffff; font-weight:700;">${p.cuadrado_por}</span>` : ''}
                </div>
-               ${p.obs_cuadre ? `<div style="font-size:0.75rem; color:#94a3b8; margin-top:3px; font-style:italic;">
-                   "${p.obs_cuadre}"</div>` : ''}
+               ${p.obs_cuadre ? `<div style="font-size:0.95rem; color:#fde047; font-weight:700; margin-top:6px;">${p.obs_cuadre}</div>` : ''}
            </div>`
         : '';
 
@@ -1998,8 +1997,8 @@ function _cardCajeraSimple(p, esCuadrada) {
             '<span style="font-size:0.78rem;color:#94a3b8;">Recibido:</span>' +
             '<span style="font-weight:800;color:#10b981;font-size:1rem;">' + fmt(p.valor_cuadrado) + '</span>' +
             '</div>' +
-            (p.cuadrado_por ? '<div style="font-size:0.73rem;color:#64748b;margin-top:3px;">Por: ' + p.cuadrado_por + '</div>' : '') +
-            (p.obs_cuadre   ? '<div style="font-size:0.73rem;color:#64748b;font-style:italic;margin-top:3px;">"' + p.obs_cuadre + '"</div>' : '') +
+            (p.cuadrado_por ? '<div style="font-size:0.95rem;color:#ffffff;font-weight:700;margin-top:4px;">Por: ' + p.cuadrado_por + '</div>' : '') +
+            (p.obs_cuadre   ? '<div style="font-size:0.95rem;color:#fde047;font-weight:700;margin-top:6px;">"' + p.obs_cuadre + '"</div>' : '') +
             '</div>';
     }
 

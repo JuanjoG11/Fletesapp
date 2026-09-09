@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fletes-app-v6';
+const CACHE_NAME = 'fletes-app-v7';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -84,14 +84,22 @@ self.addEventListener('fetch', (event) => {
                 const fetchPromise = fetch(event.request)
                     .then((networkResponse) => {
                         if (networkResponse && networkResponse.status === 200) {
+                            const responseToCache = networkResponse.clone();
                             caches.open(CACHE_NAME).then((cache) => {
-                                cache.put(event.request, networkResponse.clone());
+                                cache.put(event.request, responseToCache);
                             });
                         }
                         return networkResponse;
                     })
-                    .catch(() => cachedResponse);
-                return cachedResponse || fetchPromise;
+                    .catch(() => cachedResponse || null);
+
+                if (cachedResponse) {
+                    // Tenemos cache: devolvemos el cache y actualizamos en background
+                    fetchPromise.catch(() => {}); // fire-and-forget, sin bloquear
+                    return cachedResponse;
+                }
+                // No hay cache: esperamos la red
+                return fetchPromise;
             })
         );
         return;

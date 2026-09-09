@@ -387,8 +387,14 @@
                     <input type="date" id="pg-fecha-planilla" onchange="cargarPlanillasDelDia()">
                 </div>
                 <div class="input-group" style="margin:0;">
-                    <label>Agregar planilla</label>
-                    <select id="pg-select-planilla" onchange="agregarPlanilla(this.value); this.value=''">
+                    <label>Buscar y agregar planilla</label>
+                    <input type="text" id="pg-buscar-planilla"
+                        placeholder="Escribe nro, zona o proveedor..."
+                        oninput="_filtrarSelectPlanillas(this.value)"
+                        autocomplete="off"
+                        style="margin-bottom:4px;">
+                    <select id="pg-select-planilla" onchange="agregarPlanilla(this.value); this.value=''; document.getElementById('pg-buscar-planilla').value=''; _filtrarSelectPlanillas('');" size="4"
+                        style="height:auto; min-height:44px; max-height:120px; border-radius:0 0 9px 9px; border-top:none;">
                         <option value="">— Selecciona para agregar —</option>
                     </select>
                 </div>
@@ -543,12 +549,12 @@
                                class="input-readonly" style="font-size:0.78rem;">
                     </div>
 
-                    <div class="input-group">
+                    <div class="input-group" id="pg-grp-adicional-negociado">
                         <label>Adicional Negociado</label>
                         <input id="valor_adicional" type="text" placeholder="$ 0" class="money-input">
                     </div>
 
-                    <div class="input-group full-width">
+                    <div class="input-group full-width" id="pg-grp-razon-adicional">
                         <label>Razón del Adicional</label>
                         <textarea id="razon_adicional" rows="2"
                             placeholder="Escriba el motivo de la negociación"></textarea>
@@ -754,6 +760,14 @@ window.addEventListener('load', async () => {
     if (companyBadge) companyBadge.textContent = rs;
     if (roleBadge)    roleBadge.textContent    = `${userName} · ${role === 'admin' ? 'Administrador' : 'Programador'}`;
 
+    // Ocultar "Adicional Negociado" si no es admin
+    if (role !== 'admin') {
+        ['pg-grp-adicional-negociado', 'pg-grp-razon-adicional'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+    }
+
     // Setear variables globales que usa app.js internamente
     window.CURRENT_ROLE         = role;
     window.CURRENT_RAZON_SOCIAL = rs.toUpperCase();
@@ -894,6 +908,36 @@ async function cargarPlanillasDelDia() {
         });
         selectEl.innerHTML += `</optgroup>`;
     }
+
+    // Aplicar filtro de búsqueda si ya había texto escrito
+    const busq = document.getElementById('pg-buscar-planilla')?.value || '';
+    if (busq) _filtrarSelectPlanillas(busq);
+}
+
+/* ─────────────────────────────────────────────────────────
+   BUSCADOR: filtrar opciones del select en tiempo real
+──────────────────────────────────────────────────────────── */
+function _filtrarSelectPlanillas(texto) {
+    const selectEl = document.getElementById('pg-select-planilla');
+    if (!selectEl) return;
+
+    const q = texto.trim().toLowerCase();
+
+    // Recorrer todas las opciones y mostrar/ocultar según coincidencia
+    Array.from(selectEl.options).forEach(opt => {
+        if (!opt.value) { opt.hidden = false; return; } // placeholder siempre visible
+        opt.hidden = q ? !opt.text.toLowerCase().includes(q) : false;
+    });
+
+    // Ocultar optgroups que quedaron completamente vacíos
+    Array.from(selectEl.querySelectorAll('optgroup')).forEach(grp => {
+        const visibles = Array.from(grp.querySelectorAll('option')).filter(o => !o.hidden);
+        grp.hidden = visibles.length === 0;
+    });
+
+    // Si hay texto y solo una opción visible con valor, resaltarla
+    const visiblesConValor = Array.from(selectEl.options).filter(o => o.value && !o.hidden);
+    selectEl.size = Math.max(2, Math.min(visiblesConValor.length + 1, 6));
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -968,6 +1012,16 @@ function _renderChips() {
         if (noPlEl)  { noPlEl.value = ''; noPlEl.classList.remove('planilla-no-lock'); }
         document.getElementById('pg-facturas-panel').classList.remove('visible');
         document.getElementById('facturas_adicionales').value = '';
+        // Limpiar marcadores del select
+        const selectElClean = document.getElementById('pg-select-planilla');
+        if (selectElClean) {
+            Array.from(selectElClean.options).forEach(opt => {
+                opt.text         = opt.text.replace(/^✓ /, '');
+                opt.style.color  = '';
+                opt.style.fontWeight = '';
+                opt.disabled     = false;
+            });
+        }
         return;
     }
 
@@ -1003,6 +1057,27 @@ function _renderChips() {
         if (elCount) elCount.textContent = PG_PLANILLAS_ACUM.length;
         if (elFacts) elFacts.textContent = totalFacts;
         if (elValor) elValor.textContent = fmt(valorTotal);
+    }
+
+    // Marcar visualmente en el select las opciones ya agregadas
+    const idsAgregados = new Set(PG_PLANILLAS_ACUM.map(p => p.id));
+    const selectEl = document.getElementById('pg-select-planilla');
+    if (selectEl) {
+        Array.from(selectEl.options).forEach(opt => {
+            if (!opt.value) return;
+            if (idsAgregados.has(opt.value)) {
+                opt.text = opt.text.replace(/^✓ /, '') ; // evitar duplicar el check
+                opt.text = '✓ ' + opt.text;
+                opt.style.color      = '#10b981';
+                opt.style.fontWeight = '700';
+                opt.disabled         = true;
+            } else {
+                opt.text             = opt.text.replace(/^✓ /, '');
+                opt.style.color      = '';
+                opt.style.fontWeight = '';
+                opt.disabled         = false;
+            }
+        });
     }
 }
 

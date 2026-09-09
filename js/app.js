@@ -532,6 +532,12 @@ async function checkAuth() {
         if (btnExportarExcel) btnExportarExcel.style.display = 'none';
         if (btnExportarPDF)   btnExportarPDF.style.display   = 'inline-flex';
         if (headerAccionesFletes) headerAccionesFletes.style.display = 'table-cell';
+        // Ocultar campo "Adicional Negociado" — solo visible para admin/aprobador
+        ['grp-adicional-negociado', 'grp-razon-adicional',
+         'modal-grp-adicional-negociado', 'modal-grp-razon-adicional'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
     } else if (role === 'aprobador') {
         // PERFIL APROBADOR: redirigir a su página standalone
         window.location.href = 'aprobaciones.html';
@@ -2991,6 +2997,14 @@ window.editarFlete = async function (id) {
 
         // Mostrar modal DESPUÉS de poblar
         document.getElementById("modalEdicionFlete").classList.add("visible");
+
+        // Ocultar "Adicional Negociado" si el rol no lo permite
+        const _roleModal = (CURRENT_SESSION?.profile?.rol || CURRENT_SESSION?.session?.user?.user_metadata?.rol || 'operario').toLowerCase();
+        const _puedeVerAdicional = ['admin', 'aprobador'].includes(_roleModal);
+        ['modal-grp-adicional-negociado', 'modal-grp-razon-adicional'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = _puedeVerAdicional ? '' : 'none';
+        });
     }, 200);
 };
 

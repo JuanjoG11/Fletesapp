@@ -1003,7 +1003,39 @@
                 </div>
             </div>
 
-            <!-- ── FILTROS ── -->
+            <!-- ══════════════════════════════════════════════
+                 VISTA SIMPLIFICADA CAJERA (solo cajera_plan)
+                 Controlada por _aplicarVisibilidadRol()
+            ═══════════════════════════════════════════════ -->
+            <div id="pl-sec-cajera" style="display:none;">
+                <!-- Header cajera con selector de fecha y botón refresh -->
+                <div class="card glass-card" style="margin-bottom:20px; border-left:4px solid #10b981;">
+                    <div class="flex-header" style="padding:16px 20px; flex-wrap:wrap; gap:12px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <i class="ri-checkbox-double-line" style="color:#10b981; font-size:1.4rem;"></i>
+                            <div>
+                                <h2 style="margin:0; font-size:1.1rem; color:#10b981;">Cuadre de Planillas</h2>
+                                <p style="margin:0; font-size:0.78rem; color:var(--text-muted);">Selecciona una fecha para ver las planillas a cuadrar</p>
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:10px; margin-left:auto;">
+                            <input type="date" id="pl-cajera-fecha" class="input-modern" style="width:160px;">
+                            <button id="pl-cajera-btn-refresh" class="btn btn-primary" style="height:40px; padding:0 16px;">
+                                <i class="ri-refresh-line"></i> Actualizar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Contenido dinámico -->
+                <div id="pl-cajera-wrap">
+                    <div style="text-align:center; padding:40px; color:var(--text-muted);">
+                        <i class="ri-loader-4-line rotate" style="font-size:2rem;"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── FILTROS (oculto para cajera) ── -->
+            <div id="pl-sec-filtros">
             <div class="card glass-card" style="margin-bottom:20px;">
                 <div class="flex-header">
                     <h2><i class="ri-filter-3-line"></i> Filtros</h2>
@@ -1031,8 +1063,10 @@
                     </div>
                 </div>
             </div>
+            </div><!-- /pl-sec-filtros -->
 
-            <!-- ── KANBAN DE ESTADOS ── -->
+            <!-- ── KANBAN DE ESTADOS (oculto para cajera) ── -->
+            <div id="pl-sec-kanban">
             <h3 style="margin-bottom:16px; color:var(--text-muted); font-size:0.85rem; text-transform:uppercase; letter-spacing:1px;">
                 <i class="ri-layout-column-line"></i> Tablero de Estado de Planillas
             </h3>
@@ -1072,8 +1106,10 @@
                 </div>
 
             </div>
+            </div><!-- /pl-sec-kanban -->
 
-            <!-- ── TABLA RESUMEN ── -->
+            <!-- ── TABLA RESUMEN (oculta para cajera) ── -->
+            <div id="pl-sec-tabla-resumen">
             <div class="card glass-card" style="margin-top:24px;">
                 <div class="card-header flex-header">
                     <h2><i class="ri-table-line"></i> Listado Detallado</h2>
@@ -1100,6 +1136,7 @@
                     </table>
                 </div>
             </div>
+            </div><!-- /pl-sec-tabla-resumen -->
 
             <!-- ── RESUMEN DIARIO DE CUADRE (cajera_plan + admin) ── -->
             <div class="card glass-card" style="margin-top:20px; border-left:4px solid #10b981;" id="pl-resumen-cuadre">

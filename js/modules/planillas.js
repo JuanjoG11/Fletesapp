@@ -1,17 +1,17 @@
-﻿/* ==========================================================
-   📋 MÓDULO GESTIÓN DE PLANILLAS
-   FletesApp — js/modules/planillas.js
+/* ==========================================================
+   ?? M�DULO GESTI�N DE PLANILLAS
+   FletesApp � js/modules/planillas.js
    ==========================================================
-   Roles que usan este módulo:
-     · cargador      → sube Excel, gestiona planillas cargadas
-     · programador   → asigna planillas a fletes, desasigna facturas
-     · cajera_plan   → visualiza kanban de 4 estados (solo lectura + cambio de estado)
-     · admin         → acceso completo a todo
+   Roles que usan este m�dulo:
+     � cargador      ? sube Excel, gestiona planillas cargadas
+     � programador   ? asigna planillas a fletes, desasigna facturas
+     � cajera_plan   ? visualiza kanban de 4 estados (solo lectura + cambio de estado)
+     � admin         ? acceso completo a todo
    ========================================================== */
 
 'use strict';
 
-// ── Estado local del módulo ────────────────────────────────
+// -- Estado local del m�dulo --------------------------------
 let PL_CACHE          = [];   // Cache de planillas
 let PL_FACTURAS_MODAL = [];   // Facturas del modal activo
 let PL_ID_MODAL       = null; // Planilla abierta en modal
@@ -29,7 +29,7 @@ const PL_ESTADO_META = {
 const moneyFmt = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 });
 const fmt = v => moneyFmt.format(v || 0);
 
-// ── Inicialización ─────────────────────────────────────────
+// -- Inicializaci�n -----------------------------------------
 async function inicializarModuloPlanillas() {
     if (PL_INITIALIZED) { await cargarPlanillas(); return; }
     PL_ROLE = (window.CURRENT_ROLE || 'cargador').toLowerCase();
@@ -40,7 +40,7 @@ async function inicializarModuloPlanillas() {
     const fFecha = document.getElementById('pl-filtro-fecha');
     if (fFecha) fFecha.value = hoy;
 
-    // Mostrar/ocultar secciones según rol
+    // Mostrar/ocultar secciones seg�n rol
     _aplicarVisibilidadRol();
 
     // Listeners de filtros
@@ -54,24 +54,36 @@ async function inicializarModuloPlanillas() {
 
 function _aplicarVisibilidadRol() {
     const role = PL_ROLE;
-    // Sección de carga de Excel solo para cargador y admin
+    // Secci�n de carga de Excel solo para cargador y admin
     const secCarga = document.getElementById('pl-sec-carga');
     if (secCarga) secCarga.style.display = (['admin','cargador'].includes(role)) ? 'block' : 'none';
 
-    // Sección de programación solo para programador y admin
+    // Secci�n de programaci�n solo para programador y admin
     const secProg = document.getElementById('pl-sec-programacion');
     if (secProg) secProg.style.display = (['admin','programador'].includes(role)) ? 'block' : 'none';
 
-    // Kanban siempre visible
+    // Kanban: oculto para cajera (usa vista simplificada)
     const secKanban = document.getElementById('pl-sec-kanban');
-    if (secKanban) secKanban.style.display = 'block';
+    if (secKanban) secKanban.style.display = (role === 'cajera_plan') ? 'none' : 'block';
+
+    // Vista simplificada cajera
+    const secCajera = document.getElementById('pl-sec-cajera');
+    if (secCajera) secCajera.style.display = (role === 'cajera_plan') ? 'block' : 'none';
 
     // Tabla de facturas sueltas visible para cargador, programador y admin
     const secSueltas = document.getElementById('pl-sec-sueltas');
     if (secSueltas) secSueltas.style.display = (['admin','cargador','programador'].includes(role)) ? 'block' : 'none';
+
+    // Filtros del kanban: ocultar para cajera
+    const secFiltros = document.getElementById('pl-sec-filtros');
+    if (secFiltros) secFiltros.style.display = (role === 'cajera_plan') ? 'none' : 'block';
+
+    // Tabla resumen: ocultar para cajera
+    const secTablaResumen = document.getElementById('pl-sec-tabla-resumen');
+    if (secTablaResumen) secTablaResumen.style.display = (role === 'cajera_plan') ? 'none' : 'block';
 }
 
-// ── Carga y Renderizado Principal ──────────────────────────
+// -- Carga y Renderizado Principal --------------------------
 async function cargarPlanillas() {
     const filtros = {
         estado:    document.getElementById('pl-filtro-estado')?.value    || '',
@@ -80,7 +92,7 @@ async function cargarPlanillas() {
         busqueda:  document.getElementById('pl-filtro-busqueda')?.value  || '',
     };
 
-    // Limpiar filtros vacíos
+    // Limpiar filtros vac�os
     Object.keys(filtros).forEach(k => { if (!filtros[k]) delete filtros[k]; });
 
     _mostrarLoadingKanban(true);
@@ -98,7 +110,7 @@ async function cargarPlanillas() {
     await _renderFacturasSueltas();
 }
 
-// ── Kanban ─────────────────────────────────────────────────
+// -- Kanban -------------------------------------------------
 function _renderKanban(planillas) {
     PL_ESTADOS.forEach(estado => {
         const col  = document.getElementById(`pl-col-${_estadoId(estado)}`);
@@ -126,7 +138,7 @@ function _cardPlanilla(p) {
     const siguienteEstado = PL_ESTADOS[PL_ESTADOS.indexOf(p.estado) + 1] || null;
     const anteriorEstado  = PL_ESTADOS[PL_ESTADOS.indexOf(p.estado) - 1] || null;
 
-    // Datos de cuadre (si ya está CUADRADA)
+    // Datos de cuadre (si ya est� CUADRADA)
     const esCuadrada = p.estado === 'CUADRADA';
     const infoCuadre = esCuadrada && p.valor_cuadrado
         ? `<div style="margin-top:8px; padding:7px 10px; background:rgba(16,185,129,0.08);
@@ -155,7 +167,7 @@ function _cardPlanilla(p) {
         </div>
 
         <div class="pl-card-info">
-            <div class="pl-info-row"><i class="ri-calendar-line"></i> <span>${p.fecha || '—'}</span></div>
+            <div class="pl-info-row"><i class="ri-calendar-line"></i> <span>${p.fecha || '�'}</span></div>
             ${p.zona ? `<div class="pl-info-row"><i class="ri-map-pin-line"></i> <span>${p.zona}</span></div>` : ''}
             ${p.placa
                 ? `<div class="pl-info-row">
@@ -164,7 +176,7 @@ function _cardPlanilla(p) {
                        ${p.conductor ? `<span style="font-size:0.8rem;color:var(--text-muted);">${p.conductor}</span>` : ''}
                    </div>`
                 : `<div class="pl-info-row" style="color:#f59e0b;">
-                       <i class="ri-alert-line"></i> <span style="font-size:0.8rem;">Sin vehículo asignado</span>
+                       <i class="ri-alert-line"></i> <span style="font-size:0.8rem;">Sin veh�culo asignado</span>
                    </div>`}
             ${p.poblacion ? `<div class="pl-info-row"><i class="ri-map-2-line"></i> <span style="font-size:0.8rem;">${p.poblacion}</span></div>` : ''}
             <div class="pl-info-row"><i class="ri-file-list-3-line"></i>
@@ -203,7 +215,7 @@ function _cardPlanilla(p) {
     </div>`;
 }
 
-// ── Tabla resumida ─────────────────────────────────────────
+// -- Tabla resumida -----------------------------------------
 function _renderTabla(planillas) {
     const tbody = document.getElementById('pl-tabla-body');
     if (!tbody) return;
@@ -218,9 +230,9 @@ function _renderTabla(planillas) {
         const meta = PL_ESTADO_META[p.estado] || PL_ESTADO_META['TRANSITORIA'];
         return `<tr>
             <td><span class="badge-plate" style="font-size:0.75rem;">${p.no_planilla}</span></td>
-            <td>${p.fecha || '—'}</td>
-            <td>${p.zona || '—'}</td>
-            <td>${p.proveedor || '—'}</td>
+            <td>${p.fecha || '�'}</td>
+            <td>${p.zona || '�'}</td>
+            <td>${p.proveedor || '�'}</td>
             <td>${p.placa ? `<span class="badge-plate" style="font-size:0.7rem;">${p.placa}</span>` : '<span style="color:var(--text-muted)">Sin asignar</span>'}</td>
             <td style="text-align:center;">${p.total_facturas || 0}</td>
             <td class="price-cell">${fmt(p.valor_total)}</td>
@@ -233,7 +245,7 @@ function _renderTabla(planillas) {
     }).join('');
 }
 
-// ── KPIs ───────────────────────────────────────────────────
+// -- KPIs ---------------------------------------------------
 async function _actualizarKPIs() {
     const result = await SupabaseClient.planillas.getKPIs();
     if (!result.success) return;
@@ -255,7 +267,7 @@ async function _actualizarKPIs() {
     if (elValor) elValor.textContent = fmt(valorTotal);
 }
 
-// ── Modal Detalle / Facturas ───────────────────────────────
+// -- Modal Detalle / Facturas -------------------------------
 async function abrirDetallePlanilla(planillaId) {
     PL_ID_MODAL = planillaId;
     const planilla = PL_CACHE.find(p => p.id === planillaId);
@@ -265,9 +277,9 @@ async function abrirDetallePlanilla(planillaId) {
 
     // Cabecera del modal
     document.getElementById('pl-modal-no-planilla').textContent  = planilla.no_planilla;
-    document.getElementById('pl-modal-fecha').textContent        = planilla.fecha || '—';
-    document.getElementById('pl-modal-zona').textContent         = planilla.zona || '—';
-    document.getElementById('pl-modal-proveedor').textContent    = planilla.proveedor || '—';
+    document.getElementById('pl-modal-fecha').textContent        = planilla.fecha || '�';
+    document.getElementById('pl-modal-zona').textContent         = planilla.zona || '�';
+    document.getElementById('pl-modal-proveedor').textContent    = planilla.proveedor || '�';
     document.getElementById('pl-modal-total-fact').textContent   = planilla.total_facturas || 0;
     document.getElementById('pl-modal-valor').textContent        = fmt(planilla.valor_total);
 
@@ -280,7 +292,7 @@ async function abrirDetallePlanilla(planillaId) {
         chipEl.style.borderColor = meta.color + '40';
     }
 
-    // Sección de programación (solo para programador/admin)
+    // Secci�n de programaci�n (solo para programador/admin)
     const secProgModal = document.getElementById('pl-modal-sec-prog');
     if (secProgModal) {
         secProgModal.style.display = (['admin','programador'].includes(PL_ROLE)) ? 'block' : 'none';
@@ -326,8 +338,8 @@ function _renderFacturasModal(facturas) {
                 </label>` : (f.asignada ? '<i class="ri-checkbox-circle-line" style="color:#10b981"></i>' : '<i class="ri-close-circle-line" style="color:#ef4444"></i>')}
             </td>
             <td><strong>${f.no_factura}</strong></td>
-            <td>${f.fecha_entrega || '—'}</td>
-            <td>${f.zona || '—'}</td>
+            <td>${f.fecha_entrega || '�'}</td>
+            <td>${f.zona || '�'}</td>
             <td class="price-cell">${fmt(f.valor_bruto)}</td>
             <td class="price-cell">${fmt(f.valor_factura)}</td>
             <td class="price-cell">${fmt(f.valor_total)}</td>
@@ -355,7 +367,7 @@ function _renderFacturasModal(facturas) {
     }
 }
 
-// ── Marcar / desmarcar todas las facturas en el modal de detalle ─
+// -- Marcar / desmarcar todas las facturas en el modal de detalle -
 async function marcarTodasFacturasModal(asignada) {
     if (!PL_FACTURAS_MODAL || !PL_FACTURAS_MODAL.length) return;
     const canToggle = ['admin','programador','cajera_plan','cajera','caja'].includes(PL_ROLE);
@@ -383,7 +395,7 @@ async function marcarTodasFacturasModal(asignada) {
     }
 }
 
-// ── Toggle de factura (asignar / desasignar) ───────────────
+// -- Toggle de factura (asignar / desasignar) ---------------
 async function toggleFacturaUI(facturaId, asignada) {
     const result = await SupabaseClient.planillas.toggleFactura(facturaId, asignada);
     if (!result.success) {
@@ -413,20 +425,20 @@ async function toggleFacturaUI(facturaId, asignada) {
     }
 }
 
-// ── Cambio de estado ───────────────────────────────────────
-// ── Cambio de estado ───────────────────────────────────────
+// -- Cambio de estado ---------------------------------------
+// -- Cambio de estado ---------------------------------------
 async function cambiarEstadoPlanilla(planillaId, nuevoEstado) {
     const planilla = PL_CACHE.find(p => p.id === planillaId);
     if (!planilla) return;
 
     const meta = PL_ESTADO_META[nuevoEstado];
 
-    // ── Flujo especial para CUADRADA: la cajera confirma el cuadre ──
+    // -- Flujo especial para CUADRADA: la cajera confirma el cuadre --
     if (nuevoEstado === 'CUADRADA') {
         const moneyFmtC = new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
         const facturas  = (planilla.planilla_facturas || []).map(f => ({ ...f }));
 
-        // Estado local de los checks: por defecto true si no está desasignada
+        // Estado local de los checks: por defecto true si no est� desasignada
         const estadoChecks = {};
         facturas.forEach(f => {
             estadoChecks[f.id] = f.asignada !== false;
@@ -455,14 +467,14 @@ async function cambiarEstadoPlanilla(planillaId, nuevoEstado) {
         };
 
         const { value: formValues, isConfirmed } = await Swal.fire({
-            title: '📋 Cuadre de Planilla',
+            title: '?? Cuadre de Planilla',
             width: '740px',
             html: `
                 <div style="text-align:left;font-size:0.86rem;">
                     <div style="padding:12px 14px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:10px;margin-bottom:14px;">
                         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
                             <span><i class="ri-file-list-2-line"></i> Planilla: <strong style="font-family:monospace;font-size:0.95rem;">${planilla.no_planilla}</strong></span>
-                            <span><i class="ri-calendar-line"></i> ${planilla.fecha || '—'}</span>
+                            <span><i class="ri-calendar-line"></i> ${planilla.fecha || '�'}</span>
                             ${planilla.placa ? `<span><i class="ri-truck-line"></i> <strong>${planilla.placa}</strong></span>` : ''}
                             <span style="color:#10b981;font-weight:700;"><i class="ri-money-dollar-circle-line"></i> ${moneyFmtC.format(planilla.valor_total)}</span>
                         </div>
@@ -524,7 +536,7 @@ async function cambiarEstadoPlanilla(planillaId, nuevoEstado) {
 
                     <div style="margin-bottom:12px;">
                         <label style="display:flex;justify-content:space-between;margin-bottom:5px;color:#94a3b8;font-size:0.78rem;font-weight:600;">
-                            <span>VALOR RECIBIDO (confirmación) <span style="color:#ef4444;">*</span></span>
+                            <span>VALOR RECIBIDO (confirmaci�n) <span style="color:#ef4444;">*</span></span>
                             <span id="swal-btn-auto-val" style="font-size:0.74rem;color:#10b981;cursor:pointer;font-weight:600;" title="Restaurar al total de facturas cuadradas">
                                 <i class="ri-magic-line"></i> Reajustar al total cuadrado
                             </span>
@@ -538,7 +550,7 @@ async function cambiarEstadoPlanilla(planillaId, nuevoEstado) {
 
                     <div>
                         <label style="display:block;margin-bottom:5px;color:#94a3b8;font-size:0.78rem;font-weight:600;">
-                            OBSERVACIÓN (opcional)
+                            OBSERVACI�N (opcional)
                         </label>
                         <textarea id="swal-obs-cuadre" rows="2"
                                   placeholder="Ej: Recibido completo..."
@@ -651,7 +663,7 @@ async function cambiarEstadoPlanilla(planillaId, nuevoEstado) {
                     refrescarVista(true);
                 });
 
-                // Botón reajustar al total cuadrado
+                // Bot�n reajustar al total cuadrado
                 document.getElementById('swal-btn-auto-val')?.addEventListener('click', () => {
                     const { sumCuadradas } = calcularTotalesModal();
                     if (valInput) valInput.value = moneyFmtC.format(sumCuadradas);
@@ -724,7 +736,7 @@ async function cambiarEstadoPlanilla(planillaId, nuevoEstado) {
         const noCuadTot = formValues.noCuadradasIds?.length || 0;
         Swal.fire({
             icon: 'success',
-            title: '✅ Planilla Cuadrada',
+            title: '? Planilla Cuadrada',
             html: `<strong>${planilla.no_planilla}</strong> cuadrada correctamente.<br>
                    <span style="color:#10b981;font-weight:700;">
                        ${moneyFmtC2.format(formValues.valorRecibido)}
@@ -737,13 +749,13 @@ async function cambiarEstadoPlanilla(planillaId, nuevoEstado) {
         return;
     }
 
-    // ── Flujo normal para los demás estados ────────────────
+    // -- Flujo normal para los dem�s estados ----------------
     const confirmStd = await Swal.fire({
-        title: `¿Cambiar a ${nuevoEstado}?`,
-        html: `Planilla <strong>${planilla.no_planilla}</strong> pasará a estado <strong style="color:${meta.color}">${nuevoEstado}</strong>`,
+        title: `�Cambiar a ${nuevoEstado}?`,
+        html: `Planilla <strong>${planilla.no_planilla}</strong> pasar� a estado <strong style="color:${meta.color}">${nuevoEstado}</strong>`,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonText: 'Sí, cambiar',
+        confirmButtonText: 'S�, cambiar',
         cancelButtonText: 'Cancelar',
         background: '#1e293b', color: '#fff',
         confirmButtonColor: meta.color,
@@ -764,20 +776,20 @@ async function cambiarEstadoPlanilla(planillaId, nuevoEstado) {
     Swal.fire({
         icon: 'success',
         title: 'Estado actualizado',
-        text: `Planilla ${planilla.no_planilla} → ${nuevoEstado}`,
+        text: `Planilla ${planilla.no_planilla} ? ${nuevoEstado}`,
         timer: 1800, showConfirmButton: false,
         background: '#1e293b', color: '#fff'
     });
 }
 
-// ── Guardar programación (placa/conductor desde modal) ─────
+// -- Guardar programaci�n (placa/conductor desde modal) -----
 async function guardarProgramacionPlanilla() {
     if (!PL_ID_MODAL) return;
     const placa     = document.getElementById('pl-modal-placa')?.value?.toUpperCase().trim() || '';
     const conductor = document.getElementById('pl-modal-conductor')?.value?.trim() || '';
 
     if (!placa) {
-        Swal.fire({ icon:'warning', title:'Placa requerida', text:'Ingresa la placa del vehículo asignado.', background:'#1e293b', color:'#fff' });
+        Swal.fire({ icon:'warning', title:'Placa requerida', text:'Ingresa la placa del veh�culo asignado.', background:'#1e293b', color:'#fff' });
         return;
     }
 
@@ -796,7 +808,7 @@ async function guardarProgramacionPlanilla() {
     });
 
     if (!result.success) {
-        Swal.fire({ icon:'error', title:'Error', text:'No se pudo guardar la programación.', background:'#1e293b', color:'#fff' });
+        Swal.fire({ icon:'error', title:'Error', text:'No se pudo guardar la programaci�n.', background:'#1e293b', color:'#fff' });
         return;
     }
 
@@ -814,17 +826,17 @@ async function guardarProgramacionPlanilla() {
     await _actualizarKPIs();
 
     Swal.fire({
-        icon: 'success', title: '¡Programado!',
+        icon: 'success', title: '�Programado!',
         html: `Planilla asignada a <strong>${placa}</strong>. Estado: <strong>DESPACHADA</strong>`,
         timer: 2000, showConfirmButton: false, background: '#1e293b', color: '#fff'
     });
 }
 
-// ── Eliminar planilla ──────────────────────────────────────
+// -- Eliminar planilla --------------------------------------
 async function eliminarPlanillaUI(planillaId, noPlanilla) {
     const confirm = await Swal.fire({
-        title: '¿Eliminar planilla?',
-        html: `Se eliminará la planilla <strong>${noPlanilla}</strong> y todas sus facturas.<br><small style="color:#94a3b8">Esta acción no se puede deshacer.</small>`,
+        title: '�Eliminar planilla?',
+        html: `Se eliminar� la planilla <strong>${noPlanilla}</strong> y todas sus facturas.<br><small style="color:#94a3b8">Esta acci�n no se puede deshacer.</small>`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Eliminar',
@@ -851,7 +863,7 @@ async function eliminarPlanillaUI(planillaId, noPlanilla) {
     });
 }
 
-// ── Facturas Sueltas ───────────────────────────────────────
+// -- Facturas Sueltas ---------------------------------------
 async function _renderFacturasSueltas() {
     const tbody = document.getElementById('pl-sueltas-body');
     if (!tbody) return;
@@ -874,9 +886,9 @@ async function _renderFacturasSueltas() {
     tbody.innerHTML = result.data.map(f => `
         <tr>
             <td><strong>${f.no_factura}</strong></td>
-            <td>${f.fecha_entrega || '—'}</td>
-            <td>${f.zona || '—'}</td>
-            <td>${f.planilla?.no_planilla || '—'}</td>
+            <td>${f.fecha_entrega || '�'}</td>
+            <td>${f.zona || '�'}</td>
+            <td>${f.planilla?.no_planilla || '�'}</td>
             <td class="price-cell">${fmt(f.valor_total)}</td>
             <td>
                 ${['admin','programador'].includes(PL_ROLE)
@@ -896,7 +908,7 @@ async function reasignarFactura(facturaId) {
     }
 }
 
-// ── Carga de Excel ─────────────────────────────────────────
+// -- Carga de Excel -----------------------------------------
 function setupDropZonaPlanillas() {
     const dropZone = document.getElementById('pl-dropzone');
     const fileInput = document.getElementById('pl-file-input');
@@ -925,7 +937,7 @@ function setupDropZonaPlanillas() {
 
 async function procesarArchivoExcel(file) {
     if (!file.name.match(/\.(xlsx|xls|csv)$/i)) {
-        Swal.fire({ icon:'warning', title:'Archivo inválido', text:'Solo se aceptan archivos .xlsx, .xls o .csv', background:'#1e293b', color:'#fff' });
+        Swal.fire({ icon:'warning', title:'Archivo inv�lido', text:'Solo se aceptan archivos .xlsx, .xls o .csv', background:'#1e293b', color:'#fff' });
         return;
     }
 
@@ -937,7 +949,7 @@ async function procesarArchivoExcel(file) {
         const sheet   = wb.Sheets[wb.SheetNames[0]];
         const rows    = XLSX.utils.sheet_to_json(sheet, { defval: '' });
 
-        if (!rows.length) throw new Error('El archivo está vacío o no tiene datos válidos.');
+        if (!rows.length) throw new Error('El archivo est� vac�o o no tiene datos v�lidos.');
 
         // Detectar columnas (case-insensitive, acepta variaciones)
         const colMap = _detectarColumnas(rows[0]);
@@ -1029,8 +1041,8 @@ function _mostrarPreviewExcel(grupos, nombreArchivo) {
             const valorTotal = g.facturas.reduce((s, f) => s + (f.valor_total || f.valor_factura || 0), 0);
             return `<tr>
                 <td><span class="badge-plate" style="font-size:0.8rem;">${key}</span></td>
-                <td>${g.fecha || '—'}</td>
-                <td>${g.zona || '—'}</td>
+                <td>${g.fecha || '�'}</td>
+                <td>${g.zona || '�'}</td>
                 <td style="text-align:center;">${g.facturas.length}</td>
                 <td class="price-cell">${fmt(valorTotal)}</td>
             </tr>`;
@@ -1095,14 +1107,14 @@ async function confirmarCargaExcel() {
 
     Swal.fire({
         icon: errores === 0 ? 'success' : 'warning',
-        title: errores === 0 ? '¡Carga completada!' : 'Carga con errores',
+        title: errores === 0 ? '�Carga completada!' : 'Carga con errores',
         html: `<strong style="color:#10b981">${exitosas}</strong> planillas cargadas correctamente.
                ${errores > 0 ? `<br><strong style="color:#ef4444">${errores}</strong> con errores (ver consola).` : ''}`,
         background: '#1e293b', color: '#fff'
     });
 }
 
-// ── Helpers ────────────────────────────────────────────────
+// -- Helpers ------------------------------------------------
 function _estadoId(estado) {
     return estado.toLowerCase().replace(/ /g, '-');
 }
@@ -1126,7 +1138,7 @@ function _debounce(fn, ms) {
     let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
 
-// ── Exponer globalmente ────────────────────────────────────
+// -- Exponer globalmente ------------------------------------
 window.inicializarModuloPlanillas = inicializarModuloPlanillas;
 window.cargarPlanillas            = cargarPlanillas;
 window.abrirDetallePlanilla       = abrirDetallePlanilla;
@@ -1143,7 +1155,7 @@ window.cancelarCargaExcel         = cancelarCargaExcel;
 window.setupDropZonaPlanillas     = setupDropZonaPlanillas;
 
 // ==========================================================
-// 🔀 INICIALIZADORES POR TAB SEPARADO
+// ?? INICIALIZADORES POR TAB SEPARADO
 // ==========================================================
 
 // Tab: Carga de Planillas
@@ -1153,7 +1165,7 @@ async function inicializarModuloCarga() {
     await cargarPlanillasCarga();
 }
 
-// Tab: Programación
+// Tab: Programaci�n
 async function inicializarModuloProgramacion() {
     PL_ROLE = (window.CURRENT_ROLE || 'programador').toLowerCase();
     const hoy = new Date().toISOString().split('T')[0];
@@ -1163,19 +1175,32 @@ async function inicializarModuloProgramacion() {
     await _renderFacturasSueltas();
 }
 
+
 // Tab: Estado / Kanban
 async function inicializarModuloEstado() {
     PL_ROLE = (window.CURRENT_ROLE || 'cajera_plan').toLowerCase();
     const hoy = new Date().toISOString().split('T')[0];
 
+    // Aplicar visibilidad de secciones segun rol
+    _aplicarVisibilidadRol();
+
+    if (PL_ROLE === 'cajera_plan') {
+        // Vista simplificada para cajera
+        const fCajera = document.getElementById('pl-cajera-fecha');
+        if (fCajera && !fCajera.value) fCajera.value = hoy;
+        document.getElementById('pl-cajera-fecha')?.addEventListener('change', _cargarVistaCajera);
+        document.getElementById('pl-cajera-btn-refresh')?.addEventListener('click', _cargarVistaCajera);
+        await _cargarVistaCajera();
+        return;
+    }
+
+    // Vista estandar (admin, programador, etc.)
     const fFecha = document.getElementById('pl-filtro-fecha');
     if (fFecha && !fFecha.value) fFecha.value = hoy;
 
-    // Pre-llenar la fecha del resumen de cuadre con hoy
     const fCuadre = document.getElementById('pl-cuadre-fecha');
     if (fCuadre && !fCuadre.value) fCuadre.value = hoy;
 
-    // Bind filtros del kanban
     document.getElementById('pl-filtro-estado')?.addEventListener('change',    cargarPlanillas);
     document.getElementById('pl-filtro-fecha')?.addEventListener('change',     cargarPlanillas);
     document.getElementById('pl-filtro-proveedor')?.addEventListener('change', cargarPlanillas);
@@ -1183,13 +1208,12 @@ async function inicializarModuloEstado() {
 
     await cargarPlanillas();
 
-    // Si es cajera, cargar también el resumen del día automáticamente
-    if (['cajera_plan', 'admin'].includes(PL_ROLE)) {
+    if (PL_ROLE === 'admin') {
         await cargarResumenCuadre();
     }
 }
 
-// ── Carga del historial en tab "Carga Planillas" ──────────
+// -- Carga del historial en tab "Carga Planillas" ----------
 async function cargarPlanillasCarga() {
     const tbody = document.getElementById('pl-historial-body');
     if (!tbody) return;
@@ -1210,9 +1234,9 @@ async function cargarPlanillasCarga() {
         const canDel = ['admin','cargador'].includes(PL_ROLE);
         return `<tr>
             <td><span class="badge-plate" style="font-size:0.8rem;">${p.no_planilla}</span></td>
-            <td>${p.fecha || '—'}</td>
-            <td>${p.zona || '—'}</td>
-            <td>${p.proveedor || '—'}</td>
+            <td>${p.fecha || '�'}</td>
+            <td>${p.zona || '�'}</td>
+            <td>${p.proveedor || '�'}</td>
             <td style="text-align:center;">${p.total_facturas || 0}</td>
             <td class="price-cell">${moneyFmtL.format(p.valor_total || 0)}</td>
             <td><span class="pl-estado-chip" style="background:${meta.bg};color:${meta.color};border-color:${meta.color}40;font-size:0.75rem;">
@@ -1220,13 +1244,13 @@ async function cargarPlanillasCarga() {
             </span></td>
             <td style="text-align:center;">
                 ${canDel ? `<button class="btn-icon delete" onclick="eliminarPlanillaUI('${p.id}','${p.no_planilla}')" title="Eliminar">
-                    <i class="ri-delete-bin-line"></i></button>` : '—'}
+                    <i class="ri-delete-bin-line"></i></button>` : '�'}
             </td>
         </tr>`;
     }).join('');
 }
 
-// ── Carga de tabla en tab "Programación" ──────────────────
+// -- Carga de tabla en tab "Programaci�n" ------------------
 async function cargarPlanillasProgramacion() {
     const tbody = document.getElementById('pl-prog-tabla-body');
     if (!tbody) return;
@@ -1447,7 +1471,7 @@ window._prog_actualizarBarra              = _prog_actualizarBarra;
 window._prog_deseleccionarTodas           = _prog_deseleccionarTodas;
 
 // ==========================================================
-// ✅ MÓDULO DE APROBACIONES (solo admin)
+// ? M�DULO DE APROBACIONES (solo admin)
 // ==========================================================
 
 const APR_ESTADO_META = {
@@ -1513,7 +1537,7 @@ async function cargarAprobaciones() {
         const accionesEl = isPend ? `
             <button class="btn-icon" style="color:#10b981;font-size:1.1rem;"
                     onclick="aprobarProgramacionAdmin('${p.id}')"
-                    title="Aprobar → crear flete">
+                    title="Aprobar ? crear flete">
                 <i class="ri-checkbox-circle-line"></i>
             </button>
             <button class="btn-icon" style="color:#ef4444;font-size:1.1rem;"
@@ -1532,18 +1556,18 @@ async function cargarAprobaciones() {
             </button>`;
 
         return `<tr id="apr-row-${p.id}">
-            <td><span class="badge-plate">${p.placa || '—'}</span></td>
-            <td style="font-size:0.82rem;">${p.contratista || '—'}</td>
-            <td>${p.fecha || '—'}</td>
-            <td style="font-size:0.8rem;">${p.zona || '—'}</td>
-            <td style="font-size:0.82rem;">${p.poblacion || '—'}</td>
+            <td><span class="badge-plate">${p.placa || '�'}</span></td>
+            <td style="font-size:0.82rem;">${p.contratista || '�'}</td>
+            <td>${p.fecha || '�'}</td>
+            <td style="font-size:0.8rem;">${p.zona || '�'}</td>
+            <td style="font-size:0.82rem;">${p.poblacion || '�'}</td>
             <td><span style="background:rgba(59,130,246,0.1);color:var(--primary);border:1px solid rgba(59,130,246,0.25);
                              padding:2px 8px;border-radius:5px;font-family:monospace;font-size:0.8rem;font-weight:700;">
-                ${p.no_planilla || '—'}</span></td>
+                ${p.no_planilla || '�'}</span></td>
             <td style="text-align:center;">${p.no_pedidos || 0}</td>
             <td class="price-cell">${moneyFmt2.format(p.valor_ruta || 0)}</td>
             <td class="price-cell">${moneyFmt2.format(p.precio || 0)}</td>
-            <td style="font-size:0.78rem;color:var(--text-muted);">${p.programado_por || '—'}</td>
+            <td style="font-size:0.78rem;color:var(--text-muted);">${p.programado_por || '�'}</td>
             <td>
                 <span class="pl-estado-chip" style="background:${meta.bg};color:${meta.color};border-color:${meta.color}40;">
                     <i class="${meta.icon}"></i> ${meta.label}
@@ -1578,18 +1602,18 @@ function _actualizarBadgeAprobaciones(data) {
     else            badge.style.display = 'none';
 }
 
-// ── Aprobar ────────────────────────────────────────────────
+// -- Aprobar ------------------------------------------------
 async function aprobarProgramacionAdmin(progId) {
     const fila = document.getElementById(`apr-row-${progId}`);
     const placa = fila?.querySelector('.badge-plate')?.textContent || '';
 
     const c = await Swal.fire({
-        title: '¿Aprobar programación?',
-        html: `Se creará el flete para <strong>${placa}</strong>.<br>
-               <small style="color:#94a3b8;">Esta acción no se puede deshacer.</small>`,
+        title: '�Aprobar programaci�n?',
+        html: `Se crear� el flete para <strong>${placa}</strong>.<br>
+               <small style="color:#94a3b8;">Esta acci�n no se puede deshacer.</small>`,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonText: '<i class="ri-checkbox-circle-line"></i> Sí, aprobar',
+        confirmButtonText: '<i class="ri-checkbox-circle-line"></i> S�, aprobar',
         cancelButtonText:  'Cancelar',
         confirmButtonColor: '#10b981',
         background: '#1e293b', color: '#fff'
@@ -1609,25 +1633,25 @@ async function aprobarProgramacionAdmin(progId) {
     }
 
     await cargarAprobaciones();
-    // Refrescar listado de fletes si está visible
+    // Refrescar listado de fletes si est� visible
     if (typeof listarFletes === 'function') listarFletes(true);
 
     Swal.fire({
         icon: 'success',
-        title: '¡Flete creado!',
-        html: `Programación de <strong>${placa}</strong> aprobada.<br>
-               El flete ya está registrado en el sistema.`,
+        title: '�Flete creado!',
+        html: `Programaci�n de <strong>${placa}</strong> aprobada.<br>
+               El flete ya est� registrado en el sistema.`,
         timer: 2500, showConfirmButton: false,
         background: '#1e293b', color: '#fff'
     });
 }
 
-// ── Rechazar ───────────────────────────────────────────────
+// -- Rechazar -----------------------------------------------
 async function rechazarProgramacionAdmin(progId, placa, noPlanilla) {
     const { value: motivo, isConfirmed } = await Swal.fire({
-        title: 'Rechazar programación',
+        title: 'Rechazar programaci�n',
         html: `<p style="color:#94a3b8;font-size:0.88rem;margin-bottom:12px;">
-                   Placa: <strong style="color:#fff;">${placa}</strong> &nbsp;·&nbsp;
+                   Placa: <strong style="color:#fff;">${placa}</strong> &nbsp;�&nbsp;
                    Planilla: <strong style="color:var(--primary);">${noPlanilla}</strong>
                </p>
                <textarea id="motivo-rechazo" placeholder="Motivo del rechazo (opcional)..."
@@ -1651,16 +1675,16 @@ async function rechazarProgramacionAdmin(progId, placa, noPlanilla) {
 
     await cargarAprobaciones();
     Swal.fire({
-        icon: 'info', title: 'Programación rechazada',
-        text: `Se notificará al programador.`,
+        icon: 'info', title: 'Programaci�n rechazada',
+        text: `Se notificar� al programador.`,
         timer: 1800, showConfirmButton: false,
         background: '#1e293b', color: '#fff'
     });
 }
 
-// ── Ver detalle completo en modal ──────────────────────────
+// -- Ver detalle completo en modal --------------------------
 async function verDetalleProgramacion(progId) {
-    // Buscar en los datos ya cargados (evitar nueva petición)
+    // Buscar en los datos ya cargados (evitar nueva petici�n)
     const allResult = await SupabaseClient.programaciones.getAll({});
     const p = allResult.data?.find(x => x.id === progId);
     if (!p) return;
@@ -1669,18 +1693,18 @@ async function verDetalleProgramacion(progId) {
     const meta = APR_ESTADO_META[p.estado] || APR_ESTADO_META['PENDIENTE'];
 
     await Swal.fire({
-        title: `Programación · ${p.placa}`,
+        title: `Programaci�n � ${p.placa}`,
         html: `
         <div style="text-align:left;font-size:0.85rem;line-height:1.8;">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;padding:12px;background:rgba(255,255,255,0.04);border-radius:8px;">
                 <div><span style="color:#94a3b8;">Placa:</span> <strong>${p.placa}</strong></div>
-                <div><span style="color:#94a3b8;">Conductor:</span> ${p.contratista || '—'}</div>
+                <div><span style="color:#94a3b8;">Conductor:</span> ${p.contratista || '�'}</div>
                 <div><span style="color:#94a3b8;">Fecha:</span> ${p.fecha}</div>
-                <div><span style="color:#94a3b8;">Día:</span> ${p.dia || '—'}</div>
+                <div><span style="color:#94a3b8;">D�a:</span> ${p.dia || '�'}</div>
                 <div><span style="color:#94a3b8;">Proveedor:</span> ${p.proveedor}</div>
                 <div><span style="color:#94a3b8;">Zona:</span> ${p.zona}</div>
-                <div><span style="color:#94a3b8;">Población:</span> ${p.poblacion}</div>
-                <div><span style="color:#94a3b8;">Auxiliar:</span> ${p.auxiliares || '—'}</div>
+                <div><span style="color:#94a3b8;">Poblaci�n:</span> ${p.poblacion}</div>
+                <div><span style="color:#94a3b8;">Auxiliar:</span> ${p.auxiliares || '�'}</div>
                 <div><span style="color:#94a3b8;">Pedidos:</span> ${p.no_pedidos}</div>
                 <div><span style="color:#94a3b8;">Planilla:</span> <strong style="color:var(--primary);">${p.no_planilla}</strong></div>
                 <div><span style="color:#94a3b8;">Valor Ruta:</span> <strong style="color:#10b981;">${moneyFmtD.format(p.valor_ruta)}</strong></div>
@@ -1694,7 +1718,7 @@ async function verDetalleProgramacion(progId) {
             ${p.razon_adicional_negociacion ? `
             <div style="padding:8px 12px;background:rgba(245,158,11,0.07);border-radius:6px;">
                 <span style="color:#94a3b8;font-size:0.78rem;">ADICIONAL NEGOCIADO:</span>
-                ${moneyFmtD.format(p.valor_adicional_negociacion)} — ${p.razon_adicional_negociacion}
+                ${moneyFmtD.format(p.valor_adicional_negociacion)} � ${p.razon_adicional_negociacion}
             </div>` : ''}
             <div style="margin-top:10px;display:flex;align-items:center;gap:8px;">
                 <span style="color:#94a3b8;">Estado:</span>
@@ -1705,8 +1729,8 @@ async function verDetalleProgramacion(progId) {
             </div>
             ${p.motivo_rechazo ? `<div style="margin-top:6px;color:#ef4444;font-size:0.8rem;"><i class="ri-information-line"></i> ${p.motivo_rechazo}</div>` : ''}
             <div style="margin-top:6px;color:#94a3b8;font-size:0.76rem;">
-                Programado por: ${p.programado_por || '—'}
-                ${p.revisado_por ? ` · Revisado por: ${p.revisado_por}` : ''}
+                Programado por: ${p.programado_por || '�'}
+                ${p.revisado_por ? ` � Revisado por: ${p.revisado_por}` : ''}
             </div>
         </div>`,
         width: 600,
@@ -1731,11 +1755,11 @@ window.rechazarProgramacionAdmin   = rechazarProgramacionAdmin;
 window.verDetalleProgramacion      = verDetalleProgramacion;
 
 // ==========================================================
-// 📊 RESUMEN DIARIO DE CUADRE
+// ?? RESUMEN DIARIO DE CUADRE
 // ==========================================================
 
 async function cargarResumenCuadre() {
-    // Leer fecha — si está vacía usar hoy
+    // Leer fecha � si est� vac�a usar hoy
     const fechaEl = document.getElementById('pl-cuadre-fecha');
     if (fechaEl && !fechaEl.value) {
         fechaEl.value = new Date().toISOString().split('T')[0];
@@ -1811,15 +1835,15 @@ async function cargarResumenCuadre() {
 
             return `<tr>
                 <td><span class="badge-plate" style="font-size:0.75rem;">${p.no_planilla}</span></td>
-                <td style="font-size:0.82rem;">${p.zona || '—'}</td>
-                <td>${p.placa ? `<span class="badge-plate" style="font-size:0.7rem;">${p.placa}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
-                <td style="font-size:0.82rem;color:var(--text-muted);">${p.conductor || '—'}</td>
+                <td style="font-size:0.82rem;">${p.zona || '�'}</td>
+                <td>${p.placa ? `<span class="badge-plate" style="font-size:0.7rem;">${p.placa}</span>` : '<span style="color:var(--text-muted)">�</span>'}</td>
+                <td style="font-size:0.82rem;color:var(--text-muted);">${p.conductor || '�'}</td>
                 <td style="text-align:right; font-weight:600;">${fmtR.format(esperado)}</td>
                 <td style="text-align:right; font-weight:700; color:#10b981;">${fmtR.format(recibido)}</td>
                 <td style="text-align:right; font-weight:700; color:${diffColor};">${diffStr}</td>
-                <td style="font-size:0.78rem; color:var(--text-muted);">${p.cuadrado_por || '—'}</td>
+                <td style="font-size:0.78rem; color:var(--text-muted);">${p.cuadrado_por || '�'}</td>
                 <td style="font-size:0.78rem; color:var(--text-muted); font-style:italic; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
-                    title="${(p.obs_cuadre || '').replace(/"/g,'&quot;')}">${p.obs_cuadre || '—'}</td>
+                    title="${(p.obs_cuadre || '').replace(/"/g,'&quot;')}">${p.obs_cuadre || '�'}</td>
             </tr>`;
         }).join('');
     }
@@ -1854,7 +1878,7 @@ function exportarResumenCuadre() {
         'Valor Recibido':  fmtN(p.valor_cuadrado),
         'Diferencia':      fmtN(p.valor_cuadrado) - fmtN(p.valor_total),
         'Cuadrado por':    p.cuadrado_por || '',
-        'Observación':     p.obs_cuadre || '',
+        'Observaci�n':     p.obs_cuadre || '',
         'Fecha Cuadre':    p.fecha_cuadre || '',
     }));
 
@@ -1873,3 +1897,329 @@ function exportarResumenCuadre() {
 // Exponer globalmente
 window.cargarResumenCuadre    = cargarResumenCuadre;
 window.exportarResumenCuadre  = exportarResumenCuadre;
+
+// ==========================================================
+// VISTA SIMPLIFICADA CAJERA_PLAN
+// ==========================================================
+
+async function _cargarVistaCajera() {
+    const fechaEl = document.getElementById('pl-cajera-fecha');
+    const fecha   = fechaEl?.value || new Date().toISOString().split('T')[0];
+    const wrap = document.getElementById('pl-cajera-wrap');
+    if (!wrap) return;
+
+    wrap.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-muted);"><i class="ri-loader-4-line rotate" style="font-size:2rem;"></i><p style="margin-top:10px;">Cargando...</p></div>';
+
+    const [resDes, resCuad] = await Promise.all([
+        SupabaseClient.planillas.getAll({ estado: 'DESPACHADA', fecha }),
+        SupabaseClient.planillas.getAll({ estado: 'CUADRADA',   fecha }),
+    ]);
+
+    if (!resDes.success && !resCuad.success) {
+        wrap.innerHTML = '<div style="text-align:center;padding:32px;color:#ef4444;"><i class="ri-error-warning-line" style="font-size:2rem;"></i><p>Error al cargar las planillas.</p></div>';
+        return;
+    }
+
+    const porCuadrar  = resDes.success  ? (resDes.data  || []) : [];
+    const yaCuadradas = resCuad.success ? (resCuad.data || []) : [];
+    PL_CACHE = [...porCuadrar, ...yaCuadradas];
+
+    const totalPorCuadrar = porCuadrar.reduce((s, p)  => s + (parseFloat(p.valor_total)    || 0), 0);
+    const totalYaCuadrado = yaCuadradas.reduce((s, p) => s + (parseFloat(p.valor_cuadrado) || 0), 0);
+    const totalGeneral    = totalPorCuadrar + yaCuadradas.reduce((s, p) => s + (parseFloat(p.valor_total) || 0), 0);
+    const todoCuadrado    = porCuadrar.length === 0 && yaCuadradas.length > 0;
+    const sinPlanillas    = porCuadrar.length === 0 && yaCuadradas.length === 0;
+
+    const kpiColor1 = porCuadrar.length > 0 ? '#f59e0b' : '#10b981';
+    const kpiBg1    = porCuadrar.length > 0 ? 'rgba(245,158,11,0.1)' : 'rgba(16,185,129,0.1)';
+    const kpiBdr1   = porCuadrar.length > 0 ? 'rgba(245,158,11,0.35)' : 'rgba(16,185,129,0.35)';
+
+    wrap.innerHTML =
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px;">' +
+          '<div style="padding:18px 16px;background:' + kpiBg1 + ';border:1px solid ' + kpiBdr1 + ';border-radius:12px;text-align:center;">' +
+            '<div style="font-size:2.2rem;font-weight:900;color:' + kpiColor1 + ';line-height:1;">' + porCuadrar.length + '</div>' +
+            '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;text-transform:uppercase;font-weight:600;">Por cuadrar</div>' +
+            '<div style="font-size:0.82rem;font-weight:700;color:' + kpiColor1 + ';margin-top:4px;">' + fmt(totalPorCuadrar) + '</div>' +
+          '</div>' +
+          '<div style="padding:18px 16px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:12px;text-align:center;">' +
+            '<div style="font-size:2.2rem;font-weight:900;color:#10b981;line-height:1;">' + yaCuadradas.length + '</div>' +
+            '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;text-transform:uppercase;font-weight:600;">Ya cuadradas</div>' +
+            '<div style="font-size:0.82rem;font-weight:700;color:#10b981;margin-top:4px;">' + fmt(totalYaCuadrado) + '</div>' +
+          '</div>' +
+          '<div style="padding:18px 16px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:12px;text-align:center;">' +
+            '<div style="font-size:2.2rem;font-weight:900;color:#3b82f6;line-height:1;">' + (porCuadrar.length + yaCuadradas.length) + '</div>' +
+            '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;text-transform:uppercase;font-weight:600;">Total planillas</div>' +
+            '<div style="font-size:0.82rem;font-weight:700;color:#3b82f6;margin-top:4px;">' + fmt(totalGeneral) + '</div>' +
+          '</div>' +
+        '</div>' +
+        (todoCuadrado ? '<div style="text-align:center;padding:28px 20px;background:rgba(16,185,129,0.1);border:2px solid rgba(16,185,129,0.4);border-radius:16px;margin-bottom:24px;"><div style="font-size:3rem;">&#x2705;</div><div style="font-size:1.2rem;font-weight:800;color:#10b981;margin-top:8px;">�Todo cuadrado!</div><div style="color:var(--text-muted);font-size:0.9rem;margin-top:4px;">No quedan planillas pendientes para el ' + fecha + '.</div></div>' : '') +
+        (sinPlanillas ? '<div style="text-align:center;padding:40px 20px;color:var(--text-muted);"><i class="ri-inbox-line" style="font-size:3rem;opacity:0.4;"></i><p style="margin-top:12px;font-size:1rem;">Sin planillas programadas para el ' + fecha + '.</p></div>' : '') +
+        (porCuadrar.length > 0 ?
+            '<div style="margin-bottom:28px;"><h3 style="color:#f59e0b;font-size:0.9rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;display:flex;align-items:center;gap:8px;"><i class="ri-time-line"></i> Por cuadrar (' + porCuadrar.length + ')</h3><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;">' +
+            porCuadrar.map(function(p) { return _cardCajeraSimple(p, false); }).join('') +
+            '</div></div>' : '') +
+        (yaCuadradas.length > 0 ?
+            '<div><h3 style="color:#10b981;font-size:0.9rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="_toggleCuadrdasHoy(this)"><i class="ri-checkbox-circle-line"></i> Cuadradas hoy (' + yaCuadradas.length + ')<i class="ri-arrow-down-s-line" id="pl-cajera-arrow-cuadradas" style="margin-left:auto;transition:transform 0.2s;"></i></h3><div id="pl-cajera-ya-cuadradas" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;">' +
+            yaCuadradas.map(function(p) { return _cardCajeraSimple(p, true); }).join('') +
+            '</div></div>' : '');
+}
+
+function _toggleCuadrdasHoy(headerEl) {
+    var list  = document.getElementById('pl-cajera-ya-cuadradas');
+    var arrow = document.getElementById('pl-cajera-arrow-cuadradas');
+    if (!list) return;
+    var hidden = list.style.display === 'none';
+    list.style.display = hidden ? 'grid' : 'none';
+    if (arrow) arrow.style.transform = hidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+}
+window._toggleCuadrdasHoy = _toggleCuadrdasHoy;
+
+function _cardCajeraSimple(p, esCuadrada) {
+    var factTotal = (p.planilla_facturas || []).length;
+    var factAsig  = (p.planilla_facturas || []).filter(function(f){ return f.asignada; }).length;
+    var diff      = esCuadrada ? ((parseFloat(p.valor_cuadrado) || 0) - (parseFloat(p.valor_total) || 0)) : null;
+    var bdrColor  = esCuadrada ? '#10b981' : '#f59e0b';
+    var statusBg  = esCuadrada ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)';
+    var statusClr = esCuadrada ? '#10b981' : '#f59e0b';
+    var statusTxt = esCuadrada ? '&#x2713; CUADRADA' : '&#x23F3; PENDIENTE';
+
+    var diffBadge = '';
+    if (diff !== null) {
+        var diffBg  = diff === 0 ? 'rgba(16,185,129,0.15)' : diff > 0 ? 'rgba(59,130,246,0.15)' : 'rgba(239,68,68,0.15)';
+        var diffClr = diff === 0 ? '#10b981' : diff > 0 ? '#3b82f6' : '#ef4444';
+        var diffTxt = diff === 0 ? '&#x2713; Cuadra exacto' : (diff > 0 ? '+' : '') + fmt(diff);
+        diffBadge = '<span style="font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:6px;background:' + diffBg + ';color:' + diffClr + ';">' + diffTxt + '</span>';
+    }
+
+    var infoCuadre = '';
+    if (esCuadrada && p.valor_cuadrado) {
+        infoCuadre = '<div style="margin-top:10px;padding:10px 12px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:10px;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">' +
+            '<span style="font-size:0.78rem;color:#94a3b8;">Recibido:</span>' +
+            '<span style="font-weight:800;color:#10b981;font-size:1rem;">' + fmt(p.valor_cuadrado) + '</span>' +
+            '</div>' +
+            (p.cuadrado_por ? '<div style="font-size:0.73rem;color:#64748b;margin-top:3px;">Por: ' + p.cuadrado_por + '</div>' : '') +
+            (p.obs_cuadre   ? '<div style="font-size:0.73rem;color:#64748b;font-style:italic;margin-top:3px;">"' + p.obs_cuadre + '"</div>' : '') +
+            '</div>';
+    }
+
+    var btnAccion = esCuadrada
+        ? '<button onclick="abrirDetallePlanilla(\'' + p.id + '\')" style="width:100%;padding:10px;font-size:0.85rem;font-weight:600;background:rgba(255,255,255,0.05);color:#94a3b8;border:1px solid rgba(255,255,255,0.1);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="ri-eye-line"></i> Ver detalle</button>'
+        : '<button onclick="cuadrarPlanillaCajera(\'' + p.id + '\')" style="width:100%;padding:14px;font-size:1rem;font-weight:700;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 14px rgba(16,185,129,0.4);transition:all 0.2s;" onmouseenter="this.style.transform=\'translateY(-2px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><i class="ri-checkbox-circle-line" style="font-size:1.2rem;"></i> Cuadrar planilla</button>';
+
+    return '<div style="background:var(--glass-bg,rgba(30,41,59,0.7));backdrop-filter:blur(10px);border:1px solid ' + (esCuadrada ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)') + ';border-left:4px solid ' + bdrColor + ';border-radius:14px;padding:18px 16px;opacity:' + (esCuadrada ? '0.85' : '1') + ';transition:box-shadow 0.2s;" onmouseenter="this.style.boxShadow=\'0 4px 20px rgba(0,0,0,0.3)\'" onmouseleave="this.style.boxShadow=\'none\'">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:8px;flex-wrap:wrap;">' +
+        '<span style="font-family:monospace;font-size:1.05rem;font-weight:800;color:#f8fafc;">' + p.no_planilla + '</span>' +
+        '<span style="font-size:0.72rem;padding:3px 10px;border-radius:20px;font-weight:700;background:' + statusBg + ';color:' + statusClr + ';">' + statusTxt + '</span>' +
+        '</div>' +
+        '<div style="display:grid;gap:6px;font-size:0.84rem;color:#cbd5e1;">' +
+        '<div style="display:flex;align-items:center;gap:8px;"><i class="ri-calendar-line" style="color:var(--text-muted);width:14px;"></i><span>' + (p.fecha || '�') + '</span></div>' +
+        (p.zona ? '<div style="display:flex;align-items:center;gap:8px;"><i class="ri-map-pin-line" style="color:var(--text-muted);width:14px;"></i><span>' + p.zona + '</span></div>' : '') +
+        (p.placa ? '<div style="display:flex;align-items:center;gap:8px;"><i class="ri-truck-line" style="color:var(--text-muted);width:14px;"></i><span style="background:rgba(255,255,255,0.08);padding:2px 8px;border-radius:6px;font-family:monospace;font-weight:700;">' + p.placa + '</span>' + (p.conductor ? '<span style="color:#94a3b8;font-size:0.8rem;">' + p.conductor + '</span>' : '') + '</div>' : '') +
+        '<div style="display:flex;align-items:center;gap:8px;"><i class="ri-file-list-3-line" style="color:var(--text-muted);width:14px;"></i><span>' + factAsig + ' / ' + factTotal + ' facturas</span></div>' +
+        '<div style="display:flex;align-items:center;gap:8px;justify-content:space-between;">' +
+        '<div style="display:flex;align-items:center;gap:8px;"><i class="ri-money-dollar-circle-line" style="color:var(--text-muted);width:14px;"></i><span style="font-weight:700;color:#f8fafc;font-size:0.95rem;">' + fmt(p.valor_total) + '</span></div>' +
+        diffBadge +
+        '</div>' +
+        '</div>' +
+        infoCuadre +
+        '<div style="margin-top:14px;">' + btnAccion + '</div>' +
+        '</div>';
+}
+
+async function cuadrarPlanillaCajera(planillaId) {
+    var planilla = PL_CACHE.find(function(p) { return p.id === planillaId; });
+    if (!planilla) return;
+
+    var valorEsperado = parseFloat(planilla.valor_total) || 0;
+    var facturas      = (planilla.planilla_facturas || []).map(function(f) { return Object.assign({}, f); });
+
+    // PASO 1: ingresar valor recibido
+    var paso1 = await Swal.fire({
+        title: '&#x1F4B5; &#xBF;Cu&#xE1;nto recibiste?',
+        html: '<div style="text-align:left;font-size:0.9rem;">' +
+            '<div style="padding:12px 14px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:10px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">' +
+            '<span style="color:#94a3b8;font-size:0.82rem;">Planilla:</span>' +
+            '<strong style="font-family:monospace;">' + planilla.no_planilla + '</strong>' +
+            (planilla.placa ? '<span style="background:rgba(255,255,255,0.08);padding:2px 8px;border-radius:6px;font-family:monospace;font-weight:700;">' + planilla.placa + '</span>' : '') +
+            '<span style="color:#94a3b8;font-size:0.82rem;">Valor esperado:</span>' +
+            '<strong style="color:#10b981;font-size:1.05rem;">' + fmt(valorEsperado) + '</strong>' +
+            '</div>' +
+            '<label style="display:block;margin-bottom:8px;color:#94a3b8;font-size:0.8rem;font-weight:700;text-transform:uppercase;">Valor recibido <span style="color:#ef4444;">*</span></label>' +
+            '<input id="swal-cajera-valor" type="text" value="' + fmt(valorEsperado) + '" style="width:100%;padding:14px 16px;background:#0f172a;border:2px solid rgba(16,185,129,0.4);color:#10b981;border-radius:10px;font-size:1.2rem;font-weight:800;font-family:inherit;outline:none;box-sizing:border-box;text-align:right;" oninput="this.style.borderColor=\'rgba(59,130,246,0.5)\'">' +
+            '<p style="color:#64748b;font-size:0.77rem;margin-top:8px;text-align:right;"><i class="ri-information-line"></i> Si todo cuadra, deja el valor y confirma.</p>' +
+            '</div>',
+        showCancelButton: true,
+        confirmButtonText: '<i class="ri-arrow-right-line"></i> Continuar',
+        cancelButtonText:  'Cancelar',
+        confirmButtonColor: '#10b981',
+        background: '#1e293b', color: '#fff',
+        focusConfirm: false,
+        didOpen: function() {
+            var inp = document.getElementById('swal-cajera-valor');
+            if (inp) inp.addEventListener('focus', function() { inp.select(); });
+        },
+        preConfirm: function() {
+            var v = (document.getElementById('swal-cajera-valor') || {}).value || '';
+            if (!v.trim()) { Swal.showValidationMessage('Ingresa el valor recibido'); return false; }
+            return v;
+        }
+    });
+
+    if (!paso1.isConfirmed || !paso1.value) return;
+
+    var valorRecibido = parseFloat(paso1.value.replace(/[^0-9]/g, '')) || 0;
+    var diferencia    = valorRecibido - valorEsperado;
+    var hasDiff       = Math.abs(diferencia) > 0;
+
+    var cuadradasIds   = facturas.map(function(f) { return f.id; });
+    var noCuadradasIds = [];
+    var observacion    = hasDiff
+        ? ('Diferencia de ' + fmt(Math.abs(diferencia)) + ' ' + (diferencia > 0 ? 'a favor' : 'faltante') + '.')
+        : 'Cuadre completo sin novedades.';
+
+    // PASO 2 (solo si hay diferencia y hay facturas)
+    if (hasDiff && facturas.length > 0) {
+        var estadoChecks = {};
+        facturas.forEach(function(f) { estadoChecks[f.id] = f.asignada !== false; });
+
+        var recalc = function() {
+            var ok    = facturas.filter(function(f) { return  estadoChecks[f.id]; });
+            var no    = facturas.filter(function(f) { return !estadoChecks[f.id]; });
+            var sumOk = ok.reduce(function(s,f) { return s + (parseFloat(f.valor_total)||0); }, 0);
+            var sumNo = no.reduce(function(s,f) { return s + (parseFloat(f.valor_total)||0); }, 0);
+            var e1 = document.getElementById('swal2-cnt-ok'); if (e1) e1.textContent = ok.length;
+            var e2 = document.getElementById('swal2-tot-ok'); if (e2) e2.textContent = fmt(sumOk);
+            var e3 = document.getElementById('swal2-cnt-no'); if (e3) e3.textContent = no.length;
+            var e4 = document.getElementById('swal2-tot-no'); if (e4) e4.textContent = fmt(sumNo);
+            var obsEl = document.getElementById('swal2-obs');
+            if (obsEl && !obsEl.dataset.userEdited) {
+                obsEl.value = no.length > 0
+                    ? ('No cuadraron ' + no.length + ' factura(s): ' + no.map(function(f) { return '#' + f.no_factura; }).join(', ') + '.')
+                    : 'Cuadre completo sin novedades.';
+            }
+        };
+
+        var listHtml = facturas.length === 0
+            ? '<div style="text-align:center;padding:16px;color:#94a3b8;">Sin facturas registradas</div>'
+            : facturas.map(function(f) {
+                var chk = estadoChecks[f.id];
+                return '<div class="swal2-fact-row" id="swal2-frow-' + f.id + '" style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;margin-bottom:4px;border-radius:6px;background:' + (chk ? 'rgba(16,185,129,0.06)' : 'rgba(239,68,68,0.06)') + ';border:1px solid ' + (chk ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)') + ';">' +
+                    '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;flex-grow:1;margin:0;">' +
+                    '<input type="checkbox" class="swal2-chk" data-id="' + f.id + '" ' + (chk ? 'checked' : '') + ' style="width:16px;height:16px;accent-color:#10b981;cursor:pointer;">' +
+                    '<span style="font-family:monospace;font-weight:700;font-size:0.88rem;color:' + (chk ? '#f8fafc' : '#94a3b8') + ';">' + f.no_factura + '</span>' +
+                    (f.zona ? '<span style="font-size:0.7rem;color:#64748b;background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px;">' + f.zona + '</span>' : '') +
+                    '</label>' +
+                    '<span style="font-weight:700;font-size:0.88rem;color:' + (chk ? '#10b981' : '#ef4444') + ';font-family:monospace;">' + fmt(f.valor_total || 0) + '</span>' +
+                    '</div>';
+            }).join('');
+
+        var paso2 = await Swal.fire({
+            title: '&#x1F4CB; Revisar facturas',
+            width: '700px',
+            html: '<div style="text-align:left;font-size:0.86rem;">' +
+                '<div style="padding:10px 14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">' +
+                '<i class="ri-alert-line" style="color:#ef4444;font-size:1.3rem;"></i>' +
+                '<div><span style="font-weight:700;color:#ef4444;">Diferencia de ' + fmt(Math.abs(diferencia)) + '</span>' +
+                '<span style="color:#94a3b8;font-size:0.8rem;margin-left:6px;">(' + (diferencia > 0 ? 'recibiste m&#xE1;s' : 'recibiste menos') + ' de lo esperado)</span></div>' +
+                '</div>' +
+                '<p style="color:#94a3b8;margin-bottom:10px;font-size:0.82rem;">Desmarca las facturas que <strong>no llegaron</strong>:</p>' +
+                '<div style="display:flex;gap:8px;margin-bottom:8px;">' +
+                '<button type="button" id="swal2-btn-todas" style="padding:5px 12px;font-size:0.75rem;background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.35);border-radius:6px;cursor:pointer;font-weight:700;"><i class="ri-checkbox-line"></i> Marcar todas</button>' +
+                '<button type="button" id="swal2-btn-ninguna" style="padding:5px 12px;font-size:0.75rem;background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.35);border-radius:6px;cursor:pointer;font-weight:700;"><i class="ri-checkbox-blank-line"></i> Desmarcar todas</button>' +
+                '</div>' +
+                '<div style="max-height:200px;overflow-y:auto;background:#0b1324;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:6px;margin-bottom:12px;">' + listHtml + '</div>' +
+                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">' +
+                '<div style="padding:8px 12px;background:rgba(16,185,129,0.09);border:1px solid rgba(16,185,129,0.25);border-radius:8px;"><div style="font-size:0.68rem;color:#94a3b8;text-transform:uppercase;font-weight:600;">Cuadradas (<span id="swal2-cnt-ok">0</span>)</div><div id="swal2-tot-ok" style="font-size:1rem;font-weight:800;color:#10b981;">$ 0</div></div>' +
+                '<div style="padding:8px 12px;background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.22);border-radius:8px;"><div style="font-size:0.68rem;color:#94a3b8;text-transform:uppercase;font-weight:600;">No cuadradas (<span id="swal2-cnt-no">0</span>)</div><div id="swal2-tot-no" style="font-size:1rem;font-weight:800;color:#ef4444;">$ 0</div></div>' +
+                '</div>' +
+                '<textarea id="swal2-obs" rows="2" placeholder="Observacion..." style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid rgba(255,255,255,0.08);color:#f8fafc;border-radius:8px;font-family:inherit;font-size:0.85rem;resize:vertical;outline:none;box-sizing:border-box;"></textarea>' +
+                '</div>',
+            showCancelButton:   true,
+            confirmButtonText:  '<i class="ri-checkbox-circle-line"></i> Confirmar cuadre',
+            cancelButtonText:   'Volver',
+            confirmButtonColor: '#10b981',
+            background: '#1e293b', color: '#fff',
+            focusConfirm: false,
+            didOpen: function() {
+                recalc();
+                var obsEl = document.getElementById('swal2-obs');
+                if (obsEl) obsEl.addEventListener('input', function() { obsEl.dataset.userEdited = '1'; });
+
+                document.querySelectorAll('.swal2-chk').forEach(function(chk) {
+                    chk.addEventListener('change', function(e) {
+                        var fid = e.target.getAttribute('data-id');
+                        estadoChecks[fid] = e.target.checked;
+                        var row = document.getElementById('swal2-frow-' + fid);
+                        if (row) {
+                            row.style.background  = e.target.checked ? 'rgba(16,185,129,0.06)' : 'rgba(239,68,68,0.06)';
+                            row.style.borderColor = e.target.checked ? 'rgba(16,185,129,0.2)'  : 'rgba(239,68,68,0.2)';
+                        }
+                        recalc();
+                    });
+                });
+
+                var btnTodas = document.getElementById('swal2-btn-todas');
+                if (btnTodas) btnTodas.addEventListener('click', function() {
+                    facturas.forEach(function(f) { estadoChecks[f.id] = true; });
+                    document.querySelectorAll('.swal2-chk').forEach(function(c) { c.checked = true; var row = document.getElementById('swal2-frow-' + c.getAttribute('data-id')); if (row) { row.style.background = 'rgba(16,185,129,0.06)'; row.style.borderColor = 'rgba(16,185,129,0.2)'; } });
+                    recalc();
+                });
+                var btnNinguna = document.getElementById('swal2-btn-ninguna');
+                if (btnNinguna) btnNinguna.addEventListener('click', function() {
+                    facturas.forEach(function(f) { estadoChecks[f.id] = false; });
+                    document.querySelectorAll('.swal2-chk').forEach(function(c) { c.checked = false; var row = document.getElementById('swal2-frow-' + c.getAttribute('data-id')); if (row) { row.style.background = 'rgba(239,68,68,0.06)'; row.style.borderColor = 'rgba(239,68,68,0.2)'; } });
+                    recalc();
+                });
+            },
+            preConfirm: function() {
+                var obs = ((document.getElementById('swal2-obs') || {}).value || '').trim();
+                cuadradasIds   = facturas.filter(function(f) { return  estadoChecks[f.id]; }).map(function(f) { return f.id; });
+                noCuadradasIds = facturas.filter(function(f) { return !estadoChecks[f.id]; }).map(function(f) { return f.id; });
+                if (obs) observacion = obs;
+                return true;
+            }
+        });
+
+        if (!paso2.isConfirmed) return;
+    }
+
+    Swal.fire({ title: 'Guardando cuadre...', allowOutsideClick: false, background: '#1e293b', color: '#fff', didOpen: function() { Swal.showLoading(); } });
+
+    if (noCuadradasIds.length > 0) await SupabaseClient.planillas.toggleFacturasBatch(noCuadradasIds, false);
+    if (cuadradasIds.length   > 0) await SupabaseClient.planillas.toggleFacturasBatch(cuadradasIds,   true);
+
+    var userName = (window.CURRENT_SESSION && window.CURRENT_SESSION.profile && window.CURRENT_SESSION.profile.nombre) || 'Cajera';
+    var saveResult = await SupabaseClient.planillas.updateEstado(planillaId, 'CUADRADA', {
+        cuadrado_por:   userName,
+        valor_cuadrado: valorRecibido,
+        obs_cuadre:     observacion || null,
+        fecha_cuadre:   new Date().toISOString().split('T')[0],
+    });
+
+    if (!saveResult.success) {
+        Swal.fire({ icon: 'error', title: 'Error al guardar', text: saveResult.error || 'No se pudo registrar el cuadre.', background: '#1e293b', color: '#fff' });
+        return;
+    }
+
+    planilla.estado         = 'CUADRADA';
+    planilla.valor_cuadrado = valorRecibido;
+    planilla.cuadrado_por   = userName;
+    planilla.obs_cuadre     = observacion || null;
+    planilla.fecha_cuadre   = new Date().toISOString().split('T')[0];
+
+    await _cargarVistaCajera();
+
+    Swal.fire({
+        icon: 'success',
+        title: '&#x2705; &#xA1;Planilla cuadrada!',
+        html: '<strong>' + planilla.no_planilla + '</strong><br><span style="color:#10b981;font-weight:800;font-size:1.15rem;">' + fmt(valorRecibido) + '</span> recibidos.<br>' +
+              (Math.abs(diferencia) > 0
+                  ? '<small style="color:' + (diferencia > 0 ? '#3b82f6' : '#ef4444') + ';">Diferencia: ' + (diferencia > 0 ? '+' : '') + fmt(diferencia) + '</small>'
+                  : '<small style="color:#10b981;">Cuadra exacto &#x2713;</small>'),
+        timer: 3500, showConfirmButton: true, confirmButtonText: 'Listo',
+        background: '#1e293b', color: '#fff'
+    });
+}
+window.cuadrarPlanillaCajera = cuadrarPlanillaCajera;
+window._cargarVistaCajera    = _cargarVistaCajera;

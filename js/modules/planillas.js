@@ -1230,8 +1230,7 @@ async function cargarPlanillasCarga() {
 async function cargarPlanillasProgramacion() {
     const tbody = document.getElementById('pl-prog-tabla-body');
     if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">
-        <i class="ri-loader-4-line rotate"></i> Cargando...</td></tr>`;
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text-muted);"><i class="ri-loader-4-line rotate"></i> Cargando...</td></tr>';
 
     const filtros = {
         estado:    document.getElementById('pl-prog-filtro-estado')?.value    || '',
@@ -1241,56 +1240,211 @@ async function cargarPlanillasProgramacion() {
     Object.keys(filtros).forEach(k => { if (!filtros[k]) delete filtros[k]; });
 
     const result = await SupabaseClient.planillas.getAll(filtros);
-    if (!result.success) { tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#ef4444;">Error al cargar</td></tr>`; return; }
+    if (!result.success) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#ef4444;">Error al cargar</td></tr>'; return; }
 
-    // Actualizar KPIs rápidos de programación
-    const sinProg  = result.data.filter(p => p.estado === 'TRANSITORIA').length;
-    const conProg  = result.data.filter(p => p.estado !== 'TRANSITORIA').length;
+    const sinProg = result.data.filter(p => p.estado === 'TRANSITORIA').length;
+    const conProg = result.data.filter(p => p.estado !== 'TRANSITORIA').length;
     const elSin = document.getElementById('pl-prog-kpi-transitoria');
     const elCon = document.getElementById('pl-prog-kpi-programadas');
     if (elSin) elSin.textContent = sinProg;
     if (elCon) elCon.textContent = conProg;
 
-    // Guardar en cache global
     PL_CACHE = result.data;
 
     if (result.data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted);">Sin resultados para los filtros aplicados</td></tr>`;
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted);">Sin resultados para los filtros aplicados</td></tr>';
         return;
     }
 
     const moneyFmtP = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 });
-    tbody.innerHTML = result.data.map(p => {
+    const canProg   = ['admin','programador'].includes(PL_ROLE);
+
+    // Barra de accion multiple (aparece al marcar >= 1 fila)
+    const tablaParent = tbody.closest('table') ? tbody.closest('table').parentElement : null;
+    let barraMulti = document.getElementById('pl-prog-barra-multi');
+    if (!barraMulti && canProg && tablaParent) {
+        barraMulti = document.createElement('div');
+        barraMulti.id = 'pl-prog-barra-multi';
+        barraMulti.setAttribute('style', 'display:none;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;margin-bottom:10px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:10px;font-size:0.85rem;');
+        barraMulti.innerHTML = '<span id="pl-prog-sel-count" style="font-weight:700;color:#3b82f6;"><i class="ri-checkbox-multiple-line"></i> 0 seleccionadas</span>'
+            + '<button onclick="programarPlanillasSeleccionadas()" style="padding:6px 16px;background:#3b82f6;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:700;font-size:0.83rem;display:inline-flex;align-items:center;gap:6px;"><i class="ri-truck-line"></i> Asignar vehiculo a seleccionadas</button>'
+            + '<button onclick="_prog_deseleccionarTodas()" style="padding:6px 12px;background:rgba(255,255,255,0.06);color:#94a3b8;border:1px solid rgba(255,255,255,0.1);border-radius:7px;cursor:pointer;font-size:0.82rem;">Limpiar seleccion</button>';
+        tablaParent.insertBefore(barraMulti, tbody.closest('table'));
+    }
+
+    tbody.innerHTML = result.data.map(function(p) {
         const meta = PL_ESTADO_META[p.estado] || PL_ESTADO_META['TRANSITORIA'];
-        const canProg = ['admin','programador'].includes(PL_ROLE);
-        return `<tr>
-            <td><span class="badge-plate" style="font-size:0.8rem;">${p.no_planilla}</span></td>
-            <td>${p.fecha || '—'}</td>
-            <td>${p.zona || '—'}</td>
-            <td>${p.proveedor || '—'}</td>
-            <td style="text-align:center;">${p.total_facturas || 0}</td>
-            <td class="price-cell">${moneyFmtP.format(p.valor_total || 0)}</td>
-            <td>${p.placa ? `<span class="badge-plate" style="font-size:0.75rem;">${p.placa}</span>` : '<span style="color:var(--text-muted);font-size:0.82rem;">Sin asignar</span>'}</td>
-            <td><span class="pl-estado-chip" style="background:${meta.bg};color:${meta.color};border-color:${meta.color}40;font-size:0.75rem;">
-                <i class="${meta.icon}"></i> ${meta.label}
-            </span></td>
-            <td style="text-align:center;">
-                ${canProg ? `<button class="pl-btn-action pl-btn-detail" onclick="abrirDetallePlanilla('${p.id}')" title="Ver y programar">
-                    <i class="ri-edit-line"></i> Programar
-                </button>` : `<button class="pl-btn-action pl-btn-detail" onclick="abrirDetallePlanilla('${p.id}')">
-                    <i class="ri-eye-line"></i>
-                </button>`}
-            </td>
-        </tr>`;
+        const chkCell = canProg
+            ? '<td style="text-align:center;width:36px;"><input type="checkbox" class="pl-prog-chk" data-id="' + p.id + '" style="width:15px;height:15px;accent-color:#3b82f6;cursor:pointer;" onchange="_prog_actualizarBarra()"></td>'
+            : '<td></td>';
+        const placaCell = p.placa
+            ? '<span class="badge-plate" style="font-size:0.75rem;">' + p.placa + '</span>'
+            : '<span style="color:var(--text-muted);font-size:0.82rem;">Sin asignar</span>';
+        const estadoChip = '<span class="pl-estado-chip" style="background:' + meta.bg + ';color:' + meta.color + ';border-color:' + meta.color + '40;font-size:0.75rem;"><i class="' + meta.icon + '"></i> ' + meta.label + '</span>';
+        const accionBtn = '<button class="pl-btn-action pl-btn-detail" onclick="abrirDetallePlanilla(\'' + p.id + '\')" title="Ver detalle"><i class="ri-eye-line"></i></button>';
+        return '<tr id="pl-prog-row-' + p.id + '">'
+            + chkCell
+            + '<td><span class="badge-plate" style="font-size:0.8rem;">' + p.no_planilla + '</span></td>'
+            + '<td>' + (p.fecha || '-') + '</td>'
+            + '<td>' + (p.zona  || '-') + '</td>'
+            + '<td>' + (p.proveedor || '-') + '</td>'
+            + '<td style="text-align:center;">' + (p.total_facturas || 0) + '</td>'
+            + '<td class="price-cell">' + moneyFmtP.format(p.valor_total || 0) + '</td>'
+            + '<td>' + placaCell + '</td>'
+            + '<td>' + estadoChip + '</td>'
+            + '<td style="text-align:center;">' + accionBtn + '</td>'
+            + '</tr>';
     }).join('');
 }
 
+// Helpers de seleccion multiple
+function _prog_actualizarBarra() {
+    const sel   = document.querySelectorAll('.pl-prog-chk:checked');
+    const barra = document.getElementById('pl-prog-barra-multi');
+    const cnt   = document.getElementById('pl-prog-sel-count');
+    if (!barra) return;
+    const n = sel.length;
+    if (n >= 1) {
+        barra.style.display = 'flex';
+        if (cnt) cnt.innerHTML = '<i class="ri-checkbox-multiple-line"></i> ' + n + ' planilla' + (n > 1 ? 's' : '') + ' seleccionada' + (n > 1 ? 's' : '');
+    } else {
+        barra.style.display = 'none';
+    }
+}
+
+function _prog_deseleccionarTodas() {
+    document.querySelectorAll('.pl-prog-chk').forEach(function(c) { c.checked = false; });
+    _prog_actualizarBarra();
+}
+
+// Programar multiples planillas al mismo vehiculo
+async function programarPlanillasSeleccionadas() {
+    const checks = Array.from(document.querySelectorAll('.pl-prog-chk:checked'));
+    if (!checks.length) return;
+
+    const ids       = checks.map(function(c) { return c.dataset.id; });
+    const planillas = ids.map(function(id) { return PL_CACHE.find(function(p) { return p.id === id; }); }).filter(Boolean);
+
+    const moneyFmtM  = new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
+    const totalValor = planillas.reduce(function(s, p) { return s + (parseFloat(p.valor_total) || 0); }, 0);
+    const n = planillas.length;
+
+    const resumenHTML = planillas.map(function(p) {
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:6px;margin-bottom:4px;">'
+            + '<span style="font-family:monospace;font-weight:700;color:#3b82f6;font-size:0.88rem;">' + p.no_planilla + '</span>'
+            + '<span style="font-size:0.78rem;color:#94a3b8;">' + (p.zona || '-') + '</span>'
+            + '<span style="font-size:0.78rem;color:#94a3b8;">' + (p.proveedor || '-') + '</span>'
+            + '<span style="font-weight:700;font-size:0.85rem;color:#f8fafc;">' + moneyFmtM.format(p.valor_total || 0) + '</span>'
+            + '</div>';
+    }).join('');
+
+    const labelN = n + ' planilla' + (n > 1 ? 's' : '') + ' seleccionada' + (n > 1 ? 's' : '');
+
+    const swalResult = await Swal.fire({
+        title: '<i class="ri-truck-line"></i> Asignar vehiculo',
+        width: '560px',
+        html: '<div style="text-align:left;font-size:0.86rem;">'
+            + '<div style="margin-bottom:14px;">'
+            + '<div style="font-size:0.72rem;font-weight:700;color:#94a3b8;text-transform:uppercase;margin-bottom:6px;display:flex;justify-content:space-between;">'
+            + '<span><i class="ri-file-list-3-line"></i> ' + labelN + '</span>'
+            + '<span style="color:#10b981;">' + moneyFmtM.format(totalValor) + '</span></div>'
+            + '<div style="max-height:160px;overflow-y:auto;">' + resumenHTML + '</div></div>'
+            + '<div style="margin-bottom:12px;">'
+            + '<label style="display:block;margin-bottom:5px;color:#94a3b8;font-size:0.78rem;font-weight:700;text-transform:uppercase;">Placa <span style="color:#ef4444;">*</span></label>'
+            + '<input id="swal-multi-placa" type="text" placeholder="Ej: SYU652" style="width:100%;padding:10px 14px;background:#0f172a;border:1px solid rgba(59,130,246,0.4);color:#f8fafc;border-radius:8px;font-size:1rem;font-weight:700;font-family:monospace;text-transform:uppercase;outline:none;box-sizing:border-box;letter-spacing:1px;">'
+            + '</div>'
+            + '<div>'
+            + '<label style="display:block;margin-bottom:5px;color:#94a3b8;font-size:0.78rem;font-weight:700;text-transform:uppercase;">Conductor <span style="font-size:0.7rem;font-weight:400;">(opcional)</span></label>'
+            + '<input id="swal-multi-conductor" type="text" placeholder="Nombre del conductor" style="width:100%;padding:10px 14px;background:#0f172a;border:1px solid rgba(255,255,255,0.1);color:#f8fafc;border-radius:8px;font-size:0.9rem;font-family:inherit;outline:none;box-sizing:border-box;">'
+            + '</div></div>',
+        showCancelButton:   true,
+        confirmButtonText:  '<i class="ri-save-line"></i> Guardar en ' + n + ' planilla' + (n > 1 ? 's' : ''),
+        cancelButtonText:   'Cancelar',
+        confirmButtonColor: '#3b82f6',
+        background: '#1e293b', color: '#fff',
+        focusConfirm: false,
+        didOpen: function() {
+            const placaInput = document.getElementById('swal-multi-placa');
+            const condInput  = document.getElementById('swal-multi-conductor');
+            if (placaInput) {
+                placaInput.addEventListener('input', async function() {
+                    const v = placaInput.value.toUpperCase().replace(/\s/g, '');
+                    placaInput.value = v;
+                    if (v.length >= 6 && condInput && !condInput.value) {
+                        const res = await SupabaseClient.vehiculos?.getByPlaca?.(v, window.CURRENT_RAZON_SOCIAL);
+                        if (res && res.data && res.data.conductor) condInput.value = res.data.conductor;
+                    }
+                });
+                placaInput.focus();
+            }
+        },
+        preConfirm: function() {
+            const placa     = (document.getElementById('swal-multi-placa')?.value     || '').toUpperCase().trim();
+            const conductor = (document.getElementById('swal-multi-conductor')?.value || '').trim();
+            if (!placa) { Swal.showValidationMessage('La placa es obligatoria'); return false; }
+            return { placa: placa, conductor: conductor };
+        },
+    });
+
+    if (!swalResult.isConfirmed || !swalResult.value) return;
+
+    const placa            = swalResult.value.placa;
+    const conductor        = swalResult.value.conductor;
+    const fecha_prog       = new Date().toISOString().split('T')[0];
+    const programado_por   = (window.CURRENT_SESSION && window.CURRENT_SESSION.profile && window.CURRENT_SESSION.profile.nombre) ? window.CURRENT_SESSION.profile.nombre : 'Sistema';
+
+    Swal.fire({
+        title: 'Guardando...',
+        html: '<div id="swal-multi-prog" style="color:#94a3b8;font-size:0.9rem;">0 / ' + ids.length + '</div>',
+        allowOutsideClick: false,
+        didOpen: function() { Swal.showLoading(); },
+        background: '#1e293b', color: '#fff',
+    });
+
+    let ok = 0, errores = 0;
+    for (let i = 0; i < ids.length; i++) {
+        const el = document.getElementById('swal-multi-prog');
+        if (el) el.textContent = (i + 1) + ' / ' + ids.length;
+
+        const res = await SupabaseClient.planillas.updateEstado(ids[i], 'DESPACHADA', {
+            placa:             placa,
+            conductor:         conductor,
+            fecha_programacion: fecha_prog,
+            programado_por:    programado_por,
+        });
+
+        if (res.success) {
+            ok++;
+            const p = PL_CACHE.find(function(x) { return x.id === ids[i]; });
+            if (p) { p.placa = placa; p.conductor = conductor; p.estado = 'DESPACHADA'; }
+        } else {
+            errores++;
+            console.error('Error planilla ' + ids[i] + ':', res.error);
+        }
+    }
+
+    _prog_deseleccionarTodas();
+    await cargarPlanillasProgramacion();
+
+    Swal.fire({
+        icon:  errores === 0 ? 'success' : 'warning',
+        title: errores === 0 ? 'Listo!' : 'Parcialmente guardado',
+        html:  '<strong style="color:#10b981">' + ok + '</strong> planilla' + (ok !== 1 ? 's' : '') + ' asignada' + (ok !== 1 ? 's' : '') + ' a <strong>' + placa + '</strong>.'
+             + (errores > 0 ? '<br><span style="color:#ef4444;">' + errores + ' con error (ver consola).</span>' : ''),
+        timer: 2500, showConfirmButton: errores > 0,
+        background: '#1e293b', color: '#fff',
+    });
+}
+
 // Exponer las nuevas funciones globalmente
-window.inicializarModuloCarga         = inicializarModuloCarga;
-window.inicializarModuloProgramacion  = inicializarModuloProgramacion;
-window.inicializarModuloEstado        = inicializarModuloEstado;
-window.cargarPlanillasCarga           = cargarPlanillasCarga;
-window.cargarPlanillasProgramacion    = cargarPlanillasProgramacion;
+window.inicializarModuloCarga             = inicializarModuloCarga;
+window.inicializarModuloProgramacion      = inicializarModuloProgramacion;
+window.inicializarModuloEstado            = inicializarModuloEstado;
+window.cargarPlanillasCarga               = cargarPlanillasCarga;
+window.cargarPlanillasProgramacion        = cargarPlanillasProgramacion;
+window.programarPlanillasSeleccionadas    = programarPlanillasSeleccionadas;
+window._prog_actualizarBarra              = _prog_actualizarBarra;
+window._prog_deseleccionarTodas           = _prog_deseleccionarTodas;
 
 // ==========================================================
 // ✅ MÓDULO DE APROBACIONES (solo admin)

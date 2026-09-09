@@ -418,10 +418,36 @@
                     placeholder="Motivo del adicional negociado (si aplica)..."></textarea>
             </div>
 
-            <!-- SECCIÓN 3: Planilla y Facturas (solo lectura) -->
+            <!-- SECCIÓN 3: Planilla y Facturas -->
             <div class="edit-section-title" style="margin-top:20px;"><i class="ri-file-list-2-line"></i> Planillas y Facturas</div>
             <div id="modal-planillas-info" style="margin-bottom:10px;"></div>
-            <div id="modal-facturas-preview" style="font-size:0.8rem;color:var(--text-muted);padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--glass-border);border-radius:8px;line-height:1.8;max-height:80px;overflow:hidden;"></div>
+            <div id="modal-facturas-preview" style="font-size:0.8rem;color:var(--text-muted);padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--glass-border);border-radius:8px;line-height:1.8;margin-bottom:14px;"></div>
+
+            <!-- SECCIÓN 4: Facturas Sueltas disponibles -->
+            <div class="edit-section-title" style="margin-top:0;display:flex;justify-content:space-between;align-items:center;">
+                <span><i class="ri-alert-line" style="color:#f59e0b;"></i> Facturas Sueltas Disponibles</span>
+                <button id="btn-cargar-sueltas" onclick="cargarFacturasSueltasModal()"
+                        style="padding:4px 12px;background:rgba(245,158,11,0.15);color:#f59e0b;
+                               border:1px solid rgba(245,158,11,0.35);border-radius:6px;
+                               cursor:pointer;font-size:0.75rem;font-weight:700;font-family:inherit;">
+                    <i class="ri-refresh-line"></i> Cargar sueltas
+                </button>
+            </div>
+            <div id="modal-sueltas-container" style="font-size:0.82rem;color:var(--text-muted);padding:10px;
+                 background:rgba(255,255,255,0.02);border:1px solid var(--glass-border);border-radius:8px;
+                 min-height:40px;">
+                <span style="opacity:0.5;">Haz clic en "Cargar sueltas" para ver las facturas disponibles de esta fecha y proveedor.</span>
+            </div>
+            <div id="modal-sueltas-summary" style="display:none;margin-top:8px;padding:8px 12px;
+                 background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:7px;
+                 font-size:0.82rem;display:none;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+                <span id="modal-sueltas-cnt" style="color:#f59e0b;font-weight:700;"></span>
+                <button onclick="agregarSueltasSeleccionadas()"
+                        style="padding:5px 14px;background:#f59e0b;color:#000;border:none;border-radius:6px;
+                               cursor:pointer;font-weight:700;font-size:0.8rem;font-family:inherit;">
+                    <i class="ri-add-circle-line"></i> Incluir seleccionadas
+                </button>
+            </div>
 
         </div>
         <div class="modal-footer">
@@ -836,6 +862,138 @@ async function rechazarDirecto(progId, placa, noPlanilla) {
     Swal.fire({ icon:'info', title:'Rechazada', text:'El programador será notificado.',
         timer:1800, showConfirmButton:false, background:'#1e293b', color:'#fff' });
 }
+
+/* ── Facturas sueltas en el modal del aprobador ─────────── */
+async function cargarFacturasSueltasModal() {
+    const p = APR_DATA.find(x => x.id === APR_MODAL_ID);
+    if (!p) return;
+
+    const container = document.getElementById('modal-sueltas-container');
+    const summary   = document.getElementById('modal-sueltas-summary');
+    if (!container) return;
+
+    container.innerHTML = '<span style="opacity:0.5;"><i class="ri-loader-4-line"></i> Cargando...</span>';
+    if (summary) summary.style.display = 'none';
+
+    const result = await window.SupabaseClient.planillas.getFacturasSueltas();
+    if (!result.success || !result.data.length) {
+        container.innerHTML = '<span style="color:#10b981;"><i class="ri-checkbox-circle-line"></i> No hay facturas sueltas para esta fecha y proveedor.</span>';
+        return;
+    }
+
+    // Filtrar por proveedor y fecha si coincide con la programación
+    const proveedor = (p.proveedor || '').toUpperCase();
+    const fecha     = p.fecha || '';
+    let sueltas = result.data;
+
+    // Filtrar por proveedor si la planilla lo tiene referenciado
+    if (proveedor) {
+        const filtradas = sueltas.filter(f => {
+            const prov = (f.planilla?.proveedor || '').toUpperCase();
+            return !prov || prov === proveedor;
+        });
+        if (filtradas.length > 0) sueltas = filtradas;
+    }
+
+    if (!sueltas.length) {
+        container.innerHTML = '<span style="color:#10b981;"><i class="ri-checkbox-circle-line"></i> No hay facturas sueltas que coincidan con este proveedor.</span>';
+        return;
+    }
+
+    const moneyFmtS = new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
+
+    container.innerHTML = sueltas.map(function(f) {
+        return '<label style="display:flex;align-items:center;justify-content:space-between;gap:10px;'
+            + 'padding:7px 10px;border-radius:6px;cursor:pointer;'
+            + 'background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);'
+            + 'margin-bottom:4px;transition:0.15s;" '
+            + 'onmouseover="this.style.background=\'rgba(245,158,11,0.07)\'" '
+            + 'onmouseout="this.style.background=\'rgba(255,255,255,0.03)\'">'
+            + '<div style="display:flex;align-items:center;gap:8px;">'
+            + '<input type="checkbox" class="suelta-chk" data-id="' + f.id + '" data-factura="' + f.no_factura + '" data-valor="' + (f.valor_total || 0) + '"'
+            + ' style="width:15px;height:15px;accent-color:#f59e0b;cursor:pointer;" onchange="_actualizarResumenSueltas()">'
+            + '<span style="font-family:monospace;font-weight:700;color:#f8fafc;font-size:0.88rem;">' + f.no_factura + '</span>'
+            + (f.zona ? '<span style="font-size:0.72rem;color:#64748b;background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px;">' + f.zona + '</span>' : '')
+            + (f.planilla && f.planilla.no_planilla ? '<span style="font-size:0.72rem;color:#94a3b8;">Plan: ' + f.planilla.no_planilla + '</span>' : '')
+            + '</div>'
+            + '<span style="font-weight:700;font-size:0.85rem;color:#f59e0b;white-space:nowrap;">' + moneyFmtS.format(f.valor_total || 0) + '</span>'
+            + '</label>';
+    }).join('');
+
+    if (summary) summary.style.display = 'none';
+}
+
+function _actualizarResumenSueltas() {
+    const sel     = document.querySelectorAll('.suelta-chk:checked');
+    const summary = document.getElementById('modal-sueltas-summary');
+    const cntEl   = document.getElementById('modal-sueltas-cnt');
+    if (!summary) return;
+    const n = sel.length;
+    if (n > 0) {
+        const total = Array.from(sel).reduce(function(s, c) { return s + parseFloat(c.dataset.valor || 0); }, 0);
+        const moneyFmtS = new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
+        summary.style.display = 'flex';
+        if (cntEl) cntEl.innerHTML = '<i class="ri-file-add-line"></i> ' + n + ' factura' + (n > 1 ? 's' : '') + ' seleccionada' + (n > 1 ? 's' : '') + ' &nbsp;·&nbsp; ' + moneyFmtS.format(total);
+    } else {
+        summary.style.display = 'none';
+    }
+}
+
+async function agregarSueltasSeleccionadas() {
+    const p = APR_DATA.find(x => x.id === APR_MODAL_ID);
+    if (!p) return;
+
+    const checks   = Array.from(document.querySelectorAll('.suelta-chk:checked'));
+    if (!checks.length) return;
+
+    const ids      = checks.map(function(c) { return c.dataset.id; });
+    const facturas = checks.map(function(c) { return c.dataset.factura; });
+
+    // Actualizar facturas_seleccionadas en la programación
+    const yaExistentes = (p.facturas_seleccionadas || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+    const nuevas       = facturas.filter(function(f) { return !yaExistentes.includes(f); });
+    if (!nuevas.length) {
+        Swal.fire({ icon:'info', title:'Ya incluidas', text:'Todas las facturas seleccionadas ya están en esta programación.', background:'#1e293b', color:'#fff', timer:2000, showConfirmButton:false });
+        return;
+    }
+
+    const todasFacturas = yaExistentes.concat(nuevas).join(', ');
+
+    // Guardar en la programación
+    const saveRes = await window.SupabaseClient.programaciones.actualizar(APR_MODAL_ID, {
+        facturas_seleccionadas: todasFacturas,
+    });
+    if (!saveRes.success) {
+        Swal.fire({ icon:'error', title:'Error', text:'No se pudieron guardar las facturas.', background:'#1e293b', color:'#fff' });
+        return;
+    }
+
+    // Marcar las facturas sueltas como asignadas de vuelta
+    const markRes = await window.SupabaseClient.planillas.toggleFacturasBatch(ids, true);
+    if (!markRes.success) {
+        console.warn('No se pudo marcar sueltas como asignadas:', markRes.error);
+    }
+
+    // Actualizar el preview y el cache local
+    p.facturas_seleccionadas = todasFacturas;
+    const factEl = document.getElementById('modal-facturas-preview');
+    if (factEl) factEl.textContent = todasFacturas;
+
+    // Limpiar la sección de sueltas
+    document.querySelectorAll('.suelta-chk').forEach(function(c) { c.checked = false; });
+    _actualizarResumenSueltas();
+    await cargarFacturasSueltasModal();
+
+    Swal.fire({
+        icon: 'success', title: 'Facturas incluidas',
+        html: '<strong style="color:#10b981;">' + nuevas.length + '</strong> factura' + (nuevas.length > 1 ? 's' : '') + ' agregada' + (nuevas.length > 1 ? 's' : '') + ' a la programación.',
+        timer: 2000, showConfirmButton: false, background: '#1e293b', color: '#fff'
+    });
+}
+
+window._actualizarResumenSueltas     = _actualizarResumenSueltas;
+window.cargarFacturasSueltasModal    = cargarFacturasSueltasModal;
+window.agregarSueltasSeleccionadas   = agregarSueltasSeleccionadas;
 </script>
 </body>
 </html>

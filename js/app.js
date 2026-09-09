@@ -438,6 +438,8 @@ async function checkAuth() {
             'admin': 'Administrador',
             'operario': 'Operario Logístico',
             'cargador': 'Cargador de Planillas',
+            'cargador_alpina': 'Cargador Alpina',
+            'cargador_fleischmann': 'Cargador Fleischmann',
             'programador': 'Programador',
             'cajera_plan': 'Cajera Planillas',
             'caja': 'Caja',
@@ -500,8 +502,8 @@ async function checkAuth() {
         // Admin ve el módulo de aprobaciones de programaciones
         const navApr = document.getElementById("navAprobaciones");
         if (navApr) navApr.style.display = 'flex';
-    } else if (role === 'cargador') {
-        // PERFIL CARGADOR: va directo a carga-planillas.html (página externa)
+    } else if (role === 'cargador' || role === 'cargador_alpina' || role === 'cargador_fleischmann') {
+        // PERFIL CARGADOR (y variantes por proveedor): va directo a carga-planillas.html
         if (navFletes)    navFletes.style.display    = 'none';
         if (navVehiculos) navVehiculos.style.display = 'none';
         if (navCrear)     navCrear.style.display     = 'none';
@@ -617,7 +619,7 @@ async function checkAuth() {
 
     // Explicitly show Dashboard for standard users (since we hid it by default in HTML)
     const inicioSection = document.getElementById("inicio");
-    if (inicioSection && !['caja', 'cargador', 'cajera_plan'].includes(role)) {
+    if (inicioSection && !['caja', 'cargador', 'cargador_alpina', 'cargador_fleischmann', 'cajera_plan'].includes(role)) {
         inicioSection.classList.add("visible");
     }
 
@@ -4743,8 +4745,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 });
             });
             console.log("✅ Usuario 'operario' - Carga optimizada (sin vehículos)");
-        } else if (['cargador','cajera_plan'].includes(role)) {
-            // cargador: fue redirigido arriba. cajera_plan: carga kanban
+        } else if (['cargador','cargador_alpina','cargador_fleischmann','cajera_plan'].includes(role)) {
+            // cargadores: fueron redirigidos arriba. cajera_plan: carga kanban
             if (role === 'cajera_plan') {
                 console.log("✅ Usuario 'cajera_plan' - Cargando kanban de planillas");
                 setTimeout(() => {

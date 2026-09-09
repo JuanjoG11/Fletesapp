@@ -933,6 +933,48 @@ async function obtenerKPIPlanillas() {
 }
 
 // Agregar al objeto SupabaseClientAPI
+/**
+ * Mover facturas sueltas de una planilla a otra nueva
+ * Actualiza planilla_id + marca asignada = true en lote
+ */
+async function moverFacturasAPlanilla(facturaIds, nuevaPlanillaId) {
+    try {
+        if (!facturaIds || !facturaIds.length) return { success: true };
+        const { error } = await _supabase
+            .from('planilla_facturas')
+            .update({ planilla_id: nuevaPlanillaId, asignada: true })
+            .in('id', facturaIds);
+        if (error) throw error;
+        return { success: true };
+    } catch (error) {
+        console.error('Error al mover facturas:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Recalcular y actualizar los totales de una planilla
+ * según las facturas que actualmente tiene asignadas
+ */
+async function actualizarTotalesPlanilla(planillaId, facturas) {
+    try {
+        const total_facturas      = facturas.length;
+        const valor_bruto_total   = facturas.reduce((s, f) => s + (parseFloat(f.valor_bruto)   || 0), 0);
+        const valor_factura_total = facturas.reduce((s, f) => s + (parseFloat(f.valor_factura) || 0), 0);
+        const valor_total         = facturas.reduce((s, f) => s + (parseFloat(f.valor_total)   || 0), 0);
+
+        const { error } = await _supabase
+            .from('planillas')
+            .update({ total_facturas, valor_bruto_total, valor_factura_total, valor_total })
+            .eq('id', planillaId);
+        if (error) throw error;
+        return { success: true };
+    } catch (error) {
+        console.error('Error al actualizar totales planilla:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 SupabaseClientAPI.planillas = {
     getAll:               obtenerPlanillas,
     create:               crearPlanillaConFacturas,
@@ -942,6 +984,8 @@ SupabaseClientAPI.planillas = {
     getFacturasSueltas:   obtenerFacturasSueltas,
     delete:               eliminarPlanilla,
     getKPIs:              obtenerKPIPlanillas,
+    moverFacturas:        moverFacturasAPlanilla,
+    updateTotales:        actualizarTotalesPlanilla,
 };
 
 // Actualizar aliases globales

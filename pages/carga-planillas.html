@@ -488,14 +488,29 @@ let CP_USER_NAME = null;
     const badge = document.getElementById('userBadge');
     if (badge) badge.textContent = `${CP_USER_NAME} · ${CP_USER_ROLE}`;
 
-    // Solo cargador y admin pueden acceder
-    if (!['admin','cargador'].includes(CP_USER_ROLE.toLowerCase())) {
+    // Solo cargadores y admin pueden acceder
+    const rolesPermitidos = ['admin','cargador','cargador_alpina','cargador_fleischmann'];
+    if (!rolesPermitidos.includes(CP_USER_ROLE.toLowerCase())) {
         window.location.href = 'dashboard.html';
         return;
     }
 
     // Setear override para que obtenerPlanillas use la razon_social correcta
     window.PG_RAZON_SOCIAL_OVERRIDE = (user?.razon_social || 'TYM').toUpperCase();
+
+    // Pre-seleccionar y bloquear el proveedor según el rol
+    const selectProv = document.getElementById('cp-proveedor');
+    if (selectProv) {
+        if (CP_USER_ROLE === 'cargador_alpina') {
+            selectProv.value    = 'ALPINA';
+            selectProv.disabled = true;
+            selectProv.title    = 'Tu rol solo permite cargar planillas ALPINA';
+        } else if (CP_USER_ROLE === 'cargador_fleischmann') {
+            selectProv.value    = 'FLEISCHMANN';
+            selectProv.disabled = true;
+            selectProv.title    = 'Tu rol solo permite cargar planillas FLEISCHMANN';
+        }
+    }
 
     const hoy = new Date().toISOString().split('T')[0];
     // NO pre-llenamos la fecha del historial → muestra todas las planillas

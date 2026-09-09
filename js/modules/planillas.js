@@ -1,4 +1,4 @@
-/* ==========================================================
+﻿/* ==========================================================
    ?? M�DULO GESTI�N DE PLANILLAS
    FletesApp � js/modules/planillas.js
    ==========================================================
@@ -1952,7 +1952,7 @@ async function _cargarVistaCajera() {
             '<div style="font-size:0.82rem;font-weight:700;color:#3b82f6;margin-top:4px;">' + fmt(totalGeneral) + '</div>' +
           '</div>' +
         '</div>' +
-        (todoCuadrado ? '<div style="text-align:center;padding:28px 20px;background:rgba(16,185,129,0.1);border:2px solid rgba(16,185,129,0.4);border-radius:16px;margin-bottom:24px;"><div style="font-size:3rem;">&#x2705;</div><div style="font-size:1.2rem;font-weight:800;color:#10b981;margin-top:8px;">�Todo cuadrado!</div><div style="color:var(--text-muted);font-size:0.9rem;margin-top:4px;">No quedan planillas pendientes para el ' + fecha + '.</div></div>' : '') +
+        (todoCuadrado ? '<div style="text-align:center;padding:28px 20px;background:rgba(16,185,129,0.1);border:2px solid rgba(16,185,129,0.4);border-radius:16px;margin-bottom:24px;"><div style="font-size:3rem;">&#x2705;</div><div style="font-size:1.2rem;font-weight:800;color:#10b981;margin-top:8px;">�Todo cuadrado!</div><div style="color:var(--text-muted);font-size:0.9rem;margin-top:4px;">No quedan planillas pendientes para el ' + fecha + '.</div></div>' : '') +
         (sinPlanillas ? '<div style="text-align:center;padding:40px 20px;color:var(--text-muted);"><i class="ri-inbox-line" style="font-size:3rem;opacity:0.4;"></i><p style="margin-top:12px;font-size:1rem;">Sin planillas programadas para el ' + fecha + '.</p></div>' : '') +
         (porCuadrar.length > 0 ?
             '<div style="margin-bottom:28px;"><h3 style="color:#f59e0b;font-size:0.9rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;display:flex;align-items:center;gap:8px;"><i class="ri-time-line"></i> Por cuadrar (' + porCuadrar.length + ')</h3><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;">' +
@@ -2003,8 +2003,12 @@ function _cardCajeraSimple(p, esCuadrada) {
             '</div>';
     }
 
+    var factSueltas = (p.planilla_facturas || []).filter(function(f){ return !f.asignada; });
     var btnAccion = esCuadrada
-        ? '<button onclick="abrirDetallePlanilla(\'' + p.id + '\')" style="width:100%;padding:10px;font-size:0.85rem;font-weight:600;background:rgba(255,255,255,0.05);color:#94a3b8;border:1px solid rgba(255,255,255,0.1);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="ri-eye-line"></i> Ver detalle</button>'
+        ? '<button onclick="abrirDetallePlanilla(\'' + p.id + '\')" style="width:100%;padding:10px;font-size:0.85rem;font-weight:600;background:rgba(255,255,255,0.05);color:#94a3b8;border:1px solid rgba(255,255,255,0.1);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="ri-eye-line"></i> Ver detalle</button>' +
+          (factSueltas.length > 0
+            ? '<button onclick="crearPlanillaDiferencias(\'' + p.id + '\')" style="width:100%;margin-top:8px;padding:11px;font-size:0.88rem;font-weight:700;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 10px rgba(245,158,11,0.35);transition:all 0.2s;" onmouseenter="this.style.transform=\'translateY(-2px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><i class="ri-add-circle-line" style="font-size:1.1rem;"></i> Crear planilla (' + factSueltas.length + ' faltante' + (factSueltas.length > 1 ? 's' : '') + ')</button>'
+            : '')
         : '<button onclick="cuadrarPlanillaCajera(\'' + p.id + '\')" style="width:100%;padding:14px;font-size:1rem;font-weight:700;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 14px rgba(16,185,129,0.4);transition:all 0.2s;" onmouseenter="this.style.transform=\'translateY(-2px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><i class="ri-checkbox-circle-line" style="font-size:1.2rem;"></i> Cuadrar planilla</button>';
 
     return '<div style="background:var(--glass-bg,rgba(30,41,59,0.7));backdrop-filter:blur(10px);border:1px solid ' + (esCuadrada ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)') + ';border-left:4px solid ' + bdrColor + ';border-radius:14px;padding:18px 16px;opacity:' + (esCuadrada ? '0.85' : '1') + ';transition:box-shadow 0.2s;" onmouseenter="this.style.boxShadow=\'0 4px 20px rgba(0,0,0,0.3)\'" onmouseleave="this.style.boxShadow=\'none\'">' +
@@ -2013,7 +2017,7 @@ function _cardCajeraSimple(p, esCuadrada) {
         '<span style="font-size:0.72rem;padding:3px 10px;border-radius:20px;font-weight:700;background:' + statusBg + ';color:' + statusClr + ';">' + statusTxt + '</span>' +
         '</div>' +
         '<div style="display:grid;gap:6px;font-size:0.84rem;color:#cbd5e1;">' +
-        '<div style="display:flex;align-items:center;gap:8px;"><i class="ri-calendar-line" style="color:var(--text-muted);width:14px;"></i><span>' + (p.fecha || '�') + '</span></div>' +
+        '<div style="display:flex;align-items:center;gap:8px;"><i class="ri-calendar-line" style="color:var(--text-muted);width:14px;"></i><span>' + (p.fecha || '�') + '</span></div>' +
         (p.zona ? '<div style="display:flex;align-items:center;gap:8px;"><i class="ri-map-pin-line" style="color:var(--text-muted);width:14px;"></i><span>' + p.zona + '</span></div>' : '') +
         (p.placa ? '<div style="display:flex;align-items:center;gap:8px;"><i class="ri-truck-line" style="color:var(--text-muted);width:14px;"></i><span style="background:rgba(255,255,255,0.08);padding:2px 8px;border-radius:6px;font-family:monospace;font-weight:700;">' + p.placa + '</span>' + (p.conductor ? '<span style="color:#94a3b8;font-size:0.8rem;">' + p.conductor + '</span>' : '') + '</div>' : '') +
         '<div style="display:flex;align-items:center;gap:8px;"><i class="ri-file-list-3-line" style="color:var(--text-muted);width:14px;"></i><span>' + factAsig + ' / ' + factTotal + ' facturas</span></div>' +
@@ -2223,3 +2227,157 @@ async function cuadrarPlanillaCajera(planillaId) {
 }
 window.cuadrarPlanillaCajera = cuadrarPlanillaCajera;
 window._cargarVistaCajera    = _cargarVistaCajera;
+
+// ==========================================================
+// CREAR PLANILLA DE DIFERENCIAS (cajera_plan)
+// Toma las facturas sueltas (asignada=false) de una planilla
+// cuadrada y las mueve a una planilla nueva en TRANSITORIA.
+// ==========================================================
+async function crearPlanillaDiferencias(planillaId) {
+    var planilla = PL_CACHE.find(function(p) { return p.id === planillaId; });
+    if (!planilla) return;
+
+    var factSueltas = (planilla.planilla_facturas || []).filter(function(f) { return !f.asignada; });
+    if (factSueltas.length === 0) {
+        Swal.fire({ icon: 'info', title: 'Sin facturas pendientes',
+            text: 'Todas las facturas de esta planilla ya cuadraron.',
+            background: '#1e293b', color: '#fff' });
+        return;
+    }
+
+    var totalSueltas = factSueltas.reduce(function(s, f) { return s + (parseFloat(f.valor_total) || 0); }, 0);
+    var noPlanillaSugerido = planilla.no_planilla + '-PEND';
+    var fechaHoy = new Date().toISOString().split('T')[0];
+
+    // Modal de confirmación con resumen de facturas sueltas
+    var listaHtml = factSueltas.map(function(f) {
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;margin-bottom:4px;border-radius:6px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);">' +
+               '<span style="font-family:monospace;font-weight:700;font-size:0.88rem;color:#fbbf24;">' + f.no_factura + '</span>' +
+               (f.zona ? '<span style="font-size:0.72rem;color:#64748b;background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px;">' + f.zona + '</span>' : '') +
+               '<span style="font-weight:700;font-size:0.88rem;color:#f59e0b;font-family:monospace;">' + fmt(f.valor_total || 0) + '</span>' +
+               '</div>';
+    }).join('');
+
+    var result = await Swal.fire({
+        title: 'Nueva planilla de faltantes',
+        width: '640px',
+        html: '<div style="text-align:left;font-size:0.88rem;">' +
+            '<div style="padding:12px 14px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;margin-bottom:16px;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">' +
+            '<span style="color:#94a3b8;">Planilla origen:</span>' +
+            '<strong style="font-family:monospace;">' + planilla.no_planilla + '</strong>' +
+            '<span style="color:#94a3b8;">Facturas pendientes:</span>' +
+            '<strong style="color:#f59e0b;">' + factSueltas.length + ' facturas &mdash; ' + fmt(totalSueltas) + '</strong>' +
+            '</div>' +
+            '</div>' +
+
+            '<p style="color:#94a3b8;margin-bottom:10px;font-size:0.82rem;">Estas facturas se mover&aacute;n a una nueva planilla en estado <strong style="color:#f59e0b;">TRANSITORIA</strong>:</p>' +
+
+            '<div style="max-height:160px;overflow-y:auto;margin-bottom:14px;">' + listaHtml + '</div>' +
+
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">' +
+            '<div>' +
+            '<label style="display:block;margin-bottom:5px;color:#94a3b8;font-size:0.78rem;font-weight:700;text-transform:uppercase;">N&uacute;mero de planilla <span style="color:#ef4444;">*</span></label>' +
+            '<input id="cpd-no-planilla" type="text" value="' + noPlanillaSugerido + '" ' +
+            'style="width:100%;padding:10px 12px;background:#0f172a;border:2px solid rgba(245,158,11,0.4);color:#fbbf24;border-radius:8px;font-family:monospace;font-size:1rem;font-weight:700;outline:none;box-sizing:border-box;">' +
+            '</div>' +
+            '<div>' +
+            '<label style="display:block;margin-bottom:5px;color:#94a3b8;font-size:0.78rem;font-weight:700;text-transform:uppercase;">Fecha</label>' +
+            '<input id="cpd-fecha" type="date" value="' + fechaHoy + '" ' +
+            'style="width:100%;padding:10px 12px;background:#0f172a;border:1px solid rgba(255,255,255,0.1);color:#f8fafc;border-radius:8px;font-size:0.9rem;outline:none;box-sizing:border-box;">' +
+            '</div>' +
+            '</div>' +
+
+            '<div>' +
+            '<label style="display:block;margin-bottom:5px;color:#94a3b8;font-size:0.78rem;font-weight:700;text-transform:uppercase;">Observaci&oacute;n (opcional)</label>' +
+            '<textarea id="cpd-obs" rows="2" placeholder="Ej: Faltantes del cuadre del ' + planilla.fecha + '..." ' +
+            'style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid rgba(255,255,255,0.08);color:#f8fafc;border-radius:8px;font-family:inherit;font-size:0.85rem;resize:vertical;outline:none;box-sizing:border-box;">' +
+            'Faltantes del cuadre planilla ' + planilla.no_planilla + ' (' + planilla.fecha + ')' +
+            '</textarea>' +
+            '</div>' +
+            '</div>',
+        showCancelButton:   true,
+        confirmButtonText:  '<i class="ri-add-circle-line"></i> Crear planilla',
+        cancelButtonText:   'Cancelar',
+        confirmButtonColor: '#f59e0b',
+        background: '#1e293b', color: '#fff',
+        focusConfirm: false,
+        preConfirm: function() {
+            var noPlan = (document.getElementById('cpd-no-planilla') || {}).value || '';
+            if (!noPlan.trim()) {
+                Swal.showValidationMessage('El n\u00famero de planilla es obligatorio');
+                return false;
+            }
+            var fecha  = (document.getElementById('cpd-fecha')       || {}).value || fechaHoy;
+            var obs    = ((document.getElementById('cpd-obs')         || {}).value || '').trim();
+            return { noPlanilla: noPlan.trim().toUpperCase(), fecha: fecha, obs: obs };
+        }
+    });
+
+    if (!result.isConfirmed || !result.value) return;
+
+    var noPlanNueva = result.value.noPlanilla;
+    var fechaNueva  = result.value.fecha;
+    var obsNueva    = result.value.obs;
+
+    Swal.fire({ title: 'Creando planilla...', allowOutsideClick: false, background: '#1e293b', color: '#fff', didOpen: function() { Swal.showLoading(); } });
+
+    // 1. Crear la nueva planilla (cabecera vacía, sin facturas aún)
+    var planillaData = {
+        no_planilla:    noPlanNueva,
+        fecha:          fechaNueva,
+        zona:           planilla.zona   || null,
+        proveedor:      planilla.proveedor || 'ALPINA',
+        estado:         'TRANSITORIA',
+        cargado_por:    (window.CURRENT_SESSION && window.CURRENT_SESSION.profile && window.CURRENT_SESSION.profile.nombre) || 'Cajera',
+        obs_cuadre:     obsNueva || null,
+    };
+
+    var createResult = await SupabaseClient.planillas.create(planillaData, []);
+    if (!createResult.success) {
+        Swal.fire({ icon: 'error', title: 'Error al crear planilla',
+            text: createResult.error || 'No se pudo crear la planilla.',
+            background: '#1e293b', color: '#fff' });
+        return;
+    }
+
+    var nuevaPlanillaId = createResult.data.id;
+
+    // 2. Mover las facturas sueltas a la nueva planilla
+    //    UPDATE planilla_facturas SET planilla_id = nuevaPlanillaId, asignada = true WHERE id IN (...)
+    var facturasIds = factSueltas.map(function(f) { return f.id; });
+    var moveResult  = await SupabaseClient.planillas.moverFacturas(facturasIds, nuevaPlanillaId);
+
+    if (!moveResult.success) {
+        // Rollback: eliminar la planilla vacía que acabamos de crear
+        await SupabaseClient.planillas.delete(nuevaPlanillaId);
+        Swal.fire({ icon: 'error', title: 'Error al mover facturas',
+            text: moveResult.error || 'No se pudieron mover las facturas.',
+            background: '#1e293b', color: '#fff' });
+        return;
+    }
+
+    // 3. Actualizar el valor_total de la nueva planilla
+    var updateResult = await SupabaseClient.planillas.updateTotales(nuevaPlanillaId, factSueltas);
+    // (si falla no es bloqueante, solo los totales quedan en 0)
+
+    // 4. Actualizar cache local — quitar las facturas sueltas de la planilla original
+    planilla.planilla_facturas = (planilla.planilla_facturas || []).filter(function(f) { return f.asignada; });
+
+    // 5. Recargar vista
+    await _cargarVistaCajera();
+
+    Swal.fire({
+        icon: 'success',
+        title: '&#x2705; Planilla creada',
+        html: '<strong>' + noPlanNueva + '</strong> creada correctamente.<br>' +
+              '<span style="color:#f59e0b;font-weight:700;">' + factSueltas.length + ' factura(s)</span> ' +
+              'movidas &mdash; ' + fmt(totalSueltas) + '<br>' +
+              '<small style="color:#94a3b8;">La planilla queda en estado TRANSITORIA para ser programada.</small>',
+        timer: 4000,
+        showConfirmButton: true,
+        confirmButtonText: 'Listo',
+        background: '#1e293b', color: '#fff'
+    });
+}
+window.crearPlanillaDiferencias = crearPlanillaDiferencias;

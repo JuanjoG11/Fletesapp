@@ -4722,17 +4722,41 @@ document.addEventListener("DOMContentLoaded", async () => {
                 listarFletes(),
                 actualizarKPI()
             ]).then(() => {
-                // Cargar badge de aprobaciones pendientes después de que cargue planillas.js
+                // Cargar badge de aprobaciones pendientes (carga inicial)
                 setTimeout(async () => {
                     if (typeof SupabaseClient !== 'undefined' && SupabaseClient.programaciones) {
                         const count = await SupabaseClient.programaciones.countPendientes();
                         const badge = document.getElementById('badge-aprobaciones');
-                        if (badge && count > 0) {
-                            badge.textContent   = count;
-                            badge.style.display = 'inline-flex';
+                        if (badge) {
+                            badge.textContent   = count > 0 ? count : '';
+                            badge.style.display = count > 0 ? 'inline-flex' : 'none';
                         }
                     }
                 }, 800);
+
+                // Realtime: actualizar badge sin recargar cuando llega/cambia una programación
+                if (typeof SupabaseClient !== 'undefined') {
+                    SupabaseClient.supabase
+                        .channel('dashboard-badge-aprobaciones')
+                        .on('postgres_changes',
+                            { event: '*', schema: 'public', table: 'programaciones' },
+                            async () => {
+                                if (!SupabaseClient.programaciones) return;
+                                const count = await SupabaseClient.programaciones.countPendientes();
+                                const badge = document.getElementById('badge-aprobaciones');
+                                if (badge) {
+                                    badge.textContent   = count > 0 ? count : '';
+                                    badge.style.display = count > 0 ? 'inline-flex' : 'none';
+                                }
+                                // También actualizar el KPI dentro del tab de aprobaciones si está visible
+                                const kpiEl = document.getElementById('apr-kpi-pendiente');
+                                if (kpiEl && typeof cargarAprobaciones === 'function') {
+                                    cargarAprobaciones();
+                                }
+                            }
+                        )
+                        .subscribe();
+                }
             }).catch(err => {
                 console.error("❌ Error cargando datos:", err);
                 Swal.fire({

@@ -508,6 +508,15 @@ let APR_USER_RS   = 'TYM';
         if (typeof setupCalculators          === 'function') setupCalculators('modal-');
         if (typeof actualizarListaAuxiliares === 'function') actualizarListaAuxiliares('modal-');
     }, 500);
+
+    // ── Realtime: recargar cards y badge cuando cambia cualquier programación ──
+    window.SupabaseClient.supabase
+        .channel('aprobaciones-programaciones')
+        .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'programaciones' },
+            () => { cargarProgramaciones(); }
+        )
+        .subscribe();
 })();
 
 async function doLogout() {

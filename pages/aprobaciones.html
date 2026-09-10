@@ -884,30 +884,16 @@ async function cargarFacturasSueltasModal() {
     container.innerHTML = '<span style="opacity:0.5;"><i class="ri-loader-4-line"></i> Cargando...</span>';
     if (summary) summary.style.display = 'none';
 
-    const result = await window.SupabaseClient.planillas.getFacturasSueltas();
+    const result = await window.SupabaseClient.planillas.getFacturasSueltas({
+        proveedor: p.proveedor || '',
+        fecha:     p.fecha     || '',
+    });
     if (!result.success || !result.data.length) {
         container.innerHTML = '<span style="color:#10b981;"><i class="ri-checkbox-circle-line"></i> No hay facturas sueltas para esta fecha y proveedor.</span>';
         return;
     }
 
-    // Filtrar por proveedor y fecha si coincide con la programación
-    const proveedor = (p.proveedor || '').toUpperCase();
-    const fecha     = p.fecha || '';
-    let sueltas = result.data;
-
-    // Filtrar por proveedor si la planilla lo tiene referenciado
-    if (proveedor) {
-        const filtradas = sueltas.filter(f => {
-            const prov = (f.planilla?.proveedor || '').toUpperCase();
-            return !prov || prov === proveedor;
-        });
-        if (filtradas.length > 0) sueltas = filtradas;
-    }
-
-    if (!sueltas.length) {
-        container.innerHTML = '<span style="color:#10b981;"><i class="ri-checkbox-circle-line"></i> No hay facturas sueltas que coincidan con este proveedor.</span>';
-        return;
-    }
+    const sueltas = result.data;
 
     const moneyFmtS = new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
 

@@ -880,12 +880,20 @@ async function obtenerFacturasSueltas(filtros = {}) {
         const razonSocial = window.PG_RAZON_SOCIAL_OVERRIDE || await _getRazonSocialUsuario();
         let query = _supabase
             .from('planilla_facturas')
-            .select('*, planilla:planillas(no_planilla, fecha, zona)')
+            // LEFT JOIN: trae todas las facturas sueltas, incluidas las huérfanas (sin planilla).
+            // Cuando se filtra por proveedor, el JOIN filtra en la DB sin descartar las huérfanas.
+            .select('*, planilla:planillas(no_planilla, fecha, zona, proveedor)')
             .eq('asignada', false)
             .order('created_at', { ascending: false });
 
-        if (razonSocial) query = query.eq('razon_social', razonSocial.toUpperCase());
+        if (razonSocial)   query = query.eq('razon_social', razonSocial.toUpperCase());
         if (filtros.fecha) query = query.eq('fecha_entrega', filtros.fecha);
+
+        // Filtro de proveedor: se aplica sobre el JOIN en la DB para no traer filas innecesarias.
+        // Solo se activa si se pasa el parámetro (no afecta a los llamados sin proveedor).
+        if (filtros.proveedor) {
+            query = query.eq('planilla.proveedor', filtros.proveedor.toUpperCase());
+        }
 
         const { data, error } = await query;
         if (error) throw error;

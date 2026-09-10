@@ -2356,12 +2356,26 @@ async function crearPlanillaDiferencias(planillaId) {
         return;
     }
 
-    // 3. Actualizar el valor_total de la nueva planilla
+    // 3a. Actualizar totales de la nueva planilla (con retry automático)
     var updateResult = await SupabaseClient.planillas.updateTotales(nuevaPlanillaId, factSueltas);
-    // (si falla no es bloqueante, solo los totales quedan en 0)
+    if (!updateResult.success) {
+        await new Promise(function(res) { setTimeout(res, 800); });
+        updateResult = await SupabaseClient.planillas.updateTotales(nuevaPlanillaId, factSueltas);
+        if (!updateResult.success) {
+            console.warn('crearPlanillaDiferencias: totales nueva planilla no actualizados.', updateResult.error);
+        }
+    }
+
+    // 3b. Recalcular totales de la planilla ORIGEN (ya sin las facturas que se movieron)
+    var factsRestantes = (planilla.planilla_facturas || []).filter(function(f) { return f.asignada; });
+    var updateOrigen = await SupabaseClient.planillas.updateTotales(planillaId, factsRestantes);
+    if (!updateOrigen.success) {
+        await new Promise(function(res) { setTimeout(res, 800); });
+        await SupabaseClient.planillas.updateTotales(planillaId, factsRestantes);
+    }
 
     // 4. Actualizar cache local — quitar las facturas sueltas de la planilla original
-    planilla.planilla_facturas = (planilla.planilla_facturas || []).filter(function(f) { return f.asignada; });
+    planilla.planilla_facturas = factsRestantes;
 
     // 5. Recargar vista
     await _cargarVistaCajera();

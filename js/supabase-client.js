@@ -1117,27 +1117,34 @@ async function aprobarProgramacion(programacionId) {
             .eq('id', programacionId);
         if (eUpd) throw eUpd;
 
-        // 4. Actualizar la planilla a DESPACHADA si tiene planilla_id
-        if (prog.planilla_id) {
+        // 4. Actualizar TODAS las planillas del flete a DESPACHADA
+        // Primero construir la lista de IDs: usar planillas_ids (CSV) si existe,
+        // y caer de vuelta a planilla_id para compatibilidad con registros viejos.
+        const planillasIdsRaw = prog.planillas_ids || (prog.planilla_id ? prog.planilla_id : null);
+        const planillasIdsList = planillasIdsRaw
+            ? planillasIdsRaw.split(',').map(s => s.trim()).filter(Boolean)
+            : [];
+
+        if (planillasIdsList.length > 0) {
             await _supabase
                 .from('planillas')
                 .update({
-                    estado:            'DESPACHADA',
-                    placa:             prog.placa,
-                    conductor:         prog.contratista,
+                    estado:             'DESPACHADA',
+                    placa:              prog.placa,
+                    conductor:          prog.contratista,
                     fecha_programacion: prog.fecha,
-                    programado_por:    userName,
+                    programado_por:     userName,
                 })
-                .eq('id', prog.planilla_id);
+                .in('id', planillasIdsList);
 
             // Marcar facturas deseleccionadas como asignada=false
             if (prog.facturas_deseleccionadas) {
                 const ids = prog.facturas_deseleccionadas.split(',').map(s => s.trim()).filter(Boolean);
-                for (const fId of ids) {
+                if (ids.length > 0) {
                     await _supabase
                         .from('planilla_facturas')
                         .update({ asignada: false })
-                        .eq('id', fId);
+                        .in('id', ids);
                 }
             }
         }

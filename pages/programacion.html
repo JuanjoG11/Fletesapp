@@ -11,6 +11,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="../js/supabase-client.js"></script>
 
     <!-- Mismos estilos base que dashboard (glassmorphism, variables) -->
@@ -346,6 +348,9 @@
     <div class="header-right">
         <span class="badge" id="companyBadge">TYM</span>
         <span class="badge" id="userRoleBadge">Programador</span>
+        <button class="btn-back" onclick="descargarPDFHoy()" style="background:rgba(59,130,246,0.12);color:#3b82f6;border-color:rgba(59,130,246,0.3);">
+            <i class="ri-file-pdf-2-line"></i> PDF del día
+        </button>
         <button class="btn-back" onclick="window.location.href='dashboard.html'">
             <i class="ri-arrow-left-line"></i> Dashboard
         </button>
@@ -508,9 +513,16 @@
                     </div>
 
                     <div class="input-group">
-                        <label>Nombres Auxiliares</label>
-                        <select id="auxiliares" required onchange="handleAuxiliarExtraChange('')">
+                        <label>Auxiliar 1</label>
+                        <select id="auxiliares" required onchange="handleAuxiliarExtraChange(''); sincronizarContadorAux()">
                             <option value="" disabled selected>Seleccione...</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Auxiliar 2 <span style="font-size:0.75rem;color:var(--text-muted);font-weight:400;">(opcional)</span></label>
+                        <select id="auxiliar2" onchange="sincronizarContadorAux()">
+                            <option value="">— Sin auxiliar 2 —</option>
                         </select>
                     </div>
 
@@ -520,7 +532,7 @@
                     </div>
 
                     <div class="input-group">
-                        <label>Cant. Auxiliares (Máx. 2)</label>
+                        <label>Cant. Auxiliares</label>
                         <select id="no_auxiliares">
                             <option>1</option>
                             <option>2</option>
@@ -814,8 +826,57 @@ window.addEventListener('load', async () => {
 
     // Activar cálculos del formulario
     if (typeof setupCalculators === 'function') setupCalculators('');
-    if (typeof actualizarListaAuxiliares === 'function') actualizarListaAuxiliares('');
+    if (typeof actualizarListaAuxiliares === 'function') {
+        actualizarListaAuxiliares('');
+    }
+
+    // Observar el select auxiliar1 y copiar opciones al auxiliar2 en cuanto se llene
+    const auxSrc = document.getElementById('auxiliares');
+    if (auxSrc) {
+        const observer = new MutationObserver(() => {
+            if (auxSrc.options.length > 1) {
+                _sincronizarSelectAux2();
+            }
+        });
+        observer.observe(auxSrc, { childList: true });
+    }
+
+    // También re-sincronizar cuando cambie el proveedor
+    document.getElementById('proveedor')?.addEventListener('change', () => {
+        setTimeout(_sincronizarSelectAux2, 400);
+    });
 });
+
+/* ─────────────────────────────────────────────────────────
+   Auxiliar 2: sincronizar select con la misma lista del aux1
+──────────────────────────────────────────────────────────── */
+function _sincronizarSelectAux2() {
+    const src  = document.getElementById('auxiliares');
+    const dst  = document.getElementById('auxiliar2');
+    if (!src || !dst) return;
+
+    const valorActual = dst.value;
+    dst.innerHTML = '<option value="">— Sin auxiliar 2 —</option>';
+
+    Array.from(src.options).forEach(opt => {
+        if (!opt.value || opt.value === 'EXTRA') return;
+        const o = document.createElement('option');
+        o.value = opt.value;
+        o.textContent = opt.textContent;
+        dst.appendChild(o);
+    });
+
+    // Restaurar selección previa si sigue existiendo
+    if (valorActual) dst.value = valorActual;
+}
+
+function sincronizarContadorAux() {
+    const aux2El  = document.getElementById('auxiliar2');
+    const noAuxEl = document.getElementById('no_auxiliares');
+    if (aux2El && noAuxEl) {
+        noAuxEl.value = (aux2El.value && aux2El.value !== '') ? '2' : '1';
+    }
+}
 
 /* ─────────────────────────────────────────────────────────
    Cambiar entre las dos vistas
@@ -1280,8 +1341,8 @@ async function guardarFleteProgramacion() {
     const noPedidos  = parseInt(document.getElementById('no_pedidos')?.value || '0');
     const noAux      = parseInt(document.getElementById('no_auxiliares')?.value || '1');
     const auxNombre  = document.getElementById('auxiliares')?.value || '';
-    const auxExtra   = document.getElementById('auxiliares_extra')?.value?.trim() || '';
-    const auxFinal   = auxExtra ? `${auxNombre}, ${auxExtra}` : auxNombre;
+    const aux2Val    = document.getElementById('auxiliar2')?.value || '';
+    const auxFinal   = aux2Val ? `${auxNombre}, ${aux2Val}` : auxNombre;
     // noPlanilla ya declarado arriba (multi-planilla)
     const factsSelStr = document.getElementById('facturas_adicionales')?.value || '';
 
@@ -1342,7 +1403,8 @@ async function guardarFleteProgramacion() {
         valor_adicional_negociacion: adicional,
         razon_adicional_negociacion: razonAdic,
         precio,
-        planilla_id:                 PG_PLANILLAS_ACUM[0]?.id || null,  // principal = primera
+        planilla_id:                 PG_PLANILLAS_ACUM[0]?.id || null,  // principal = primera (compat.)
+        planillas_ids:               planillasIds,                      // TODOS los IDs separados por coma
         programado_por:              window.CURRENT_SESSION?.profile?.nombre || 'Programador',
     };
 
@@ -1370,7 +1432,8 @@ async function guardarFleteProgramacion() {
                       ${deseleccionadas.length} factura(s) quedaron pendientes para otra ruta.</small>`
                    : ''}`,
         background: '#1e293b', color: '#fff',
-        confirmButtonText: 'OK'
+        timer: 2000,
+        showConfirmButton: false,
     });
 
     limpiarFormularioProg();
@@ -1397,6 +1460,14 @@ function limpiarFormularioProg() {
 
     // La limpieza del formulario de flete la maneja limpiarFormulario de app.js
     if (typeof limpiarFormulario === 'function') limpiarFormulario('');
+
+    // Limpiar auxiliar 2
+    const aux2El = document.getElementById('auxiliar2');
+    if (aux2El) aux2El.value = '';
+    const aux2ManualEl = document.getElementById('auxiliar2_manual');
+    if (aux2ManualEl) aux2ManualEl.value = '';
+    const aux2Wrap = document.getElementById('aux2-manual-wrap');
+    if (aux2Wrap) aux2Wrap.style.display = 'none';
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -1614,8 +1685,11 @@ async function confirmarReplanillar() {
         didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
 
     try {
-        // 1. Actualizar el planilla_id de la factura suelta → nueva planilla
-        const { error: eUpd } = await window.SupabaseClient.supabase
+        const supabase = window.SupabaseClient.supabase;
+        const origenId = factura.planilla_id || null;
+
+        // 1. Mover la factura a la planilla destino
+        const { error: eUpd } = await supabase
             .from('planilla_facturas')
             .update({
                 planilla_id: planillaId,
@@ -1624,6 +1698,29 @@ async function confirmarReplanillar() {
             .eq('id', factura.id);
 
         if (eUpd) throw eUpd;
+
+        // 2. Recalcular totales de la planilla DESTINO
+        const { data: factsDestino, error: eD } = await supabase
+            .from('planilla_facturas')
+            .select('valor_bruto, valor_factura, valor_total')
+            .eq('planilla_id', planillaId)
+            .eq('asignada', true);
+        if (!eD && factsDestino) {
+            await window.SupabaseClient.planillas.updateTotales(planillaId, factsDestino);
+        }
+
+        // 3. Recalcular totales de la planilla ORIGEN (si existía y es distinta al destino)
+        if (origenId && origenId !== planillaId) {
+            const { data: factsOrigen, error: eO } = await supabase
+                .from('planilla_facturas')
+                .select('valor_bruto, valor_factura, valor_total')
+                .eq('planilla_id', origenId)
+                .eq('asignada', true);
+            if (!eO) {
+                // Si no queda ninguna factura asignada el array está vacío → totales a 0, correcto
+                await window.SupabaseClient.planillas.updateTotales(origenId, factsOrigen || []);
+            }
+        }
 
         cerrarModalReplanillar();
         await cargarSueltasProg();
@@ -1663,6 +1760,247 @@ document.addEventListener('DOMContentLoaded', () => {
         noPedEl.addEventListener('input', () => { noPedEl.dataset.manual = 'true'; });
     }
 });
+
+/* Botón "PDF del día" del header */
+async function descargarPDFHoy() {
+    const hoy = new Date().toISOString().split('T')[0];
+
+    const { value: fecha } = await Swal.fire({
+        title: '<i class="ri-file-pdf-2-line"></i> Programación PDF',
+        html: `<div style="margin-top:10px;">
+                 <label style="display:block;font-size:0.85rem;color:#94a3b8;margin-bottom:8px;font-weight:600;text-transform:uppercase;">
+                   Selecciona la fecha
+                 </label>
+                 <input id="pdf-fecha-sel" type="date" value="${hoy}"
+                   style="width:100%;padding:10px 14px;background:#0f172a;border:1px solid rgba(59,130,246,0.4);
+                          color:#f8fafc;border-radius:8px;font-size:1rem;outline:none;box-sizing:border-box;">
+               </div>`,
+        showCancelButton: true,
+        confirmButtonText: '<i class="ri-download-2-line"></i> Generar PDF',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#3b82f6',
+        background: '#1e293b', color: '#fff',
+        preConfirm: () => {
+            const v = document.getElementById('pdf-fecha-sel')?.value;
+            if (!v) { Swal.showValidationMessage('Selecciona una fecha'); return false; }
+            return v;
+        }
+    });
+
+    if (fecha) await generarPDFProgramacionDia(fecha);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   📄  GENERAR PDF DE PROGRAMACIÓN DEL DÍA
+   Descarga una hoja con todas las programaciones guardadas
+   para la fecha indicada, con el estilo de la hoja Excel.
+═══════════════════════════════════════════════════════════ */
+async function generarPDFProgramacionDia(fecha) {
+    if (!fecha) fecha = new Date().toISOString().split('T')[0];
+    console.log('[PDF] Generando para fecha:', fecha);
+
+    Swal.fire({ title: 'Generando PDF...', allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
+
+    // ── Traer programaciones del día usando el cliente oficial ──
+    const rs = (window.CURRENT_RAZON_SOCIAL || 'TYM').toUpperCase();
+    console.log('[PDF] razon_social:', rs, '| fecha:', fecha);
+
+    // Intentar primero con razon_social, si no hay datos intentar sin filtro
+    let query = window.SupabaseClient.supabase
+        .from('programaciones')
+        .select('*')
+        .eq('fecha', fecha)
+        .eq('razon_social', rs)
+        .order('proveedor', { ascending: true })
+        .order('zona',      { ascending: true });
+
+    let { data: rows, error: qErr } = await query;
+    console.log('[PDF] con razon_social:', rows?.length, 'error:', qErr?.message);
+
+    // Si no encontró nada, buscar sin filtro de razon_social (por si se guardó diferente)
+    if (!qErr && (!rows || rows.length === 0)) {
+        const r2 = await window.SupabaseClient.supabase
+            .from('programaciones')
+            .select('*')
+            .eq('fecha', fecha)
+            .order('proveedor', { ascending: true })
+            .order('zona',      { ascending: true });
+        console.log('[PDF] sin razon_social:', r2.data?.length, r2.data?.map(x => x.razon_social + '|' + x.placa));
+        if (r2.data && r2.data.length > 0) rows = r2.data;
+    }
+
+    if (qErr || !rows || rows.length === 0) {
+        Swal.fire({ icon: 'info', title: 'Sin datos',
+            text: `No hay programaciones guardadas para el ${fecha}. Abre la consola (F12) para ver el detalle.`,
+            background: '#1e293b', color: '#fff' });
+        return;
+    }
+
+    // ── Helpers ───────────────────────────────────────────
+    const fmt = v => new Intl.NumberFormat('es-CO', {
+        style: 'currency', currency: 'COP', minimumFractionDigits: 0
+    }).format(v || 0);
+
+    const diasSemana = { '2026-09-09': 'MIERCOLES', '2026-09-10': 'JUEVES' };
+    const fechaObj   = new Date(fecha + 'T12:00:00');
+    const diasES     = ['DOMINGO','LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO'];
+    const diaStr     = diasES[fechaObj.getDay()];
+    const mesesES    = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO',
+                        'JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+    const tituloFecha = `${diaStr} ${fechaObj.getDate()} ${mesesES[fechaObj.getMonth()]} ${fechaObj.getFullYear()}`;
+
+    // ── Cargar logo ───────────────────────────────────────
+    const loadImg = (url) => new Promise((res, rej) => {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = () => {
+            const c = document.createElement('canvas');
+            c.width = img.width; c.height = img.height;
+            c.getContext('2d').drawImage(img, 0, 0);
+            res(c.toDataURL(url.endsWith('.png') ? 'image/png' : 'image/jpeg'));
+        };
+        img.onerror = () => res(null);
+        img.src = url;
+    });
+    const logoData = await loadImg('../assets/img/logo_tym.png');
+
+    // ── Crear PDF ─────────────────────────────────────────
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const PW = 297, PH = 210;   // A4 landscape mm
+    const ML = 10, MR = 10;     // márgenes
+    const CW = PW - ML - MR;    // ancho de contenido
+
+    // ─ Encabezado ─
+    // Fondo azul oscuro
+    doc.setFillColor(31, 57, 90);
+    doc.rect(ML, 8, CW, 18, 'F');
+
+    // Logo
+    if (logoData) doc.addImage(logoData, 'PNG', ML + 2, 9, 14, 14);
+
+    // Título
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(15);
+    doc.text(`PROGRAMACION ${tituloFecha}`, PW / 2, 19, { align: 'center' });
+
+    doc.setFontSize(8);
+    doc.setTextColor(180, 210, 255);
+    doc.text(`${rs} · Generado: ${new Date().toLocaleString('es-CO')}`, PW / 2, 24, { align: 'center' });
+
+    // ─ Separar por grupo (proveedor/zona similar a la imagen) ─
+    // Agrupar por proveedor
+    const grupos = {};
+    rows.forEach(r => {
+        const key = r.proveedor || 'SIN PROVEEDOR';
+        if (!grupos[key]) grupos[key] = [];
+        grupos[key].push(r);
+    });
+
+    // ─ Columnas — solo las 6 de la hoja de programación ─
+    const cols = [
+        { header: 'PLACA',      dataKey: 'placa' },
+        { header: 'CONDUCTOR',  dataKey: 'contratista' },
+        { header: 'ZONAS',      dataKey: 'zona' },
+        { header: 'POBLACIÓN',  dataKey: 'poblacion' },
+        { header: 'AUXILIAR',   dataKey: 'auxiliares' },
+    ];
+
+    // Preparar filas
+    const buildRows = (arr) => arr.map(r => {
+        return {
+            placa:       r.placa || '',
+            contratista: (r.contratista || '').toUpperCase(),
+            zona:        r.zona || '',
+            poblacion:   r.poblacion || '',
+            auxiliares:  (r.auxiliares || '').toUpperCase(),
+        };
+    });
+
+    let startY = 30;
+    const proveedores = Object.keys(grupos);
+
+    proveedores.forEach((prov, idx) => {
+        const filas = buildRows(grupos[prov]);
+
+        // Sub-encabezado del proveedor
+        doc.setFillColor(0, 131, 176);
+        doc.rect(ML, startY, CW, 6, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.text(prov, ML + 3, startY + 4);
+        startY += 6;
+
+        // Tabla del grupo
+        doc.autoTable({
+            startY,
+            columns: cols,
+            body: filas,
+            margin: { left: ML, right: MR },
+            tableWidth: CW,
+            styles: {
+                fontSize: 7.5,
+                cellPadding: { top: 2.5, bottom: 2.5, left: 2.5, right: 2 },
+                lineColor: [180, 200, 220],
+                lineWidth: 0.2,
+                textColor: [20, 30, 50],
+                font: 'helvetica',
+                overflow: 'linebreak',
+            },
+            headStyles: {
+                fillColor:  [0, 100, 160],
+                textColor:  [255, 255, 255],
+                fontStyle:  'bold',
+                fontSize:   7.5,
+                halign:     'left',
+            },
+            alternateRowStyles: {
+                fillColor: [235, 245, 255],
+            },
+            columnStyles: {
+                placa:       { cellWidth: 22, fontStyle: 'bold', textColor: [20, 80, 160] },
+                contratista: { cellWidth: 55 },
+                zona:        { cellWidth: 42, fontStyle: 'bold' },
+                poblacion:   { cellWidth: 55 },
+                auxiliares:  { cellWidth: 100 },
+            },
+            didDrawPage: (d) => { startY = d.cursor.y; },
+        });
+
+        startY = doc.lastAutoTable.finalY + (idx < proveedores.length - 1 ? 5 : 0);
+
+        // Si no hay espacio para el siguiente grupo, nueva página
+        if (idx < proveedores.length - 1 && startY > PH - 25) {
+            doc.addPage();
+            startY = 14;
+        }
+    });
+
+    // ─ Total de rutas al final ─
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(31, 57, 90);
+    doc.text(`Total rutas: ${rows.length}`, ML, startY + 5);
+
+    // ─ Pie de página en cada hoja ─
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(140, 140, 140);
+        doc.text(`Página ${i} de ${totalPages}`, PW - MR, PH - 4, { align: 'right' });
+        doc.text('FletesApp · Programación oficial', ML, PH - 4);
+    }
+
+    // ─ Descargar ─
+    const nombreArchivo = `programacion_${fecha.replace(/-/g, '')}.pdf`;
+    doc.save(nombreArchivo);
+    Swal.close();
+}
 </script>
 </body>
 </html>

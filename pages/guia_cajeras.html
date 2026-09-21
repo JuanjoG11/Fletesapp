@@ -699,10 +699,52 @@
         </div>
     </div>
 
-    <p style="font-size:0.88rem; color:#475569; margin-bottom:12px;">
+    <p style="font-size:0.88rem; color:#475569; margin-bottom:16px;">
         Al cambiar a <strong>"Cuadre Detallado"</strong> ves la misma información pero en formato tabla tipo Excel.
-        Esta vista se alimenta automáticamente de lo que cuadras en las tarjetas. También puedes editar los
-        desgloses (efectivo, consignaciones, etc.) directamente aquí.
+        El <strong>TOTAL CUADRE</strong> ya viene precargado desde las tarjetas, pero el desglose (efectivo, consignaciones, vales, etc.)
+        hay que llenarlo manualmente aquí todos los días.
+    </p>
+
+    <!-- Paso a paso para entrar y llenar la tabla -->
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:18px 20px; margin-bottom:20px;">
+        <div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:#475569; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+            <i class="ri-list-check" style="color:#3b82f6; font-size:1rem;"></i> Cómo llenar la tabla cada día
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+                <div style="width:24px; height:24px; background:#dbeafe; color:#1d4ed8; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:800; flex-shrink:0; margin-top:1px;">1</div>
+                <div style="font-size:0.85rem; color:#1e293b;">Entra a <strong>Estado Planillas</strong> → haz clic en el botón <strong style="color:#4f46e5;">"Cuadre Detallado"</strong> (arriba a la derecha).</div>
+            </div>
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+                <div style="width:24px; height:24px; background:#dbeafe; color:#1d4ed8; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:800; flex-shrink:0; margin-top:1px;">2</div>
+                <div style="font-size:0.85rem; color:#1e293b;">Verifica que la <strong>fecha</strong> sea la del día que vas a llenar. Si necesitas completar un día anterior, <strong>cámbia la fecha primero</strong> y luego haz clic en <strong>"Actualizar"</strong>.</div>
+            </div>
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+                <div style="width:24px; height:24px; background:#dbeafe; color:#1d4ed8; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:800; flex-shrink:0; margin-top:1px;">3</div>
+                <div style="font-size:0.85rem; color:#1e293b;">El <strong style="color:#166534;">TOTAL CUADRE</strong> ya está cargado desde las tarjetas. Ahora llena las columnas de desglose: <strong>Efectivo, Consignaciones, Vales, Devolución</strong>, etc. según lo que recibiste físicamente.</div>
+            </div>
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+                <div style="width:24px; height:24px; background:#dbeafe; color:#1d4ed8; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:800; flex-shrink:0; margin-top:1px;">4</div>
+                <div style="font-size:0.85rem; color:#1e293b;">Navega entre celdas con <kbd style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:4px; padding:1px 6px; font-size:0.8rem;">Tab</kbd> o las flechas del teclado. Cuando termines una planilla, pasa a la siguiente fila.</div>
+            </div>
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+                <div style="width:24px; height:24px; background:#dbeafe; color:#1d4ed8; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:800; flex-shrink:0; margin-top:1px;">5</div>
+                <div style="font-size:0.85rem; color:#1e293b;">Verifica que el <strong style="color:#dc2626;">DIF</strong> quede en <strong style="color:#059669;">0 (verde)</strong> en cada planilla. Si queda en rojo o azul, revisa los valores ingresados.</div>
+            </div>
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+                <div style="width:24px; height:24px; background:#dcfce7; color:#166534; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:800; flex-shrink:0; margin-top:1px;">6</div>
+                <div style="font-size:0.85rem; color:#1e293b;"><strong style="color:#166534;">Haz clic en "Guardar todo"</strong> antes de salir. También puedes exportar el PDF o Excel del día desde los botones en la parte inferior de la tabla.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tip: día anterior olvidado -->
+    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:12px 16px; margin-bottom:16px; display:flex; gap:10px; align-items:flex-start; font-size:0.84rem;">
+        <i class="ri-calendar-check-line" style="color:#d97706; font-size:1.1rem; flex-shrink:0; margin-top:2px;"></i>
+        <div style="color:#92400e;">
+            <strong>¿Se te olvidó llenar un día anterior?</strong> Cambia la fecha en el campo de fecha y haz clic en <strong>"Actualizar"</strong>. La tabla cargará las planillas de ese día y podrás completar el desglose aunque hayan pasado varios días. No hay límite de tiempo para hacerlo, pero entre más tiempo pase, más difícil recordar los valores exactos.
+        </div>
+    </div>
     </p>
 
     <div class="mockup">

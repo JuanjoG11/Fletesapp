@@ -4169,7 +4169,8 @@ async function cargarModuloPagos() {
         .select('id, fecha, dia, proveedor, contratista, placa, poblacion, precio, estado_pago, fecha_pago, pagado_por, desc_retencion, desc_seguridad, desc_vales')
         .gte('fecha', desde)
         .lte('fecha', hasta)
-        .order('fecha', { ascending: true })
+        .order('placa',  { ascending: true })
+        .order('fecha',  { ascending: true })
         .limit(2000);
 
     if (proveedor) query = query.eq('proveedor', proveedor);
@@ -4188,7 +4189,19 @@ async function cargarModuloPagos() {
         return;
     }
 
-    // Calcular resumen
+    // ── Calcular descuentos_quincena existentes para el periodo ──────
+    // Determinar quincena del rango seleccionado
+    const _periodoQ = _calcPeriodoQuincena(desde);
+
+    const { data: dqRows } = await SupabaseClient.supabase
+        .from('descuentos_quincena')
+        .select('placa, seguridad, vales')
+        .eq('periodo', _periodoQ);
+
+    const dqMap = {}; // placa → { seguridad, vales }
+    (dqRows || []).forEach(r => { dqMap[r.placa] = { seguridad: r.seguridad || 0, vales: r.vales || 0 }; });
+
+    // ── Calcular resumen ─────────────────────────────────────────────
     const pagados    = fletes.filter(f => f.estado_pago === 'PAGADO');
     const pendientes = fletes.filter(f => f.estado_pago !== 'PAGADO');
     const sumPagado    = pagados.reduce((s, f) => s + (f.precio || 0), 0);
@@ -4205,119 +4218,152 @@ async function cargarModuloPagos() {
         document.getElementById('pagos-total-total').textContent      = moneyFormatter.format(sumTotal);
     }
 
-    // ── Retención automática 2% por placa ───────────────────
-    // Calcular el total de fletes PENDIENTES agrupados por placa
-    // para distribuir proporcionalmente la retención del 2%
-    const TASA_RETENCION = 0.02;
-    const totalPorPlaca = {};
-    pendientes.forEach(f => {
-        if (!totalPorPlaca[f.placa]) totalPorPlaca[f.placa] = 0;
-        totalPorPlaca[f.placa] += (f.precio || 0);
-    });
-
-    // Estilo compartido para inputs de descuento
+    // ── Estilos compartidos ──────────────────────────────────────────
     const inputDescStyle = `width:90px; background:rgba(15,23,42,0.8); border:1px solid rgba(255,255,255,0.12);
         border-radius:6px; padding:4px 8px; color:#e2e8f0; font-size:0.8rem; font-family:inherit; text-align:right;`;
 
-    // Renderizar tabla
+    const TASA_RETENCION = 0.02;
+
+    // ── Agrupar pendientes por placa para saber cuáles placas tienen fila de desc. global ──
+    const placasPendientes = [...new Set(pendientes.map(f => f.placa))];
+
+    // ── Renderizar tabla ─────────────────────────────────────────────
     const fragment = document.createDocumentFragment();
+
+    // Procesar flete por flete (ya vienen ordenados por placa, luego fecha)
+    let ultimaPlaca = null;
+
     fletes.forEach(f => {
         const esPagado = f.estado_pago === 'PAGADO';
         const ret = f.desc_retencion || 0;
-        const seg = f.desc_seguridad || 0;
-        const val = f.desc_vales     || 0;
-        const neto = (f.precio || 0) - ret - seg - val;
+        const retAuto = esPagado ? ret : Math.round((f.precio || 0) * TASA_RETENCION);
 
-        // Retención automática proporcional para fletes pendientes:
-        // cada flete paga (su valor / total placa) × (total placa × 2%)
-        // lo que simplifica a: precio × 2%
-        const retAutoCalculada = esPagado ? ret : Math.round((f.precio || 0) * TASA_RETENCION);
+        // Descuentos globales de la quincena para esta placa
+        const dqPlaca   = dqMap[f.placa] || { seguridad: 0, vales: 0 };
+
+        // ── Fila separadora de placa cuando cambia (solo pendientes) ──
+        if (!esPagado && f.placa !== ultimaPlaca) {
+            ultimaPlaca = f.placa;
+            const placasPendientesFletes = pendientes.filter(p => p.placa === f.placa);
+            const totalPlaca = placasPendientesFletes.reduce((s, p) => s + (p.precio || 0), 0);
+            const retTotalPlaca = Math.round(totalPlaca * TASA_RETENCION);
+
+            const trHeader = document.createElement('tr');
+            trHeader.style.cssText = 'background:rgba(30,41,59,0.9); border-top:2px solid rgba(59,130,246,0.3);';
+            trHeader.dataset.placaHeader = f.placa;
+            trHeader.innerHTML = `
+                <td colspan="8" style="padding:8px 12px;">
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        <span class="badge-plate" style="font-size:0.8rem;">${f.placa}</span>
+                        <span style="font-size:0.75rem; color:var(--text-muted);">
+                            ${placasPendientesFletes.length} flete${placasPendientesFletes.length !== 1 ? 's' : ''} ·
+                            Bruto: <strong>${moneyFormatter.format(totalPlaca)}</strong> ·
+                            Retención auto: <strong style="color:#fbbf24;">${moneyFormatter.format(retTotalPlaca)}</strong>
+                        </span>
+                    </div>
+                </td>
+                <td colspan="2" style="padding:8px 6px;">
+                    <div style="font-size:0.63rem; color:#a78bfa; margin-bottom:3px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">
+                        <i class="ri-shield-check-line"></i> Seguridad — toda la quincena
+                    </div>
+                    <input type="text" inputmode="numeric"
+                        class="desc-global desc-seg-global" data-placa="${f.placa}"
+                        value="${_fmtDesc(dqPlaca.seguridad)}" data-raw="${dqPlaca.seguridad}"
+                        placeholder="0"
+                        style="${inputDescStyle} border-color:rgba(139,92,246,0.5); color:#c4b5fd; width:110px;"
+                        oninput="_onDescGlobal(this)" onfocus="_descFocus(this)" onblur="_descBlur(this)">
+                </td>
+                <td colspan="2" style="padding:8px 6px;">
+                    <div style="font-size:0.63rem; color:#f9a8d4; margin-bottom:3px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">
+                        <i class="ri-coupon-line"></i> Vales — toda la quincena
+                    </div>
+                    <input type="text" inputmode="numeric"
+                        class="desc-global desc-val-global" data-placa="${f.placa}"
+                        value="${_fmtDesc(dqPlaca.vales)}" data-raw="${dqPlaca.vales}"
+                        placeholder="0"
+                        style="${inputDescStyle} border-color:rgba(236,72,153,0.5); color:#f9a8d4; width:110px;"
+                        oninput="_onDescGlobal(this)" onfocus="_descFocus(this)" onblur="_descBlur(this)">
+                </td>
+                <td colspan="2"></td>
+            `;
+            fragment.appendChild(trHeader);
+        }
+
+        const neto = esPagado
+            ? (f.precio || 0) - ret - (dqPlaca.seguridad || 0) - (dqPlaca.vales || 0)
+            : (f.precio || 0) - retAuto;
 
         const tr = document.createElement('tr');
         tr.style.opacity = esPagado ? '0.65' : '1';
-        tr.dataset.id = f.id;
+        tr.dataset.id    = f.id;
+        tr.dataset.placa = f.placa;
 
         if (esPagado) {
-            // Fila ya pagada: mostrar descuentos como texto
             tr.innerHTML = `
                 <td><input type="checkbox" class="chk-pago" data-id="${f.id}" disabled></td>
-                <td>
-                    <span class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; font-size:0.7rem; padding:2px 8px;">
-                        ✓ PAGADO
-                    </span>
-                </td>
+                <td><span class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; font-size:0.7rem; padding:2px 8px;">✓ PAGADO</span></td>
                 <td>${f.fecha}</td>
                 <td><span class="badge" style="background:var(--accent-blue);font-size:0.7rem;padding:2px 6px;">${f.proveedor}</span></td>
                 <td><strong>${f.contratista || '-'}</strong></td>
                 <td><span class="badge-plate">${f.placa}</span></td>
                 <td>${f.poblacion || '-'}</td>
                 <td class="price-cell" style="font-weight:600;">${moneyFormatter.format(f.precio || 0)}</td>
-                <td style="text-align:right; color:${ret > 0 ? '#fbbf24' : 'var(--text-muted)'}; font-size:0.85rem;">${ret > 0 ? moneyFormatter.format(ret) : '—'}</td>
-                <td style="text-align:right; color:${seg > 0 ? '#c4b5fd' : 'var(--text-muted)'}; font-size:0.85rem;">${seg > 0 ? moneyFormatter.format(seg) : '—'}</td>
-                <td style="text-align:right; color:${val > 0 ? '#f9a8d4' : 'var(--text-muted)'}; font-size:0.85rem;">${val > 0 ? moneyFormatter.format(val) : '—'}</td>
+                <td style="text-align:right; color:${ret > 0 ? '#fbbf24' : 'var(--text-muted)'}; font-size:0.85rem;" colspan="1">${ret > 0 ? moneyFormatter.format(ret) : '—'}</td>
+                <td style="text-align:right; color:var(--text-muted); font-size:0.8rem; font-style:italic;" colspan="2">Ver fila de placa</td>
                 <td style="text-align:right; font-weight:600; color:#86efac; font-size:0.85rem;">${moneyFormatter.format(neto)}</td>
                 <td style="color:var(--text-muted); font-size:0.85rem;">${f.fecha_pago || '-'}</td>
                 <td style="color:var(--text-muted); font-size:0.85rem;">${f.pagado_por || '-'}</td>
             `;
         } else {
-            // Flete pendiente: retención pre-calculada (2% del flete), editable
-            const netoAuto = (f.precio || 0) - retAutoCalculada - seg - val;
+            const netoAuto = (f.precio || 0) - retAuto;
             tr.innerHTML = `
-                <td><input type="checkbox" class="chk-pago" data-id="${f.id}"
-                    onchange="_recalcNetoFila(this)"></td>
-                <td>
-                    <span class="badge" style="background:rgba(239,68,68,0.15); color:#ef4444; font-size:0.7rem; padding:2px 8px;">
-                        ⏳ PENDIENTE
-                    </span>
-                </td>
+                <td><input type="checkbox" class="chk-pago" data-id="${f.id}" onchange="_recalcNetoFila(this)"></td>
+                <td><span class="badge" style="background:rgba(239,68,68,0.15); color:#ef4444; font-size:0.7rem; padding:2px 8px;">⏳ PENDIENTE</span></td>
                 <td>${f.fecha}</td>
                 <td><span class="badge" style="background:var(--accent-blue);font-size:0.7rem;padding:2px 6px;">${f.proveedor}</span></td>
                 <td><strong>${f.contratista || '-'}</strong></td>
                 <td><span class="badge-plate">${f.placa}</span></td>
                 <td>${f.poblacion || '-'}</td>
                 <td class="price-cell" data-precio="${f.precio || 0}" style="font-weight:600;">${moneyFormatter.format(f.precio || 0)}</td>
-                <td title="2% automático del valor del flete. Editable.">
+                <td title="2% automático. Editable.">
                     <input type="text" inputmode="numeric" class="desc-input desc-retencion" data-id="${f.id}"
-                        value="${_fmtDesc(retAutoCalculada)}"
-                        data-raw="${retAutoCalculada}"
+                        value="${_fmtDesc(retAuto)}" data-raw="${retAuto}"
                         style="${inputDescStyle} border-color:rgba(245,158,11,0.4); color:#fbbf24;"
                         oninput="_onDescInput(this)" onfocus="_descFocus(this)" onblur="_descBlur(this)">
-                    <div style="font-size:0.63rem; color:#64748b; text-align:right; margin-top:2px;">2% auto</div>
+                    <div style="font-size:0.6rem; color:#64748b; text-align:right; margin-top:2px;">2% auto</div>
                 </td>
-                <td>
-                    <input type="text" inputmode="numeric" class="desc-input desc-seguridad" data-id="${f.id}"
-                        value="${_fmtDesc(seg)}"
-                        data-raw="${seg}"
-                        placeholder="0"
-                        style="${inputDescStyle} border-color:rgba(139,92,246,0.3);"
-                        oninput="_onDescInput(this)" onfocus="_descFocus(this)" onblur="_descBlur(this)">
-                </td>
-                <td>
-                    <input type="text" inputmode="numeric" class="desc-input desc-vales" data-id="${f.id}"
-                        value="${_fmtDesc(val)}"
-                        data-raw="${val}"
-                        placeholder="0"
-                        style="${inputDescStyle} border-color:rgba(236,72,153,0.3);"
-                        oninput="_onDescInput(this)" onfocus="_descFocus(this)" onblur="_descBlur(this)">
-                </td>
-                <td class="neto-fila-${f.id}" style="text-align:right; font-weight:700; color:#86efac; font-size:0.85rem;">
-                    ${moneyFormatter.format(netoAuto)}
-                </td>
+                <td style="text-align:center; color:var(--text-muted); font-size:0.75rem; font-style:italic;" colspan="2">↑ fila placa</td>
+                <td class="neto-fila-${f.id}" style="text-align:right; font-weight:700; color:#86efac; font-size:0.85rem;">${moneyFormatter.format(netoAuto)}</td>
                 <td style="color:var(--text-muted); font-size:0.85rem;">-</td>
                 <td style="color:var(--text-muted); font-size:0.85rem;">-</td>
             `;
         }
         fragment.appendChild(tr);
     });
+
     tbody.innerHTML = '';
     tbody.appendChild(fragment);
 
-    // Mostrar hint de descuentos si hay pendientes
     const hint = document.getElementById('pagos-desc-hint');
     if (hint) hint.style.display = pendientes.length > 0 ? 'flex' : 'none';
 
-    // Sync checkbox maestro
     document.getElementById('chk-todos-pagos').checked = false;
+}
+
+// Calcular periodo quincena a partir de una fecha 'YYYY-MM-DD'
+function _calcPeriodoQuincena(fecha) {
+    if (!fecha) return '';
+    const [yyyy, mm, dd] = fecha.split('-');
+    const q = parseInt(dd) <= 15 ? 'Q1' : 'Q2';
+    return `${yyyy}-${mm}-${q}`;
+}
+
+// Cuando cambia un input global de placa (seguridad/vales)
+function _onDescGlobal(input) {
+    const raw = String(input.value).replace(/[^0-9]/g, '');
+    input.dataset.raw = raw || '0';
+    input.value = raw;
+    // No recalcula por fila — son globales
 }
 
 function toggleTodosCheckboxPagos(masterChk) {
@@ -4427,27 +4473,48 @@ async function marcarFletesPagados() {
         return Swal.fire({ icon: 'warning', title: 'Sin selección', text: 'Selecciona al menos un flete para marcar como pagado.', background: '#1e293b', color: '#fff' });
     }
 
-    // Recoger descuentos de cada fila seleccionada
-    const descuentos = {};
+    // ── Recoger retención por flete ──────────────────────────────────
+    const retenciones = {};
     seleccionados.forEach(id => {
         const row = document.querySelector(`tr[data-id="${id}"]`);
-        descuentos[id] = {
+        retenciones[id] = {
             desc_retencion: parseFloat(row?.querySelector('.desc-retencion')?.dataset?.raw || '0') || 0,
-            desc_seguridad: parseFloat(row?.querySelector('.desc-seguridad')?.dataset?.raw || '0') || 0,
-            desc_vales:     parseFloat(row?.querySelector('.desc-vales')?.dataset?.raw     || '0') || 0,
+            placa: row?.dataset?.placa || '',
         };
     });
 
-    const totalDesc = Object.values(descuentos).reduce((s, d) => s + d.desc_retencion + d.desc_seguridad + d.desc_vales, 0);
-    const resumenDesc = totalDesc > 0
-        ? `<div style="margin-top:10px; font-size:0.85rem; color:#94a3b8;">
-               Total descuentos aplicados: <strong style="color:#fbbf24;">${moneyFormatter.format(totalDesc)}</strong>
-           </div>`
-        : `<div style="margin-top:10px; font-size:0.85rem; color:#64748b;">Sin descuentos registrados.</div>`;
+    // ── Recoger seguridad y vales globales por placa ─────────────────
+    const placasAfectadas = [...new Set(Object.values(retenciones).map(r => r.placa).filter(Boolean))];
+    const descGlobal = {}; // placa → { seguridad, vales }
+    placasAfectadas.forEach(placa => {
+        const inputSeg = document.querySelector(`.desc-seg-global[data-placa="${placa}"]`);
+        const inputVal = document.querySelector(`.desc-val-global[data-placa="${placa}"]`);
+        descGlobal[placa] = {
+            seguridad: parseFloat(inputSeg?.dataset?.raw || '0') || 0,
+            vales:     parseFloat(inputVal?.dataset?.raw || '0') || 0,
+        };
+    });
+
+    // ── Resumen para el Swal ─────────────────────────────────────────
+    const totalRet = Object.values(retenciones).reduce((s, r) => s + r.desc_retencion, 0);
+    const totalSeg = Object.values(descGlobal).reduce((s, d) => s + d.seguridad, 0);
+    const totalVal = Object.values(descGlobal).reduce((s, d) => s + d.vales, 0);
+    const totalDesc = totalRet + totalSeg + totalVal;
+
+    const resumenHtml = `
+        <div style="margin-top:12px; font-size:0.84rem; text-align:left; line-height:2;">
+            <div>Fletes a marcar: <strong>${seleccionados.length}</strong></div>
+            <div style="color:#fbbf24;">Retención (2%): <strong>${moneyFormatter.format(totalRet)}</strong></div>
+            ${totalSeg > 0 ? `<div style="color:#c4b5fd;">Seguridad: <strong>${moneyFormatter.format(totalSeg)}</strong></div>` : ''}
+            ${totalVal > 0 ? `<div style="color:#f9a8d4;">Vales: <strong>${moneyFormatter.format(totalVal)}</strong></div>` : ''}
+            <div style="color:#fca5a5; border-top:1px solid rgba(255,255,255,0.1); padding-top:4px; margin-top:4px;">
+                Total descuentos: <strong>${moneyFormatter.format(totalDesc)}</strong>
+            </div>
+        </div>`;
 
     const { isConfirmed } = await Swal.fire({
         title: `¿Marcar ${seleccionados.length} flete(s) como pagados?`,
-        html: `Esta acción registrará la fecha y usuario de pago.${resumenDesc}`,
+        html: `Esta acción registrará la fecha y usuario de pago.${resumenHtml}`,
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'Sí, marcar pagados',
@@ -4465,26 +4532,44 @@ async function marcarFletesPagados() {
     const userName = session?.profile?.nombre || session?.user?.user_metadata?.nombre || 'Contabilidad';
     const fechaHoy = new Date().toISOString().split('T')[0];
 
-    // Actualizar cada flete individualmente para incluir sus propios descuentos
-    const promesas = seleccionados.map(id =>
+    // ── 1. Actualizar cada flete: estado + retención ─────────────────
+    const promesasFletes = seleccionados.map(id =>
         SupabaseClient.supabase
             .from('fletes')
             .update({
                 estado_pago:    'PAGADO',
                 fecha_pago:     fechaHoy,
                 pagado_por:     userName,
-                desc_retencion: descuentos[id].desc_retencion,
-                desc_seguridad: descuentos[id].desc_seguridad,
-                desc_vales:     descuentos[id].desc_vales,
+                desc_retencion: retenciones[id].desc_retencion,
+                // Limpiar seg/vales del flete (ahora viven en descuentos_quincena)
+                desc_seguridad: 0,
+                desc_vales:     0,
             })
             .eq('id', id)
     );
 
-    const resultados = await Promise.all(promesas);
-    const errores    = resultados.filter(r => r.error);
+    // ── 2. Guardar seguridad+vales globales por placa (UPSERT) ───────
+    const periodoQ = _calcPeriodoQuincena(fechaHoy);
+    const promesasDQ = placasAfectadas
+        .filter(placa => descGlobal[placa].seguridad > 0 || descGlobal[placa].vales > 0)
+        .map(placa =>
+            SupabaseClient.supabase
+                .from('descuentos_quincena')
+                .upsert({
+                    placa,
+                    periodo:        periodoQ,
+                    seguridad:      descGlobal[placa].seguridad,
+                    vales:          descGlobal[placa].vales,
+                    registrado_por: userName,
+                }, { onConflict: 'placa,periodo' })
+        );
+
+    const todos = await Promise.all([...promesasFletes, ...promesasDQ]);
+    const errores = todos.filter(r => r.error);
 
     if (errores.length > 0) {
-        return Swal.fire({ icon: 'error', title: 'Error parcial', text: `${errores.length} flete(s) no se pudieron actualizar.`, background: '#1e293b', color: '#fff' });
+        console.error('Errores al guardar:', errores);
+        return Swal.fire({ icon: 'error', title: 'Error parcial', text: `${errores.length} operación(es) fallaron. Revisa la consola.`, background: '#1e293b', color: '#fff' });
     }
 
     Swal.fire({
@@ -4496,7 +4581,6 @@ async function marcarFletesPagados() {
         color: '#fff'
     });
 
-    // Recargar tabla
     await cargarModuloPagos();
 }
 

@@ -27,7 +27,6 @@
         .header-sub   { font-size:0.75rem; color:#94a3b8; }
         .container { width:100%; max-width:1000px; padding:32px 16px; flex:1; }
 
-        /* Search card */
         .search-card {
             background:rgba(30,41,59,0.8); border:1px solid rgba(255,255,255,0.08);
             border-radius:16px; padding:32px; text-align:center; margin-bottom:28px;
@@ -53,10 +52,7 @@
         .btn-buscar:active   { transform:scale(0.97); }
         .btn-buscar:disabled { background:#334155; cursor:not-allowed; }
 
-        /* Botones de quincena */
-        .quincena-btns {
-            display:flex; gap:8px; justify-content:center; margin-top:14px; flex-wrap:wrap;
-        }
+        .quincena-btns { display:flex; gap:8px; justify-content:center; margin-top:14px; flex-wrap:wrap; }
         .btn-q {
             background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3);
             color:#60a5fa; border-radius:8px; padding:7px 16px;
@@ -65,9 +61,7 @@
         .btn-q:hover  { background:rgba(59,130,246,0.25); }
         .btn-q.activo { background:rgba(59,130,246,0.3); border-color:#3b82f6; color:#fff; }
 
-        .filtros-extra {
-            display:flex; gap:10px; justify-content:center; margin-top:10px; flex-wrap:wrap;
-        }
+        .filtros-extra { display:flex; gap:10px; justify-content:center; margin-top:10px; flex-wrap:wrap; }
         .filtros-extra input,
         .filtros-extra select {
             background:rgba(15,23,42,0.8); border:1px solid rgba(255,255,255,0.12);
@@ -76,7 +70,6 @@
         }
         .filtros-extra label { font-size:0.8rem; color:#94a3b8; display:flex; align-items:center; gap:6px; }
 
-        /* Resultados */
         #resultados { display:none; }
         .results-header {
             background:rgba(30,41,59,0.8); border:1px solid rgba(255,255,255,0.08);
@@ -86,7 +79,6 @@
         .results-header h2 { font-size:1rem; font-weight:700; }
         .results-meta      { font-size:0.8rem; color:#94a3b8; }
 
-        /* Stats */
         .stats-row {
             display:flex; gap:10px; padding:14px 20px;
             background:rgba(30,41,59,0.6);
@@ -101,11 +93,9 @@
         .stat-box .stat-label { font-size:0.65rem; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; }
         .stat-box .stat-value { font-size:1.05rem; font-weight:700; margin-top:2px; }
 
-        /* ── Resumen quincena ── */
+        /* Resumen quincena */
         #resumenQuincena {
-            display:none;
-            margin:0;
-            padding:20px;
+            display:none; padding:20px;
             background:rgba(15,23,42,0.85);
             border-left:1px solid rgba(255,255,255,0.08);
             border-right:1px solid rgba(255,255,255,0.08);
@@ -117,23 +107,14 @@
             display:flex; align-items:center; gap:8px;
         }
         .rq-titulo span { background:rgba(59,130,246,0.15); border-radius:6px; padding:3px 10px; }
-        .rq-grid {
-            display:grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px,1fr));
-            gap:10px;
-        }
-        .rq-card {
-            border-radius:10px; padding:14px 16px;
-            display:flex; flex-direction:column; gap:5px;
-        }
-        .rq-bruto   { background:rgba(59,130,246,0.1);  border:1px solid rgba(59,130,246,0.25); }
-        .rq-ret     { background:rgba(245,158,11,0.1);  border:1px solid rgba(245,158,11,0.25); }
-        .rq-seg     { background:rgba(139,92,246,0.1);  border:1px solid rgba(139,92,246,0.25); }
-        .rq-vale    { background:rgba(236,72,153,0.1);  border:1px solid rgba(236,72,153,0.25); }
-        .rq-desc    { background:rgba(239,68,68,0.1);   border:1px solid rgba(239,68,68,0.25);  }
-        .rq-neto    { background:rgba(34,197,94,0.1);   border:1px solid rgba(34,197,94,0.3);
-                      grid-column: span 2; }
-
+        .rq-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; }
+        .rq-card { border-radius:10px; padding:14px 16px; display:flex; flex-direction:column; gap:5px; }
+        .rq-bruto { background:rgba(59,130,246,0.1);  border:1px solid rgba(59,130,246,0.25); }
+        .rq-ret   { background:rgba(245,158,11,0.1);  border:1px solid rgba(245,158,11,0.25); }
+        .rq-seg   { background:rgba(139,92,246,0.1);  border:1px solid rgba(139,92,246,0.25); }
+        .rq-vale  { background:rgba(236,72,153,0.1);  border:1px solid rgba(236,72,153,0.25); }
+        .rq-desc  { background:rgba(239,68,68,0.1);   border:1px solid rgba(239,68,68,0.25);  }
+        .rq-neto  { background:rgba(34,197,94,0.1);   border:1px solid rgba(34,197,94,0.3); grid-column:span 2; }
         .rq-label { font-size:0.66rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
         .rq-bruto .rq-label { color:#60a5fa; }
         .rq-ret   .rq-label { color:#f59e0b; }
@@ -141,7 +122,6 @@
         .rq-vale  .rq-label { color:#f472b6; }
         .rq-desc  .rq-label { color:#f87171; }
         .rq-neto  .rq-label { color:#4ade80; }
-
         .rq-valor { font-size:1.1rem; font-weight:800; }
         .rq-bruto .rq-valor { color:#93c5fd; }
         .rq-ret   .rq-valor { color:#fbbf24; }
@@ -149,10 +129,9 @@
         .rq-vale  .rq-valor { color:#f9a8d4; }
         .rq-desc  .rq-valor { color:#fca5a5; }
         .rq-neto  .rq-valor { color:#86efac; font-size:1.3rem; }
-
         .rq-sub { font-size:0.67rem; color:#64748b; }
 
-        /* ── Tabla escritorio ── */
+        /* Tabla escritorio */
         .table-wrap {
             background:rgba(30,41,59,0.8); border:1px solid rgba(255,255,255,0.08);
             border-top:none; border-radius:0 0 12px 12px; overflow-x:auto;
@@ -166,21 +145,18 @@
         tbody tr { border-top:1px solid rgba(255,255,255,0.05); transition:background 0.15s; }
         tbody tr:hover { background:rgba(59,130,246,0.05); }
         td { padding:11px 12px; font-size:0.86rem; vertical-align:middle; }
-
-        .td-desc    { color:#64748b; font-size:0.8rem; text-align:right; }
-        .td-ret.has-val { color:#fbbf24; font-weight:600; }
-        .td-seg.has-val { color:#c4b5fd; font-weight:600; }
-        .td-val.has-val { color:#f9a8d4; font-weight:600; }
+        .td-ret.has-val { color:#fbbf24; font-weight:600; text-align:right; }
+        .td-ret         { color:#64748b; text-align:right; }
         .td-neto        { font-weight:700; color:#86efac; text-align:right; }
         .td-neto.sin-desc { color:#e2e8f0; font-weight:600; }
-
+        .td-global      { color:#64748b; font-size:0.75rem; text-align:center; font-style:italic; }
         .badge-estado    { display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.72rem; font-weight:700; }
         .badge-pagado    { background:rgba(34,197,94,0.15);  color:#22c55e; border:1px solid rgba(34,197,94,0.3);  }
         .badge-pendiente { background:rgba(239,68,68,0.12);  color:#ef4444; border:1px solid rgba(239,68,68,0.25); }
         .price-val { font-weight:600; color:#e2e8f0; }
         .date-val  { color:#94a3b8; font-size:0.82rem; }
 
-        /* ── Tarjetas móvil ── */
+        /* Tarjetas móvil */
         #listaMovil { display:none; }
         .flete-card {
             background:rgba(20,30,50,0.85); border:1px solid rgba(255,255,255,0.09);
@@ -191,10 +167,7 @@
             margin-bottom:10px; gap:8px; flex-wrap:wrap;
         }
         .fc-fecha { font-size:0.78rem; color:#94a3b8; }
-        .fc-prov  {
-            background:rgba(59,130,246,0.15); color:#60a5fa;
-            border-radius:4px; padding:2px 8px; font-size:0.72rem; font-weight:700;
-        }
+        .fc-prov  { background:rgba(59,130,246,0.15); color:#60a5fa; border-radius:4px; padding:2px 8px; font-size:0.72rem; font-weight:700; }
         .fc-row {
             display:flex; justify-content:space-between; align-items:center;
             padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.84rem;
@@ -210,6 +183,14 @@
         .fc-neto  { color:#86efac; font-size:0.95rem; }
         .fc-neto.sin-desc { color:#e2e8f0; }
         .fc-fpago { color:#94a3b8; font-size:0.8rem; }
+        .desc-global-card {
+            background:rgba(15,23,42,0.9); border:1px solid rgba(99,102,241,0.3);
+            border-radius:12px; margin-bottom:10px; padding:14px 16px;
+        }
+        .desc-global-titulo {
+            font-size:0.7rem; font-weight:700; text-transform:uppercase;
+            letter-spacing:0.8px; color:#818cf8; margin-bottom:10px;
+        }
 
         .state-box { text-align:center; padding:48px 24px; color:#64748b; }
         .state-box i { font-size:2.5rem; margin-bottom:12px; display:block; }
@@ -251,8 +232,6 @@
                 <i class="ri-search-2-line"></i> Consultar
             </button>
         </div>
-
-        <!-- Botones quincena -->
         <div class="quincena-btns">
             <button class="btn-q" id="btnQ1" onclick="setQuincena(1)">
                 <i class="ri-calendar-2-line"></i> 1ª Quincena (1–15)
@@ -261,7 +240,6 @@
                 <i class="ri-calendar-2-line"></i> 2ª Quincena (16–fin)
             </button>
         </div>
-
         <div class="filtros-extra">
             <label><i class="ri-calendar-line"></i> Desde: <input type="date" id="filtroDesde" onchange="limpiarQ()"></label>
             <label><i class="ri-calendar-line"></i> Hasta: <input type="date" id="filtroHasta" onchange="limpiarQ()"></label>
@@ -281,8 +259,7 @@
             <span class="results-meta" id="resultsMeta"></span>
         </div>
 
-        <!-- Stats generales -->
-        <div class="stats-row" id="statsRow">
+        <div class="stats-row">
             <div class="stat-box">
                 <div class="stat-label">Total fletes</div>
                 <div class="stat-value" id="statTotal">0</div>
@@ -301,7 +278,7 @@
             </div>
         </div>
 
-        <!-- ── Resumen de quincena (fletes pagados) ── -->
+        <!-- Resumen quincena -->
         <div id="resumenQuincena">
             <div class="rq-titulo">
                 <i class="ri-bill-line"></i>
@@ -311,27 +288,27 @@
                 <div class="rq-card rq-bruto">
                     <div class="rq-label"><i class="ri-money-dollar-circle-line"></i> Total fletes pagados</div>
                     <div class="rq-valor" id="rqBruto">$0</div>
-                    <div class="rq-sub" id="rqBrutoCnt">0 fletes</div>
+                    <div class="rq-sub"  id="rqBrutoCnt">0 fletes</div>
                 </div>
                 <div class="rq-card rq-ret">
-                    <div class="rq-label"><i class="ri-government-line"></i> Retención (2%)</div>
+                    <div class="rq-label"><i class="ri-government-line"></i> Retención (2% por flete)</div>
                     <div class="rq-valor" id="rqRet">$0</div>
-                    <div class="rq-sub" id="rqRetCnt">–</div>
+                    <div class="rq-sub"  id="rqRetCnt">–</div>
                 </div>
                 <div class="rq-card rq-seg">
-                    <div class="rq-label"><i class="ri-shield-check-line"></i> Seguridad</div>
+                    <div class="rq-label"><i class="ri-shield-check-line"></i> Seguridad (quincena)</div>
                     <div class="rq-valor" id="rqSeg">$0</div>
-                    <div class="rq-sub" id="rqSegCnt">–</div>
+                    <div class="rq-sub"  id="rqSegCnt">–</div>
                 </div>
                 <div class="rq-card rq-vale">
-                    <div class="rq-label"><i class="ri-coupon-line"></i> Vales</div>
+                    <div class="rq-label"><i class="ri-coupon-line"></i> Vales (quincena)</div>
                     <div class="rq-valor" id="rqVal">$0</div>
-                    <div class="rq-sub" id="rqValCnt">–</div>
+                    <div class="rq-sub"  id="rqValCnt">–</div>
                 </div>
                 <div class="rq-card rq-desc">
                     <div class="rq-label"><i class="ri-arrow-down-circle-line"></i> Total descontado</div>
                     <div class="rq-valor" id="rqDesc">$0</div>
-                    <div class="rq-sub">Suma de los tres</div>
+                    <div class="rq-sub">Retención + Seguridad + Vales</div>
                 </div>
                 <div class="rq-card rq-neto">
                     <div class="rq-label"><i class="ri-wallet-3-line"></i> Neto pagado al conductor</div>
@@ -341,7 +318,7 @@
             </div>
         </div>
 
-        <!-- TABLA escritorio -->
+        <!-- Tabla escritorio -->
         <div class="table-wrap">
             <table>
                 <thead>
@@ -352,9 +329,7 @@
                         <th>Población</th>
                         <th>Valor Flete</th>
                         <th>Retención</th>
-                        <th>Seguridad</th>
-                        <th>Vales</th>
-                        <th>Neto</th>
+                        <th>Neto flete</th>
                         <th>Estado</th>
                         <th>Fecha Pago</th>
                     </tr>
@@ -363,7 +338,7 @@
             </table>
         </div>
 
-        <!-- TARJETAS móvil -->
+        <!-- Tarjetas móvil -->
         <div id="listaMovil"></div>
     </div>
 
@@ -377,28 +352,29 @@
     const db  = supabase.createClient(SUPA_URL, SUPA_KEY);
     const fmt = new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', maximumFractionDigits:0 });
 
-    let _quinceActiva = 0; // 0=ninguna, 1=primera, 2=segunda
+    let _quinceActiva = 0;
 
-    // ── Inicializar fechas (quincena actual por defecto) ─────────────
+    // Calcular periodo quincena 'YYYY-MM-Q1' | 'YYYY-MM-Q2'
+    function _periodoQ(fecha) {
+        if (!fecha) return '';
+        const [yyyy, mm, dd] = fecha.split('-');
+        return `${yyyy}-${mm}-${parseInt(dd) <= 15 ? 'Q1' : 'Q2'}`;
+    }
+
     (function initFechas() {
-        const hoy = new Date();
-        const dd  = hoy.getDate();
-        // Detectar quincena actual
+        const dd = new Date().getDate();
         setQuincena(dd <= 15 ? 1 : 2);
     })();
 
     function setQuincena(n) {
-        const hoy  = new Date();
-        const yyyy = hoy.getFullYear();
-        const mm   = String(hoy.getMonth() + 1).padStart(2, '0');
+        const hoy    = new Date();
+        const yyyy   = hoy.getFullYear();
+        const mm     = String(hoy.getMonth() + 1).padStart(2, '0');
         const ultimo = new Date(yyyy, hoy.getMonth() + 1, 0).getDate();
-
-        const desde = n === 1 ? `${yyyy}-${mm}-01` : `${yyyy}-${mm}-16`;
-        const hasta = n === 1 ? `${yyyy}-${mm}-15` : `${yyyy}-${mm}-${String(ultimo).padStart(2,'0')}`;
-
+        const desde  = n === 1 ? `${yyyy}-${mm}-01` : `${yyyy}-${mm}-16`;
+        const hasta  = n === 1 ? `${yyyy}-${mm}-15` : `${yyyy}-${mm}-${String(ultimo).padStart(2,'0')}`;
         document.getElementById('filtroDesde').value = desde;
         document.getElementById('filtroHasta').value = hasta;
-
         _quinceActiva = n;
         document.getElementById('btnQ1').classList.toggle('activo', n === 1);
         document.getElementById('btnQ2').classList.toggle('activo', n === 2);
@@ -410,7 +386,6 @@
         document.getElementById('btnQ2').classList.remove('activo');
     }
 
-    // ── Consulta principal ───────────────────────────────────────────
     async function buscarFletesTrans() {
         const placa  = document.getElementById('inputPlaca').value.trim().toUpperCase();
         const desde  = document.getElementById('filtroDesde').value;
@@ -429,25 +404,40 @@
         btn.disabled = true;
         btn.innerHTML = '<i class="ri-loader-4-line spin"></i> Buscando...';
 
-        let query = db
+        const periodo = _periodoQ(desde);
+
+        // Queries en paralelo: fletes + descuento global quincena
+        let qFletes = db
             .from('fletes')
-            .select('fecha, dia, proveedor, poblacion, precio, estado_pago, fecha_pago, desc_retencion, desc_seguridad, desc_vales')
+            .select('fecha, dia, proveedor, poblacion, precio, estado_pago, fecha_pago, desc_retencion')
             .ilike('placa', placa)
             .order('fecha', { ascending: false })
             .limit(500);
+        if (desde)  qFletes = qFletes.gte('fecha', desde);
+        if (hasta)  qFletes = qFletes.lte('fecha', hasta);
+        if (estado) qFletes = qFletes.eq('estado_pago', estado);
 
-        if (desde) query = query.gte('fecha', desde);
-        if (hasta) query = query.lte('fecha', hasta);
-        if (estado) query = query.eq('estado_pago', estado);
+        const qDQ = periodo
+            ? db.from('descuentos_quincena')
+                 .select('seguridad, vales')
+                 .ilike('placa', placa)
+                 .eq('periodo', periodo)
+                 .maybeSingle()
+            : Promise.resolve({ data: null, error: null });
 
-        const { data, error } = await query;
+        const [resF, resDQ] = await Promise.all([qFletes, qDQ]);
 
         btn.disabled = false;
         btn.innerHTML = '<i class="ri-search-2-line"></i> Consultar';
 
+        const data    = resF.data;
+        const error   = resF.error;
+        const dqSeg   = resDQ.data?.seguridad || 0;
+        const dqVal   = resDQ.data?.vales     || 0;
+
         const resDiv = document.getElementById('resultados');
         resDiv.style.display = 'block';
-        const COLS = 11;
+        const COLS = 9;
 
         if (error || !data) {
             tbody.innerHTML = `<tr><td colspan="${COLS}"><div class="state-box"><i class="ri-error-warning-line" style="color:#ef4444;"></i><p>Error al consultar. Intenta de nuevo.</p></div></td></tr>`;
@@ -467,24 +457,24 @@
             return;
         }
 
-        // ── Calcular totales ─────────────────────────────────────
+        // ── Totales ──────────────────────────────────────────────────
         const pagados    = data.filter(f => f.estado_pago === 'PAGADO');
         const pendientes = data.filter(f => f.estado_pago !== 'PAGADO');
         const totalBruto = data.reduce((s, f) => s + (f.precio || 0), 0);
 
         const brutoPagados = pagados.reduce((s, f) => s + (f.precio || 0), 0);
+        // Retención: suma de lo que tiene cada flete (guardado por flete)
         const totRet  = pagados.reduce((s, f) => s + (f.desc_retencion || 0), 0);
-        const totSeg  = pagados.reduce((s, f) => s + (f.desc_seguridad || 0), 0);
-        const totVal  = pagados.reduce((s, f) => s + (f.desc_vales     || 0), 0);
-        const totDesc = totRet + totSeg + totVal;
+        // Seguridad y vales: un solo valor global de descuentos_quincena
+        const totDesc = totRet + dqSeg + dqVal;
         const neto    = brutoPagados - totDesc;
 
-        // Proyección de retención sobre pendientes (2%)
-        const brutoPendientes   = pendientes.reduce((s, f) => s + (f.precio || 0), 0);
-        const retProyectada     = Math.round(brutoPendientes * 0.02);
+        // Proyección para pendientes
+        const brutoPendientes = pendientes.reduce((s, f) => s + (f.precio || 0), 0);
+        const retProyectada   = Math.round(brutoPendientes * 0.02);
 
         // ── Stats ────────────────────────────────────────────────────
-        const etiquetaPeriodo = _quinceActiva === 1 ? '1ª Quincena' : _quinceActiva === 2 ? '2ª Quincena' : 'Período';
+        const etiqueta = _quinceActiva === 1 ? '1ª Quincena' : _quinceActiva === 2 ? '2ª Quincena' : 'Período';
         document.getElementById('resultsTitle').textContent   = `Fletes de ${placa}`;
         document.getElementById('resultsMeta').textContent    = `${data.length} resultado(s) · ${desde} al ${hasta}`;
         document.getElementById('statTotal').textContent      = data.length;
@@ -492,44 +482,42 @@
         document.getElementById('statPendientes').textContent = pendientes.length;
         document.getElementById('statValor').textContent      = fmt.format(totalBruto);
 
-        // ── Resumen quincena — visible siempre ───────────────────────
+        // ── Resumen quincena ─────────────────────────────────────────
         if (pagados.length > 0) {
-            // Fletes pagados: mostrar lo real
-            document.getElementById('rqTituloLabel').textContent = `${etiquetaPeriodo} · Lo que te pagaron`;
+            document.getElementById('rqTituloLabel').textContent = `${etiqueta} · Lo que te pagaron`;
             document.getElementById('rqBruto').textContent       = fmt.format(brutoPagados);
             document.getElementById('rqBrutoCnt').textContent    = `${pagados.length} flete${pagados.length !== 1 ? 's' : ''} pagados`;
             document.getElementById('rqRet').textContent         = fmt.format(totRet);
-            document.getElementById('rqRetCnt').textContent      = totRet > 0 ? 'Retenido' : 'Sin retención';
-            document.getElementById('rqSeg').textContent         = fmt.format(totSeg);
-            document.getElementById('rqSegCnt').textContent      = totSeg > 0 ? 'Descontado' : 'Sin descuento';
-            document.getElementById('rqVal').textContent         = fmt.format(totVal);
-            document.getElementById('rqValCnt').textContent      = totVal > 0 ? 'Descontado' : 'Sin vales';
+            document.getElementById('rqRetCnt').textContent      = totRet > 0 ? '2% por flete' : 'Sin retención';
+            document.getElementById('rqSeg').textContent         = fmt.format(dqSeg);
+            document.getElementById('rqSegCnt').textContent      = dqSeg > 0 ? 'Descuento quincena' : 'Sin descuento';
+            document.getElementById('rqVal').textContent         = fmt.format(dqVal);
+            document.getElementById('rqValCnt').textContent      = dqVal > 0 ? 'Descuento quincena' : 'Sin vales';
             document.getElementById('rqDesc').textContent        = fmt.format(totDesc);
             document.getElementById('rqNeto').textContent        = fmt.format(neto);
         } else {
-            // Solo pendientes: proyección estimada
-            document.getElementById('rqTituloLabel').textContent = `${etiquetaPeriodo} · Pendiente de pago`;
+            // Solo pendientes — proyección
+            const descProy = retProyectada + dqSeg + dqVal;
+            document.getElementById('rqTituloLabel').textContent = `${etiqueta} · Pendiente de pago`;
             document.getElementById('rqBruto').textContent       = fmt.format(brutoPendientes);
             document.getElementById('rqBrutoCnt').textContent    = `${pendientes.length} flete${pendientes.length !== 1 ? 's' : ''} pendientes`;
             document.getElementById('rqRet').textContent         = fmt.format(retProyectada);
             document.getElementById('rqRetCnt').textContent      = 'Proyección 2%';
-            document.getElementById('rqSeg').textContent         = fmt.format(0);
-            document.getElementById('rqSegCnt').textContent      = 'Por definir';
-            document.getElementById('rqVal').textContent         = fmt.format(0);
-            document.getElementById('rqValCnt').textContent      = 'Por definir';
-            document.getElementById('rqDesc').textContent        = fmt.format(retProyectada);
-            document.getElementById('rqNeto').textContent        = fmt.format(brutoPendientes - retProyectada);
+            document.getElementById('rqSeg').textContent         = fmt.format(dqSeg);
+            document.getElementById('rqSegCnt').textContent      = dqSeg > 0 ? 'Registrado' : 'Por definir';
+            document.getElementById('rqVal').textContent         = fmt.format(dqVal);
+            document.getElementById('rqValCnt').textContent      = dqVal > 0 ? 'Registrado' : 'Por definir';
+            document.getElementById('rqDesc').textContent        = fmt.format(descProy);
+            document.getElementById('rqNeto').textContent        = fmt.format(brutoPendientes - descProy);
         }
         document.getElementById('resumenQuincena').style.display = 'block';
 
         // ── Tabla escritorio ─────────────────────────────────────────
+        // Seg/Vales son globales → solo se muestran en el resumen arriba, no por fila
         tbody.innerHTML = data.map(f => {
             const esPagado = f.estado_pago === 'PAGADO';
-            const ret = f.desc_retencion || 0;
-            const seg = f.desc_seguridad || 0;
-            const val = f.desc_vales     || 0;
-            const desc = ret + seg + val;
-            const fNeto = esPagado ? (f.precio || 0) - desc : (f.precio || 0);
+            const ret      = f.desc_retencion || 0;
+            const fNeto    = esPagado ? (f.precio || 0) - ret : (f.precio || 0);
             return `
             <tr>
                 <td class="date-val">${f.fecha}</td>
@@ -537,10 +525,8 @@
                 <td><span style="background:rgba(59,130,246,0.15);color:#60a5fa;border-radius:4px;padding:2px 7px;font-size:0.72rem;font-weight:600;">${f.proveedor || '-'}</span></td>
                 <td>${f.poblacion || '-'}</td>
                 <td class="price-val" style="text-align:right;">${fmt.format(f.precio || 0)}</td>
-                <td class="td-desc td-ret ${ret > 0 ? 'has-val' : ''}" style="text-align:right;">${esPagado ? (ret > 0 ? fmt.format(ret) : '<span style="color:#334155;">$0</span>') : '<span style="color:#334155;">—</span>'}</td>
-                <td class="td-desc td-seg ${seg > 0 ? 'has-val' : ''}" style="text-align:right;">${esPagado ? (seg > 0 ? fmt.format(seg) : '<span style="color:#334155;">$0</span>') : '<span style="color:#334155;">—</span>'}</td>
-                <td class="td-desc td-val ${val > 0 ? 'has-val' : ''}" style="text-align:right;">${esPagado ? (val > 0 ? fmt.format(val) : '<span style="color:#334155;">$0</span>') : '<span style="color:#334155;">—</span>'}</td>
-                <td class="td-neto ${desc === 0 ? 'sin-desc' : ''}">${fmt.format(fNeto)}</td>
+                <td class="td-ret ${ret > 0 ? 'has-val' : ''}">${esPagado ? fmt.format(ret) : '<span style="color:#334155;">—</span>'}</td>
+                <td class="td-neto ${ret === 0 ? 'sin-desc' : ''}">${esPagado ? fmt.format(fNeto) : fmt.format(f.precio || 0)}</td>
                 <td><span class="badge-estado ${esPagado ? 'badge-pagado' : 'badge-pendiente'}">${esPagado ? '✓ PAGADO' : '⏳ PENDIENTE'}</span></td>
                 <td class="date-val">${f.fecha_pago || '—'}</td>
             </tr>`;
@@ -549,26 +535,14 @@
         // ── Tarjetas móvil ───────────────────────────────────────────
         movil.innerHTML = data.map(f => {
             const esPagado = f.estado_pago === 'PAGADO';
-            const ret  = f.desc_retencion || 0;
-            const seg  = f.desc_seguridad || 0;
-            const val  = f.desc_vales     || 0;
-            const desc = ret + seg + val;
-            const fNeto = esPagado ? (f.precio || 0) - desc : (f.precio || 0);
-
-            const filasDesc = esPagado ? `
-                <div class="fc-row">
-                    <span class="fc-lbl">Retención</span>
-                    <span class="fc-val ${ret > 0 ? 'fc-ret' : 'fc-cero'}">${fmt.format(ret)}</span>
-                </div>
-                <div class="fc-row">
-                    <span class="fc-lbl">Seguridad</span>
-                    <span class="fc-val ${seg > 0 ? 'fc-seg' : 'fc-cero'}">${fmt.format(seg)}</span>
-                </div>
-                <div class="fc-row">
-                    <span class="fc-lbl">Vales</span>
-                    <span class="fc-val ${val > 0 ? 'fc-vale' : 'fc-cero'}">${fmt.format(val)}</span>
-                </div>` : '';
-
+            const ret   = f.desc_retencion || 0;
+            const fNeto = esPagado ? (f.precio || 0) - ret : (f.precio || 0);
+            const filaRet = esPagado
+                ? `<div class="fc-row">
+                       <span class="fc-lbl">Retención (2%)</span>
+                       <span class="fc-val ${ret > 0 ? 'fc-ret' : 'fc-cero'}">${fmt.format(ret)}</span>
+                   </div>`
+                : '';
             return `
             <div class="flete-card">
                 <div class="fc-head">
@@ -584,18 +558,30 @@
                     <span class="fc-lbl">Valor flete</span>
                     <span class="fc-val fc-bruto">${fmt.format(f.precio || 0)}</span>
                 </div>
-                ${filasDesc}
+                ${filaRet}
                 <div class="fc-row" style="border-top:1px solid rgba(255,255,255,0.08);margin-top:3px;padding-top:7px;">
-                    <span class="fc-lbl" style="color:#4ade80;">Neto a cobrar</span>
-                    <span class="fc-val fc-neto ${desc === 0 ? 'sin-desc' : ''}">${fmt.format(fNeto)}</span>
+                    <span class="fc-lbl" style="color:#4ade80;">Neto del flete</span>
+                    <span class="fc-val fc-neto ${ret === 0 ? 'sin-desc' : ''}">${fmt.format(fNeto)}</span>
                 </div>
-                ${f.fecha_pago ? `
-                <div class="fc-row">
-                    <span class="fc-lbl">Fecha pago</span>
-                    <span class="fc-val fc-fpago">${f.fecha_pago}</span>
-                </div>` : ''}
+                ${f.fecha_pago ? `<div class="fc-row"><span class="fc-lbl">Fecha pago</span><span class="fc-val fc-fpago">${f.fecha_pago}</span></div>` : ''}
             </div>`;
         }).join('');
+
+        // Tarjeta extra con descuentos globales de quincena (si existen y hay pagados)
+        if (pagados.length > 0 && (dqSeg > 0 || dqVal > 0)) {
+            movil.innerHTML += `
+            <div class="desc-global-card">
+                <div class="desc-global-titulo">
+                    <i class="ri-subtract-line"></i> Descuentos globales de la quincena
+                </div>
+                ${dqSeg > 0 ? `<div class="fc-row"><span class="fc-lbl"><i class="ri-shield-check-line"></i> Seguridad</span><span class="fc-val fc-seg">${fmt.format(dqSeg)}</span></div>` : ''}
+                ${dqVal > 0 ? `<div class="fc-row"><span class="fc-lbl"><i class="ri-coupon-line"></i> Vales</span><span class="fc-val fc-vale">${fmt.format(dqVal)}</span></div>` : ''}
+                <div class="fc-row" style="border-top:1px solid rgba(255,255,255,0.08);margin-top:3px;padding-top:7px;">
+                    <span class="fc-lbl" style="color:#f87171;">Total desc. globales</span>
+                    <span class="fc-val" style="color:#fca5a5;">${fmt.format(dqSeg + dqVal)}</span>
+                </div>
+            </div>`;
+        }
     }
 
     document.getElementById('inputPlaca').addEventListener('input', function() {

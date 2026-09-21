@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía Cajera | Cuadre de Planillas — TYM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:#f1f5f9; color:#1e293b; line-height:1.6; }
+
+        /* HEADER */
+        .g-header { background:linear-gradient(135deg,#1e3a5f,#0f2440); color:#fff; padding:28px 40px; display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+        .g-header-icon { width:52px; height:52px; background:rgba(59,130,246,0.3); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.7rem; flex-shrink:0; }
+        .g-header h1 { font-size:1.45rem; font-weight:800; }
+        .g-header p  { font-size:0.86rem; color:#93c5fd; margin-top:3px; }
+        .print-btn { margin-left:auto; background:rgba(255,255,255,0.15); color:#fff; border:1px solid rgba(255,255,255,0.3); border-radius:10px; padding:9px 18px; font-size:0.82rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:7px; }
+        .print-btn:hover { background:rgba(255,255,255,0.25); }
+
+        /* FLUJO BANNER */
+        .flujo-banner {
+            background:#fff; border:1px solid #e2e8f0; border-radius:12px;
+            padding:16px 20px; margin-bottom:28px;
+            display:flex; align-items:center; gap:0; flex-wrap:wrap; justify-content:center;
+        }
+        .flujo-step { text-align:center; padding:10px 16px; }
+        .flujo-step .fs-num { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1rem; margin:0 auto 6px; }
+        .flujo-step .fs-lbl { font-size:0.78rem; font-weight:700; color:#475569; }
+        .flujo-arrow { color:#94a3b8; font-size:1.4rem; padding:0 4px; align-self:center; }
+        .fs1 .fs-num { background:#ede9fe; color:#7c3aed; }
+        .fs2 .fs-num { background:#dcfce7; color:#166534; }
+        .fs3 .fs-num { background:#fef3c7; color:#92400e; }
+        .fs4 .fs-num { background:#dbeafe; color:#1d4ed8; }
+
+        /* CONTAINER */
+        .g-wrap { max-width:960px; margin:0 auto; padding:36px 24px; }
+
+        /* SECCIONES */
+        .g-sec { margin-bottom:40px; }
+        .g-sec-titulo { display:flex; align-items:center; gap:10px; margin-bottom:16px; padding-bottom:10px; border-bottom:3px solid #3b82f6; }
+        .g-sec-n { width:32px; height:32px; border-radius:50%; background:#1d4ed8; color:#fff; display:flex; align-items:center; justify-content:center; font-size:0.88rem; font-weight:800; flex-shrink:0; }
+        .g-sec-titulo h2 { font-size:1.1rem; font-weight:800; color:#1e293b; }
+        .g-badge { margin-left:auto; border-radius:20px; padding:2px 10px; font-size:0.7rem; font-weight:700; }
+        .gb-azul  { background:#dbeafe; color:#1d4ed8; }
+        .gb-verde { background:#dcfce7; color:#166534; }
+        .gb-naranja { background:#ffedd5; color:#c2410c; }
+
+        /* PASOS */
+        .g-pasos { display:flex; flex-direction:column; gap:10px; }
+        .g-paso { display:flex; gap:14px; align-items:flex-start; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:14px 18px; }
+        .g-paso.ok     { border-left:4px solid #22c55e; }
+        .g-paso.warn   { border-left:4px solid #f59e0b; background:#fffbeb; }
+        .g-paso.danger { border-left:4px solid #ef4444; background:#fff1f2; }
+        .g-paso-n { width:26px; height:26px; border-radius:50%; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:800; flex-shrink:0; margin-top:2px; }
+        .g-paso h3 { font-size:0.92rem; font-weight:700; margin-bottom:3px; }
+        .g-paso p  { font-size:0.84rem; color:#64748b; }
+        .g-paso p strong { color:#1e293b; }
+
+        /* ANOTACIONES */
+        .annot { display:flex; align-items:flex-start; gap:8px; margin-top:10px; padding:10px 14px; border-radius:8px; font-size:0.82rem; }
+        .annot.ok     { background:#f0fdf4; border:1px solid #bbf7d0; color:#166534; }
+        .annot.info   { background:#eff6ff; border:1px solid #bfdbfe; color:#1d4ed8; }
+        .annot.warn   { background:#fffbeb; border:1px solid #fde68a; color:#92400e; }
+        .annot.danger { background:#fff1f2; border:1px solid #fecaca; color:#991b1b; }
+        .annot i { font-size:1.1rem; flex-shrink:0; margin-top:1px; }
+
+        /* ══ MOCKUP — dark app style ══ */
+        .mockup { background:#0f172a; border-radius:14px; border:1px solid rgba(255,255,255,0.1); overflow:hidden; font-family:'Inter',sans-serif; }
+        .mockup-bar { background:#1e293b; border-bottom:1px solid rgba(255,255,255,0.08); padding:10px 16px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .mockup-bar .m-title { font-size:0.82rem; font-weight:700; color:#e2e8f0; }
+
+        /* Badges de estado */
+        .m-badge { font-size:0.7rem; font-weight:700; border-radius:6px; padding:2px 8px; display:inline-block; }
+        .m-verde   { background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3); }
+        .m-azul    { background:rgba(59,130,246,0.15); color:#60a5fa; border:1px solid rgba(59,130,246,0.3); }
+        .m-rojo    { background:rgba(239,68,68,0.15);  color:#f87171; border:1px solid rgba(239,68,68,0.3); }
+        .m-amarillo{ background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.3); }
+        .m-morado  { background:rgba(139,92,246,0.15); color:#c4b5fd; border:1px solid rgba(139,92,246,0.3); }
+        .m-naranja { background:rgba(249,115,22,0.15); color:#fb923c; border:1px solid rgba(249,115,22,0.3); }
+
+        /* Botones simulados */
+        .m-btn { border-radius:8px; padding:8px 14px; font-size:0.8rem; font-weight:700; cursor:default; display:inline-flex; align-items:center; gap:6px; border:none; }
+        .m-btn-verde   { background:linear-gradient(135deg,#10b981,#059669); color:#fff; box-shadow:0 4px 14px rgba(16,185,129,0.4); }
+        .m-btn-naranja { background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; box-shadow:0 3px 10px rgba(245,158,11,0.35); }
+        .m-btn-gris    { background:rgba(255,255,255,0.05); color:#94a3b8; border:1px solid rgba(255,255,255,0.1) !important; }
+        .m-btn-morado  { background:rgba(99,102,241,0.15); color:#818cf8; border:1px solid rgba(99,102,241,0.4) !important; }
+
+        /* Input simulado */
+        .m-input { width:100%; padding:16px; background:#0a1628; border:2px solid rgba(16,185,129,0.5); color:#10b981; border-radius:10px; font-size:1.4rem; font-weight:900; font-family:monospace; text-align:right; letter-spacing:1px; outline:none; box-sizing:border-box; }
+
+        /* Indicador DIF en modal */
+        .m-dif { display:flex; align-items:center; gap:8px; margin-top:12px; padding:10px 14px; border-radius:8px; font-size:0.88rem; font-weight:800; }
+        .m-dif.ok     { border:1px solid rgba(16,185,129,0.35); background:rgba(16,185,129,0.12); color:#10b981; }
+        .m-dif.danger { border:1px solid rgba(239,68,68,0.3);   background:rgba(239,68,68,0.1);  color:#f87171; }
+        .m-dif.info   { border:1px solid rgba(59,130,246,0.3);  background:rgba(59,130,246,0.1); color:#60a5fa; }
+
+        /* Tarjeta planilla */
+        .m-planilla-card { border-radius:12px; padding:14px; }
+        .m-planilla-card.despachada { background:#0d1b2e; border:1px solid rgba(139,92,246,0.4); border-top:3px solid #8b5cf6; }
+        .m-planilla-card.cuadrada   { background:#0a1a12; border:1px solid rgba(16,185,129,0.3);  border-top:3px solid #10b981; opacity:0.85; }
+        .m-planilla-card.diff       { background:#1a110a; border:1px solid rgba(245,158,11,0.4); border-top:3px solid #f59e0b; }
+
+        /* Tabla Excel */
+        .m-table-wrap { overflow-x:auto; }
+        .m-table { width:100%; border-collapse:collapse; font-size:0.75rem; color:#e2e8f0; min-width:860px; }
+        .m-table thead tr { background:#0a1628; }
+        .m-table th { padding:8px 10px; text-align:center; font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#64748b; border:1px solid #1e3a5f; white-space:pre-line; }
+        .m-table th.th-verde   { color:#34d399; }
+        .m-table th.th-amarillo{ color:#fbbf24; }
+        .m-table th.th-rojo    { color:#f87171; }
+        .m-table tbody tr { border-bottom:1px solid rgba(255,255,255,0.04); }
+        .m-table tbody tr.row-verde { background:rgba(16,185,129,0.07); }
+        .m-table td { padding:7px 10px; text-align:right; border:1px solid rgba(255,255,255,0.04); font-family:monospace; font-size:0.76rem; color:#e2e8f0; white-space:nowrap; }
+        .m-table td.td-fix   { text-align:center; font-family:'Inter',sans-serif; }
+        .m-table td.td-placa { font-weight:800; color:#f8fafc; font-family:'Inter',sans-serif; }
+        .m-table td.td-verde { color:#34d399; font-weight:700; background:rgba(16,185,129,0.12); }
+        .m-table td.td-amarillo { color:#fbbf24; font-weight:700; }
+        .m-table td.td-rojo   { color:#f87171; font-weight:700; }
+        .m-table td.td-ok     { color:#10b981; font-weight:800; }
+        .m-table td.td-neg    { color:#ef4444; font-weight:800; }
+        .m-table td.td-cero   { color:#334155; }
+        .m-table td.td-input  { background:rgba(99,102,241,0.1); }
+        .m-cell-input { background:rgba(15,23,42,0.8); border:1px solid rgba(99,102,241,0.5); border-radius:4px; padding:3px 6px; color:#e2e8f0; font-size:0.74rem; font-family:monospace; text-align:right; width:80px; display:inline-block; }
+
+        /* Resumen del flujo */
+        .flujo-resumen { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; }
+        .fr-card { background:#fff; border-radius:12px; border:1px solid #e2e8f0; padding:16px; text-align:center; }
+        .fr-icon { font-size:1.8rem; margin-bottom:6px; }
+        .fr-card h4 { font-size:0.84rem; font-weight:700; margin-bottom:4px; }
+        .fr-card p  { font-size:0.75rem; color:#64748b; }
+
+        footer { text-align:center; padding:20px; color:#94a3b8; font-size:0.78rem; border-top:1px solid #e2e8f0; margin-top:8px; }
+
+        @media print { .print-btn { display:none; } body { background:#fff; } }
+        @media (max-width:600px) { .g-header { padding:20px 16px; } .print-btn { margin-left:0; } .g-wrap { padding:20px 12px; } }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="g-header">
+    <div class="g-header-icon"><i class="ri-file-list-3-line"></i></div>
+    <div>
+        <h1>Guía de Cuadre de Planillas</h1>
+        <p>Rol Cajera · FletesApp TYM · Módulo "Estado Planillas"</p>
+    </div>
+    <button class="print-btn" onclick="window.print()"><i class="ri-printer-line"></i> Imprimir</button>
+</div>
+
+<div class="g-wrap">
+
+<!-- FLUJO GENERAL -->
+<div class="flujo-banner">
+    <div class="flujo-step fs1">
+        <div class="fs-num">1</div>
+        <div class="fs-lbl">Ver tarjetas<br>DESPACHADAS</div>
+    </div>
+    <div class="flujo-arrow">→</div>
+    <div class="flujo-step fs2">
+        <div class="fs-num">2</div>
+        <div class="fs-lbl">Cuadrar con<br>el botón verde</div>
+    </div>
+    <div class="flujo-arrow">→</div>
+    <div class="flujo-step fs3">
+        <div class="fs-num">3</div>
+        <div class="fs-lbl">Facturas sueltas<br>→ nueva planilla</div>
+    </div>
+    <div class="flujo-arrow">→</div>
+    <div class="flujo-step fs4">
+        <div class="fs-num">4</div>
+        <div class="fs-lbl">Revisar tabla<br>Excel (opcional)</div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SEC 1: QUÉ VES AL ENTRAR — TARJETAS -->
+<!-- ══════════════════════════════════════════ -->
+<div class="g-sec">
+    <div class="g-sec-titulo">
+        <div class="g-sec-n">1</div>
+        <h2>Lo que ves al entrar: Vista Tarjetas</h2>
+        <span class="g-badge gb-verde">Vista principal</span>
+    </div>
+
+    <p style="font-size:0.88rem; color:#475569; margin-bottom:12px;">
+        El sistema arranca en <strong>Vista Tarjetas</strong>. Cada planilla despachada aparece como una tarjeta.
+        Las moradas son las que están pendientes de cuadrar. Las verdes ya están cuadradas.
+    </p>
+
+    <div class="mockup">
+        <div class="mockup-bar">
+            <span class="m-title">Estado Planillas — 21/09/2026</span>
+            <span style="display:flex; gap:0; margin-left:auto; border-radius:8px; overflow:hidden; border:2px solid #1e3a5f;">
+                <span style="background:linear-gradient(135deg,#10b981,#059669); color:#fff; padding:8px 16px; font-size:0.78rem; font-weight:800; cursor:default; display:flex; align-items:center; gap:6px;"><i class="ri-layout-grid-fill"></i> Tarjetas</span>
+                <span style="background:transparent; color:#475569; padding:8px 16px; font-size:0.78rem; font-weight:700; cursor:default; display:flex; align-items:center; gap:6px;"><i class="ri-table-fill"></i> Cuadre Detallado</span>
+            </span>
+            <input type="date" value="2026-09-21" style="background:#030a14; border:2px solid #1e3a5f; border-radius:8px; padding:6px 10px; color:#e2e8f0; font-size:0.8rem;">
+            <span class="m-btn m-btn-verde" style="padding:8px 14px; font-size:0.78rem;"><i class="ri-refresh-line"></i> Actualizar</span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; padding:16px; background:#060d1a;">
+
+            <!-- Tarjeta pendiente -->
+            <div class="m-planilla-card despachada">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-family:monospace; font-weight:900; font-size:1rem; color:#f8fafc;">4522</span>
+                    <span class="m-badge m-morado">DESPACHADA</span>
+                </div>
+                <div style="font-size:0.72rem; color:#64748b; text-transform:uppercase; margin-bottom:2px;">Auxiliar</div>
+                <div style="font-size:0.88rem; font-weight:700; color:#e2e8f0; margin-bottom:8px;">Pedro Arias — ZN-3</div>
+                <span style="background:rgba(255,255,255,0.08); padding:2px 10px; border-radius:6px; font-family:monospace; font-weight:700; color:#fbbf24; font-size:0.85rem;">SYU652</span>
+                <div style="display:flex; justify-content:space-between; margin:10px 0;">
+                    <div><div style="font-size:0.68rem; color:#64748b;">Valor Total</div><div style="font-weight:900; color:#10b981;">$980.000</div></div>
+                    <div style="text-align:right;"><div style="font-size:0.68rem; color:#64748b;">Facturas</div><div style="font-weight:900; color:#e2e8f0;">12</div></div>
+                </div>
+                <div class="m-btn m-btn-verde" style="width:100%; justify-content:center; padding:12px;"><i class="ri-checkbox-circle-line" style="font-size:1.1rem;"></i> Cuadrar planilla</div>
+            </div>
+
+            <!-- Tarjeta ya cuadrada -->
+            <div class="m-planilla-card cuadrada">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-family:monospace; font-weight:900; font-size:1rem; color:#f8fafc;">4521</span>
+                    <span class="m-badge m-verde">✓ CUADRADA</span>
+                </div>
+                <div style="font-size:0.88rem; font-weight:700; color:#e2e8f0; margin-bottom:8px;">Carlos Muñoz — ZN-1</div>
+                <span style="background:rgba(255,255,255,0.08); padding:2px 10px; border-radius:6px; font-family:monospace; font-weight:700; color:#fbbf24; font-size:0.85rem;">TJQ665</span>
+                <div style="margin-top:10px; padding:10px 12px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:10px;">
+                    <div style="display:flex; justify-content:space-between;"><span style="font-size:0.7rem; color:#94a3b8;">Recibido:</span><span style="font-weight:900; color:#10b981;">$1.250.000</span></div>
+                    <div style="font-size:0.7rem; color:#64748b; margin-top:2px;">Por: María González</div>
+                    <div style="font-size:0.7rem; color:#94a3b8; font-style:italic; margin-top:2px;">"Cuadre completo sin novedades."</div>
+                </div>
+                <div class="m-btn m-btn-gris" style="width:100%; justify-content:center; margin-top:8px; padding:8px;"><i class="ri-eye-line"></i> Ver detalle</div>
+            </div>
+
+            <!-- Tarjeta con facturas sueltas (cuadrada con diferencia) -->
+            <div class="m-planilla-card diff">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-family:monospace; font-weight:900; font-size:1rem; color:#f8fafc;">4520</span>
+                    <span class="m-badge m-verde">✓ CUADRADA</span>
+                </div>
+                <div style="font-size:0.88rem; font-weight:700; color:#e2e8f0; margin-bottom:8px;">Luis Cano — ZN-2</div>
+                <span style="background:rgba(255,255,255,0.08); padding:2px 10px; border-radius:6px; font-family:monospace; font-weight:700; color:#fbbf24; font-size:0.85rem;">ERK303</span>
+                <div style="margin-top:10px; padding:10px 12px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:10px; margin-bottom:8px;">
+                    <div style="display:flex; justify-content:space-between;"><span style="font-size:0.7rem; color:#94a3b8;">Recibido:</span><span style="font-weight:900; color:#10b981;">$930.000</span></div>
+                    <div style="font-size:0.7rem; color:#f87171; font-style:italic; margin-top:2px;">3 factura(s) marcadas como no cuadradas/sueltas.</div>
+                </div>
+                <!-- Botón naranja para crear planilla con las sueltas -->
+                <div class="m-btn m-btn-naranja" style="width:100%; justify-content:center; padding:10px; font-size:0.85rem;"><i class="ri-add-circle-line"></i> Crear planilla (3 faltante(s))</div>
+            </div>
+
+        </div>
+    </div>
+    <div class="annot info">
+        <i class="ri-information-line"></i>
+        <span><strong>Morado = DESPACHADA</strong> (pendiente de cuadrar) · <strong>Verde = CUADRADA</strong> (lista) · <strong>Naranja = tiene facturas sueltas</strong> que necesitan nueva planilla</span>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SEC 2: CUADRAR UNA PLANILLA (EXACTO) -->
+<!-- ══════════════════════════════════════════ -->
+<div class="g-sec">
+    <div class="g-sec-titulo">
+        <div class="g-sec-n">2</div>
+        <h2>Cuadrar una planilla — cuadre exacto</h2>
+        <span class="g-badge gb-verde">Lo más común</span>
+    </div>
+
+    <div class="g-pasos">
+        <div class="g-paso ok">
+            <div class="g-paso-n">①</div>
+            <div>
+                <h3>Haz clic en el botón verde "Cuadrar planilla"</h3>
+                <p>Se abre una ventana con el valor esperado de esa planilla ya precargado.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal cuadre exacto -->
+    <div class="mockup" style="max-width:460px; margin:12px auto 0;">
+        <div class="mockup-bar">
+            <i class="ri-safe-2-line" style="color:#10b981; font-size:1.1rem;"></i>
+            <span class="m-title">Cuadrar planilla</span>
+        </div>
+        <div style="padding:20px; background:#1e293b;">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:10px; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-family:monospace; font-weight:900; font-size:1rem; color:#f8fafc;">4522</span>
+                    <span style="background:rgba(255,255,255,0.1); padding:2px 10px; border-radius:6px; font-family:monospace; font-weight:700; color:#fbbf24;">SYU652</span>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:0.65rem; color:#475569; text-transform:uppercase; font-weight:700;">Valor esperado</div>
+                    <div style="font-size:1.15rem; font-weight:900; color:#10b981;">$980.000,00</div>
+                </div>
+            </div>
+            <div style="font-size:0.75rem; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Valor recibido <span style="color:#ef4444;">*</span></div>
+            <input type="text" value="980.000" class="m-input" readonly>
+            <div class="m-dif ok"><i class="ri-checkbox-circle-fill"></i> Cuadra exacto — se guardará automáticamente</div>
+            <div style="margin-top:12px; padding:9px 12px; background:rgba(99,102,241,0.07); border:1px solid rgba(99,102,241,0.18); border-radius:8px; font-size:0.72rem; color:#a5b4fc; display:flex; align-items:center; gap:8px;">
+                <i class="ri-magic-line" style="color:#818cf8; font-size:1rem; flex-shrink:0;"></i>
+                <span>Si cuadra exacto se guarda solo. Si hay diferencia, revisa las facturas en el siguiente paso.</span>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:16px;">
+                <span class="m-btn" style="background:#334155; color:#94a3b8; padding:11px 20px; flex:1; justify-content:center;">Cancelar</span>
+                <span class="m-btn m-btn-verde" style="flex:2; justify-content:center; padding:11px 20px;"><i class="ri-arrow-right-line"></i> Continuar</span>
+            </div>
+        </div>
+    </div>
+    <div class="annot ok" style="max-width:460px; margin:8px auto 0;">
+        <i class="ri-checkbox-circle-line"></i>
+        <span>El sistema pre-llena el valor esperado. Si lo recibido es igual, solo clic en <strong>"Continuar"</strong> → queda guardado automáticamente.</span>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SEC 3: CUADRE CON DIFERENCIA -->
+<!-- ══════════════════════════════════════════ -->
+<div class="g-sec">
+    <div class="g-sec-titulo">
+        <div class="g-sec-n">3</div>
+        <h2>Cuadre con diferencia — marcar facturas sueltas</h2>
+        <span class="g-badge gb-naranja">Cuando falta o sobra</span>
+    </div>
+
+    <p style="font-size:0.88rem; color:#475569; margin-bottom:12px;">
+        Si el valor recibido es diferente al esperado, el indicador cambia de color y el sistema te pide revisar cuáles facturas cuadraron.
+    </p>
+
+    <!-- Los tres estados del indicador -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; margin-bottom:14px;">
+        <div class="mockup">
+            <div style="padding:12px 14px; background:#1e293b;">
+                <div style="font-size:0.72rem; color:#64748b; margin-bottom:6px;">Recibes exacto: <strong style="color:#10b981;">$980.000</strong></div>
+                <div class="m-dif ok"><i class="ri-checkbox-circle-fill"></i> Cuadra exacto</div>
+            </div>
+        </div>
+        <div class="mockup">
+            <div style="padding:12px 14px; background:#1e293b;">
+                <div style="font-size:0.72rem; color:#64748b; margin-bottom:6px;">Recibes menos: <strong style="color:#f87171;">$930.000</strong></div>
+                <div class="m-dif danger"><i class="ri-arrow-down-circle-fill"></i> Faltante: -50.000,00</div>
+            </div>
+        </div>
+        <div class="mockup">
+            <div style="padding:12px 14px; background:#1e293b;">
+                <div style="font-size:0.72rem; color:#64748b; margin-bottom:6px;">Recibes más: <strong style="color:#60a5fa;">$1.000.000</strong></div>
+                <div class="m-dif info"><i class="ri-arrow-up-circle-fill"></i> Sobrante: +20.000,00</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="g-pasos">
+        <div class="g-paso warn">
+            <div class="g-paso-n">①</div>
+            <div>
+                <h3>Si hay diferencia: clic en "Continuar" para ver las facturas</h3>
+                <p>El sistema muestra la lista de todas las facturas de esa planilla. Tienes que marcar <strong>cuáles SÍ cuadraron</strong> (las que vinieron) y cuáles NO.</p>
+            </div>
+        </div>
+        <div class="g-paso warn">
+            <div class="g-paso-n">②</div>
+            <div>
+                <h3>Desmarca las facturas que NO llegaron</h3>
+                <p>Por defecto todas están marcadas. <strong>Desmarca (quita el visto)</strong> las facturas que el conductor no trajo. Esas quedarán como "sueltas".</p>
+            </div>
+        </div>
+        <div class="g-paso ok">
+            <div class="g-paso-n">③</div>
+            <div>
+                <h3>Agrega una observación y confirma</h3>
+                <p>Escribe una nota (ej: <em>"Faltó factura 1234 y 1235"</em>) y haz clic en <strong>"Guardar cuadre"</strong>. La planilla queda en estado CUADRADA.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SEC 4: FACTURAS SUELTAS → NUEVA PLANILLA -->
+<!-- ══════════════════════════════════════════ -->
+<div class="g-sec">
+    <div class="g-sec-titulo">
+        <div class="g-sec-n">4</div>
+        <h2>Facturas sueltas → crear nueva planilla</h2>
+        <span class="g-badge gb-naranja">Botón naranja</span>
+    </div>
+
+    <p style="font-size:0.88rem; color:#475569; margin-bottom:12px;">
+        Cuando una planilla queda cuadrada pero con facturas que no llegaron, aparece un <strong>botón naranja</strong>
+        en esa tarjeta. Ese botón crea automáticamente una nueva planilla con esas facturas sueltas, para que el
+        programador pueda re-despacharlas.
+    </p>
+
+    <div class="mockup" style="max-width:300px;">
+        <div style="padding:14px; background:#060d1a;">
+            <div class="m-planilla-card diff">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-family:monospace; font-weight:900; color:#f8fafc;">4520</span>
+                    <span class="m-badge m-verde">✓ CUADRADA</span>
+                </div>
+                <div style="font-size:0.85rem; font-weight:700; color:#e2e8f0; margin-bottom:6px;">Luis Cano — ZN-2</div>
+                <span style="background:rgba(255,255,255,0.08); padding:2px 10px; border-radius:6px; font-family:monospace; font-weight:700; color:#fbbf24; font-size:0.82rem;">ERK303</span>
+                <div style="margin-top:8px; padding:8px 10px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:8px; margin-bottom:8px;">
+                    <div style="display:flex; justify-content:space-between;"><span style="font-size:0.68rem; color:#94a3b8;">Recibido:</span><span style="font-weight:900; color:#10b981; font-size:0.9rem;">$930.000</span></div>
+                    <div style="font-size:0.68rem; color:#f87171; margin-top:2px;">3 factura(s) sueltas.</div>
+                </div>
+                <!-- Botón naranja -->
+                <div class="m-btn m-btn-naranja" style="width:100%; justify-content:center; padding:10px; font-size:0.84rem;"><i class="ri-add-circle-line"></i> Crear planilla (3 faltante(s))</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="g-pasos" style="margin-top:12px;">
+        <div class="g-paso ok">
+            <div class="g-paso-n">①</div>
+            <div>
+                <h3>Haz clic en el botón naranja</h3>
+                <p>Se muestra un resumen de las facturas que quedaron sueltas y el total que representan. El sistema ya tiene la lista lista.</p>
+            </div>
+        </div>
+        <div class="g-paso ok">
+            <div class="g-paso-n">②</div>
+            <div>
+                <h3>Confirma la creación</h3>
+                <p>El sistema crea una nueva planilla en estado <strong>TRANSITORIA</strong> con esas facturas (el número de planilla lleva el sufijo <em>-PEND</em>). El programador la verá y podrá re-despacharla.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="annot warn">
+        <i class="ri-alert-line"></i>
+        <span>Solo aparece el botón naranja si hay facturas sueltas. Si la planilla cuadró exacto (sin facturas faltantes), el botón naranja no aparece.</span>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SEC 5: VISTA CUADRE DETALLADO (TABLA EXCEL) -->
+<!-- ══════════════════════════════════════════ -->
+<div class="g-sec">
+    <div class="g-sec-titulo">
+        <div class="g-sec-n">5</div>
+        <h2>Vista Cuadre Detallado (tabla Excel)</h2>
+        <span class="g-badge gb-azul">Alimentada por las tarjetas</span>
+    </div>
+
+    <p style="font-size:0.88rem; color:#475569; margin-bottom:12px;">
+        Al cambiar a <strong>"Cuadre Detallado"</strong> ves la misma información pero en formato tabla tipo Excel.
+        Esta vista se alimenta automáticamente de lo que cuadras en las tarjetas. También puedes editar los
+        desgloses (efectivo, consignaciones, etc.) directamente aquí.
+    </p>
+
+    <div class="mockup">
+        <div class="mockup-bar">
+            <span class="m-title">Cuadre Detallado — 21/09/2026</span>
+            <span style="display:flex; gap:0; margin-left:auto; border-radius:8px; overflow:hidden; border:2px solid #1e3a5f;">
+                <span style="background:transparent; color:#475569; padding:8px 16px; font-size:0.78rem; font-weight:700; cursor:default; display:flex; align-items:center; gap:6px;"><i class="ri-layout-grid-fill"></i> Tarjetas</span>
+                <span style="background:linear-gradient(135deg,#6366f1,#4f46e5); color:#fff; padding:8px 16px; font-size:0.78rem; font-weight:800; cursor:default; display:flex; align-items:center; gap:6px;"><i class="ri-table-fill"></i> Cuadre Detallado</span>
+            </span>
+        </div>
+        <!-- Barra de atajos de teclado -->
+        <div style="display:flex; align-items:center; flex-wrap:wrap; gap:10px; padding:10px 16px; background:linear-gradient(135deg,#060f1e,#0a1628); border-bottom:1px solid #1e3a5f;">
+            <span style="font-size:0.68rem; color:#475569; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">Navegar:</span>
+            <div style="display:flex; gap:4px;">
+                <kbd style="background:#0d1f38; color:#93c5fd; border:2px solid #1e3a5f; border-bottom:4px solid #0a1628; border-radius:6px; padding:3px 8px; font-size:0.82rem; font-weight:900; font-family:monospace;">←</kbd>
+                <kbd style="background:#0d1f38; color:#93c5fd; border:2px solid #1e3a5f; border-bottom:4px solid #0a1628; border-radius:6px; padding:3px 8px; font-size:0.82rem; font-weight:900; font-family:monospace;">→</kbd>
+                <kbd style="background:#0d1f38; color:#93c5fd; border:2px solid #1e3a5f; border-bottom:4px solid #0a1628; border-radius:6px; padding:3px 8px; font-size:0.82rem; font-weight:900; font-family:monospace;">↑</kbd>
+                <kbd style="background:#0d1f38; color:#93c5fd; border:2px solid #1e3a5f; border-bottom:4px solid #0a1628; border-radius:6px; padding:3px 8px; font-size:0.82rem; font-weight:900; font-family:monospace;">↓</kbd>
+            </div>
+            <span style="font-size:0.7rem; color:#64748b;">celdas</span>
+            <div style="width:1px; height:18px; background:#1e3a5f;"></div>
+            <kbd style="background:#0d1f38; color:#93c5fd; border:2px solid #1e3a5f; border-bottom:4px solid #0a1628; border-radius:6px; padding:3px 8px; font-size:0.75rem; font-weight:900; font-family:monospace;">Tab</kbd>
+            <span style="font-size:0.7rem; color:#64748b;">siguiente celda</span>
+            <div style="width:1px; height:18px; background:#1e3a5f;"></div>
+            <div style="display:flex; align-items:center; gap:6px;">
+                <div style="width:12px; height:12px; border-radius:3px; background:#f59e0b;"></div>
+                <span style="font-size:0.7rem; color:#94a3b8;">Fila naranja = sin guardar</span>
+            </div>
+            <div style="margin-left:auto; display:flex; align-items:center; gap:6px; background:rgba(16,185,129,0.12); border:2px solid rgba(16,185,129,0.3); border-radius:6px; padding:4px 10px;">
+                <i class="ri-calculator-line" style="color:#10b981; font-size:0.9rem;"></i>
+                <span style="font-size:0.7rem; color:#10b981; font-weight:800;">TOTAL y DIF se calculan solos</span>
+            </div>
+        </div>
+        <div class="m-table-wrap">
+            <table class="m-table">
+                <thead>
+                    <tr>
+                        <th>AUXILIAR</th>
+                        <th>RUTA</th>
+                        <th># PLAN.</th>
+                        <th>MES</th>
+                        <th>CUADRE</th>
+                        <th class="th-verde">TOTAL&#10;CUADRE</th>
+                        <th>PLAN.&#10;TRANS.</th>
+                        <th>FACT&#10;TRANS.</th>
+                        <th>DEVOL.</th>
+                        <th>VALES</th>
+                        <th>DESC.&#10;NÓM.</th>
+                        <th>CONSIG.</th>
+                        <th>CONSIG.&#10;ALPINA</th>
+                        <th># CONSIG.</th>
+                        <th>EFECTIVO</th>
+                        <th>MONEDAS</th>
+                        <th>CRÉDITO</th>
+                        <th>SOBR.&#10;CAJA</th>
+                        <th>RETE&#10;FUENTE</th>
+                        <th>AJ.&#10;PESO</th>
+                        <th>OTROS&#10;GASTOS</th>
+                        <th class="th-amarillo">TOTAL</th>
+                        <th class="th-rojo">DIF</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="row-verde">
+                        <td class="td-fix">Carlos Muñoz</td>
+                        <td class="td-fix" style="color:#64748b; font-size:0.7rem;">ZN-1</td>
+                        <td class="td-fix td-placa">4521</td>
+                        <td class="td-fix" style="color:#64748b; font-size:0.7rem;">SEP</td>
+                        <td class="td-fix" style="color:#64748b; font-size:0.68rem;">MANUAL</td>
+                        <td class="td-verde">1.250.000,00</td>
+                        <td class="td-cero">—</td><td class="td-cero">—</td><td class="td-cero">—</td>
+                        <td class="td-cero">—</td><td class="td-cero">—</td>
+                        <td>850.000,00</td><td class="td-cero">—</td>
+                        <td class="td-fix" style="color:#64748b; font-size:0.7rem;">3C</td>
+                        <td>400.000,00</td><td class="td-cero">—</td><td class="td-cero">—</td>
+                        <td class="td-cero">—</td><td class="td-cero">—</td><td class="td-cero">—</td><td class="td-cero">—</td>
+                        <td class="td-amarillo">1.250.000,00</td>
+                        <td class="td-ok">0</td>
+                    </tr>
+                    <tr>
+                        <td class="td-fix">Pedro Arias</td>
+                        <td class="td-fix" style="color:#64748b; font-size:0.7rem;">ZN-3</td>
+                        <td class="td-fix td-placa">4522</td>
+                        <td class="td-fix" style="color:#64748b; font-size:0.7rem;">SEP</td>
+                        <td class="td-fix td-cero">—</td>
+                        <td class="td-verde td-input"><span class="m-cell-input" style="border-color:rgba(16,185,129,0.5); color:#34d399;">980.000</span></td>
+                        <td class="td-cero">—</td><td class="td-cero">—</td><td class="td-cero">—</td>
+                        <td class="td-cero">—</td><td class="td-cero">—</td>
+                        <td class="td-input"><span class="m-cell-input">650.000</span></td>
+                        <td class="td-cero">—</td><td class="td-cero">—</td>
+                        <td class="td-input"><span class="m-cell-input" style="border-color:rgba(99,102,241,0.8); outline:2px solid #6366f1;">330.000</span></td>
+                        <td class="td-cero">—</td><td class="td-cero">—</td>
+                        <td class="td-cero">—</td><td class="td-cero">—</td><td class="td-cero">—</td><td class="td-cero">—</td>
+                        <td class="td-amarillo">980.000,00</td>
+                        <td class="td-ok">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="display:flex; gap:8px; padding:12px 14px; border-top:1px solid rgba(255,255,255,0.06);">
+            <span class="m-btn m-btn-verde" style="padding:8px 16px;"><i class="ri-save-3-line"></i> Guardar todo</span>
+            <span class="m-btn m-btn-morado" style="padding:8px 14px;"><i class="ri-file-pdf-2-line"></i> PDF</span>
+            <span class="m-btn m-btn-morado" style="padding:8px 14px;"><i class="ri-file-excel-2-line"></i> Excel</span>
+        </div>
+    </div>
+
+    <!-- Tabla de referencia de columnas -->
+    <p style="font-size:0.9rem; font-weight:700; color:#1e293b; margin:20px 0 10px;">¿Qué significa cada columna?</p>
+    <table style="width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; border:1px solid #e2e8f0; font-size:0.83rem;">
+        <thead>
+            <tr style="background:#1e3a5f; color:#fff;">
+                <th style="padding:10px 14px; text-align:left; font-size:0.74rem; text-transform:uppercase; letter-spacing:0.4px;">Columna</th>
+                <th style="padding:10px 14px; text-align:left; font-size:0.74rem; text-transform:uppercase; letter-spacing:0.4px;">¿Qué se registra aquí?</th>
+                <th style="padding:10px 14px; text-align:left; font-size:0.74rem; text-transform:uppercase; letter-spacing:0.4px;">¿Quién lo llena?</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:9px 14px;"><span style="background:#dcfce7; color:#166534; border:1px solid #86efac; border-radius:5px; padding:1px 7px; font-size:0.72rem; font-weight:700;">TOTAL CUADRE</span></td>
+                <td style="padding:9px 14px; color:#475569;"><strong style="color:#1e293b;">Valor total que debe llegar con esa planilla.</strong> Se llena desde las tarjetas al cuadrar.</td>
+                <td style="padding:9px 14px; color:#475569;">Desde las tarjetas (automático)</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9; background:#fafafa;">
+                <td style="padding:9px 14px;"><span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:5px; padding:1px 7px; font-size:0.72rem; font-weight:700;">PLAN. TRANS.</span></td>
+                <td style="padding:9px 14px; color:#475569;">Número de planilla transitoria relacionada (si aplica).</td>
+                <td style="padding:9px 14px; color:#475569;">✏️ La cajera</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:9px 14px;"><span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:5px; padding:1px 7px; font-size:0.72rem; font-weight:700;">FACT TRANS.</span></td>
+                <td style="padding:9px 14px; color:#475569;">Facturas transitorias relacionadas (si aplica).</td>
+                <td style="padding:9px 14px; color:#475569;">✏️ La cajera</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9; background:#fafafa;">
+                <td style="padding:9px 14px;"><span style="background:#ffedd5; color:#c2410c; border:1px solid #fdba74; border-radius:5px; padding:1px 7px; font-size:0.72rem; font-weight:700;">DEVOLUCIÓN</span></td>
+                <td style="padding:9px 14px; color:#475569;">Valor de mercancía devuelta por el conductor.</td>
+                <td style="padding:9px 14px; color:#475569;">✏️ La cajera</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:9px 14px;"><span style="background:#fef9c3; color:#854d0e; border:1px solid #fde047; border-radius:5px; padding:1px 7px; font-size:0.72rem; font-weight:700;">VALES</span></td>
+                <td style="padding:9px 14px; color:#475569;">Vales o anticipos descontados al conductor.</td>
+                <td style="padding:9px 14px; color:#475569;">✏️ La cajera</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9; background:#fafafa;">
+                <td style="padding:9px 14px;"><span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:5px; padding:1px 7px; font-size:0.72rem; font-weight:700;">DESC. NÓM.</span></td>
+                <td style="padding:9px 14px; color:#475569;">Descuentos de nómina aplicados en esa planilla.</td>
+                <td style="padding:9px 14px; color:#475569;">✏️ La cajera</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:9px 14px;"><span style="background:#dbeafe; color:#1d4ed8; border:1px solid #93c5fd; border-radius:5px; padding:1px 7px; font-size:0.72rem; font-weight:700;">CONSIGNACIONES</span></td>
+                <td style="padding:9px 14px; color:#475569;"><strong style="color:#1e293b;">Valor total de consignaciones bancarias recibidas.</strong></td>
+                <td style="padding:9px 14px; color:#475569;">✏️ La cajera</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9; background:#fafafa;">
+                <td style="padding:9px 14px;"><span style="background:#dbeafe; color:#1d4ed8; border:1px solid #93c5fd; border-radius:5px; padding:1px 7px; font-size:0.72rem; font-weight:700;">CONSIG. ALPINA</span></td>
+                <td style="padding:9px 14px; color:#475569;">Consignaciones específicas de Alpina.</td>
+                <td style="padding:9px 14px; color:#475569;">✏️ La cajera</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:9px 14px;"><span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:5px; padding:1px 7px; font-size:0.72rem; font-weight:700;"># CONSIG.</span></td>
+                <td style="padding:9px 14px; color:#475569;">Número o referencia de la consignación. Ej: "3C", "7C".</td>
+                <td style="padding:9px 14px; color:#475569;">✏️ La cajera</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9; background:#fafafa;">
+                <td style="padding:9px 14px;"><span style="background:#dcfce7; color:#166534; border:1px solid #86efac; border-radius:5px; padding:1px 7px; font-size:0.72rem; font-weight:700;">EFECTIVO</span></td>
+                <td style="padding:9px 14px; color:#475569;"><strong style="color:#1e293b;">Dinero en billetes recibido físicamente.</strong></td>
+                <td style="padding:9px 14px; color:#475569;">✏️ La cajera</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:9px 14px;"><span style="background:#dcfce7; color:#166534; border:1px solid #86efac; border-radius:5px; padding:1px 7px; font-size:0.72rem; font-weight:700;">MONEDAS</span></td>
+                <td style="padding:9px 14px; color:#475569;">Monedas recibidas.</td>
+                <td style="padding:9px 14px; color:#475569;">✏️ La cajera</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9; background:#fafafa;">
+                <td style="padding:9px 14px;"><span style="background:#dbeafe; color:#1d4ed8; border:1px solid #93c5fd; border-radius:5px; padding:1px 7px; font-size:0.72rem; font-weight:700;">CRÉDITO</span></td>
+                <td style="padding:9px 14px; color:#475569;">Pagos con tarjeta o crédito.</td>
+                <td style="padding:9px 14px; color:#475569;">✏️ La cajera</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:9px 14px;"><span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:5px; padding:1px 7px; font-size:0.72rem; font-weight:700;">SOBR. CAJA</span></td>
+                <td style="padding:9px 14px; color:#475569;">Sobrante de caja anterior que se aplica.</td>
+                <td style="padding:9px 14px; color:#475569;">✏️ La cajera</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9; background:#fafafa;">
+                <td style="padding:9px 14px;"><span style="background:#fef9c3; color:#854d0e; border:1px solid #fde047; border-radius:5px; padding:1px 7px; font-size:0.72rem; font-weight:700;">RETEFUENTE</span></td>
+                <td style="padding:9px 14px; color:#475569;">Retención en la fuente aplicada.</td>
+                <td style="padding:9px 14px; color:#475569;">✏️ La cajera</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:9px 14px;"><span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:5px; padding:1px 7px; font-size:0.72rem; font-weight:700;">AJ. PESO</span></td>
+                <td style="padding:9px 14px; color:#475569;">Ajuste por diferencia de peso (negativo = faltante).</td>
+                <td style="padding:9px 14px; color:#475569;">✏️ La cajera</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9; background:#fafafa;">
+                <td style="padding:9px 14px;"><span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:5px; padding:1px 7px; font-size:0.72rem; font-weight:700;">OTROS GASTOS</span></td>
+                <td style="padding:9px 14px; color:#475569;">Cualquier otro valor adicional no contemplado arriba.</td>
+                <td style="padding:9px 14px; color:#475569;">✏️ La cajera</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:9px 14px;"><span style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d; border-radius:5px; padding:1px 7px; font-size:0.72rem; font-weight:700;">TOTAL</span></td>
+                <td style="padding:9px 14px; color:#475569;"><strong style="color:#1e293b;">Suma automática</strong> de: Devolución + Consig. + Efectivo + Monedas + Crédito + Sobrante + Retefuente + Ajustes + Otros.</td>
+                <td style="padding:9px 14px; color:#475569;">🤖 Sistema — automático</td>
+            </tr>
+            <tr>
+                <td style="padding:9px 14px;"><span style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:5px; padding:1px 7px; font-size:0.72rem; font-weight:700;">DIF</span></td>
+                <td style="padding:9px 14px; color:#475569;"><strong style="color:#1e293b;">TOTAL CUADRE − TOTAL calculado.</strong> Verde = cuadra. Rojo = falta. Azul = sobra.</td>
+                <td style="padding:9px 14px; color:#475569;">🤖 Sistema — automático</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="annot info" style="margin-top:12px;">
+        <i class="ri-information-line"></i>
+        <span>Los valores de TOTAL CUADRE se llenan desde las tarjetas. Aquí puedes detallar el desglose (cuánto fue en efectivo, cuánto en consignaciones, etc.) y ajustar si necesitas.</span>
+    </div>
+    <div class="annot warn" style="margin-top:8px;">
+        <i class="ri-alert-line"></i>
+        <span>Si editas valores en esta tabla, haz clic en <strong>"Guardar todo"</strong> antes de salir. El auto-guardado ocurre cada 60 segundos pero no es 100% seguro.</span>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SEC 6: EL DIF -->
+<!-- ══════════════════════════════════════════ -->
+<div class="g-sec">
+    <div class="g-sec-titulo">
+        <div class="g-sec-n">6</div>
+        <h2>Qué significa el DIF en la tabla</h2>
+        <span class="g-badge gb-azul">Referencia rápida</span>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px;">
+        <div class="annot ok"><i class="ri-checkbox-circle-line" style="font-size:1.3rem;"></i><span><strong>DIF = 0 (verde)</strong><br>Todo cuadra. Lo que el conductor trajo es exactamente lo esperado.</span></div>
+        <div class="annot danger"><i class="ri-arrow-down-circle-line" style="font-size:1.3rem;"></i><span><strong>DIF negativo (rojo)</strong><br>Falta dinero. Revisa si hay consignación sin registrar o un faltante real.</span></div>
+        <div class="annot info"><i class="ri-arrow-up-circle-line" style="font-size:1.3rem;"></i><span><strong>DIF positivo (azul)</strong><br>Sobra algo. Revisa si falta registrar un descuento o hay un error en los valores.</span></div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SEC 7: RESUMEN DEL FLUJO -->
+<!-- ══════════════════════════════════════════ -->
+<div class="g-sec">
+    <div class="g-sec-titulo">
+        <div class="g-sec-n">7</div>
+        <h2>Resumen del flujo diario</h2>
+        <span class="g-badge gb-verde">Cheat sheet</span>
+    </div>
+    <div class="flujo-resumen">
+        <div class="fr-card"><div class="fr-icon">📅</div><h4>1. Verifica la fecha</h4><p>Confirma que el día seleccionado es el correcto antes de cargar.</p></div>
+        <div class="fr-card"><div class="fr-icon">🃏</div><h4>2. Vista Tarjetas</h4><p>Las moradas están pendientes. Haz clic en "Cuadrar planilla" en cada una.</p></div>
+        <div class="fr-card"><div class="fr-icon">💰</div><h4>3. Digita lo recibido</h4><p>Escribe el valor exacto recibido. Si cuadra solo, el sistema lo guarda automáticamente.</p></div>
+        <div class="fr-card"><div class="fr-icon">🔴</div><h4>4. Si hay diferencia</h4><p>Desmarca las facturas que no llegaron. Agrega una observación y guarda.</p></div>
+        <div class="fr-card"><div class="fr-icon">🟠</div><h4>5. Facturas sueltas</h4><p>Si aparece el botón naranja, crea la planilla de diferencias para re-despachar.</p></div>
+        <div class="fr-card"><div class="fr-icon">📊</div><h4>6. Tabla Excel (opcional)</h4><p>Revisa o completa el desglose (efectivo, consignaciones). Guarda con el botón verde.</p></div>
+    </div>
+</div>
+
+</div><!-- fin g-wrap -->
+
+<footer>
+    Guía interna · Rol Cajera · FletesApp · Tiendas y Marcas Eje Cafetero
+</footer>
+
+</body>
+</html>

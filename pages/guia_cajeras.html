@@ -378,11 +378,257 @@
 
 
 <!-- ══════════════════════════════════════════ -->
-<!-- SEC 4: FACTURAS SUELTAS → NUEVA PLANILLA -->
+<!-- SEC 4: VER DETALLE — FACTURAS UNA A UNA -->
 <!-- ══════════════════════════════════════════ -->
 <div class="g-sec">
     <div class="g-sec-titulo">
         <div class="g-sec-n">4</div>
+        <h2>Ver detalle — facturas una a una</h2>
+        <span class="g-badge gb-azul">Botón "Ver detalle"</span>
+    </div>
+
+    <p style="font-size:0.88rem; color:#475569; margin-bottom:12px;">
+        El botón gris <strong>"Ver detalle"</strong> abre la lista completa de facturas de esa planilla.
+        Muestra cuáles están asignadas (llegaron) y cuáles están sueltas (no llegaron), con el valor de cada una.
+    </p>
+
+    <!-- Mockup: modal Ver detalle -->
+    <div class="mockup">
+        <div style="padding:20px 24px; background:#1e293b;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <i class="ri-file-list-3-line" style="color:#60a5fa; font-size:1.2rem;"></i>
+                    <span style="font-size:1.05rem; font-weight:800; color:#fff;">Detalle Planilla</span>
+                    <span style="font-size:1.05rem; font-weight:900; color:#60a5fa; font-family:monospace;">23689</span>
+                </div>
+                <span style="color:#64748b; font-size:1.2rem; cursor:default;">✕</span>
+            </div>
+
+            <!-- Cabecera datos planilla -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:12px; padding:14px 16px; background:#0a1628; border-radius:10px; margin-bottom:14px;">
+                <div><div style="font-size:0.65rem; color:#64748b; text-transform:uppercase; margin-bottom:3px;">FECHA</div><div style="font-weight:700; color:#e2e8f0; font-size:0.88rem;">2026-09-10</div></div>
+                <div><div style="font-size:0.65rem; color:#64748b; text-transform:uppercase; margin-bottom:3px;">ZONA</div><div style="font-weight:700; color:#e2e8f0; font-size:0.88rem;">M9454</div></div>
+                <div><div style="font-size:0.65rem; color:#64748b; text-transform:uppercase; margin-bottom:3px;">PROVEEDOR</div><div style="font-weight:700; color:#e2e8f0; font-size:0.88rem;">ALPINA</div></div>
+                <div><div style="font-size:0.65rem; color:#64748b; text-transform:uppercase; margin-bottom:3px;">FACTURAS</div><div style="font-weight:800; color:#60a5fa; font-size:0.88rem;">67</div></div>
+                <div><div style="font-size:0.65rem; color:#64748b; text-transform:uppercase; margin-bottom:3px;">VALOR TOTAL</div><div style="font-weight:800; color:#10b981; font-size:0.88rem;">$10.450.871</div></div>
+                <div><div style="font-size:0.65rem; color:#64748b; text-transform:uppercase; margin-bottom:3px;">ESTADO</div><span class="m-badge m-verde" style="font-size:0.72rem;">CUADRADA</span></div>
+            </div>
+
+            <!-- Resumen asignadas / sueltas -->
+            <div style="display:flex; align-items:center; gap:16px; margin-bottom:12px; flex-wrap:wrap; font-size:0.82rem;">
+                <span style="color:#10b981;"><i class="ri-checkbox-circle-line"></i> <strong>67 asignadas</strong> ($10.450.871)</span>
+                <span style="color:#ef4444;"><i class="ri-alert-line"></i> <strong>1 suelta</strong> ($295.549)</span>
+                <span style="color:#94a3b8;">Total planilla: $10.746.420</span>
+                <div style="margin-left:auto; display:flex; gap:8px;">
+                    <span class="m-btn" style="background:rgba(16,185,129,0.1); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:5px 12px; font-size:0.75rem; border-radius:6px;"><i class="ri-checkbox-line"></i> Marcar todas</span>
+                    <span class="m-btn" style="background:rgba(239,68,68,0.1); color:#f87171; border:1px solid rgba(239,68,68,0.3); padding:5px 12px; font-size:0.75rem; border-radius:6px;"><i class="ri-checkbox-blank-line"></i> Desmarcar todas</span>
+                </div>
+            </div>
+
+            <!-- Tabla de facturas -->
+            <div style="overflow-x:auto; border-radius:8px; border:1px solid rgba(255,255,255,0.07);">
+                <table style="width:100%; border-collapse:collapse; font-size:0.8rem; min-width:580px;">
+                    <thead>
+                        <tr style="background:#0a1628;">
+                            <th style="padding:8px 12px; text-align:center; color:#64748b; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap;">ASIG.</th>
+                            <th style="padding:8px 12px; text-align:left; color:#64748b; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.4px;">NO. FACTURA</th>
+                            <th style="padding:8px 12px; text-align:left; color:#64748b; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.4px;">FECHA ENT.</th>
+                            <th style="padding:8px 12px; text-align:left; color:#64748b; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.4px;">ZONA</th>
+                            <th style="padding:8px 12px; text-align:right; color:#64748b; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.4px;">VLR BRUTO</th>
+                            <th style="padding:8px 12px; text-align:right; color:#10b981; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.4px;">VLR FACTURA</th>
+                            <th style="padding:8px 12px; text-align:right; color:#10b981; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.4px;">VALOR TOTAL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:8px 12px; text-align:center;"><div style="width:36px; height:20px; background:#10b981; border-radius:10px; display:inline-flex; align-items:center; justify-content:flex-end; padding-right:3px;"><div style="width:14px; height:14px; background:#fff; border-radius:50%;"></div></div></td>
+                            <td style="padding:8px 12px; font-weight:800; color:#f8fafc; font-family:monospace;">743687</td>
+                            <td style="padding:8px 12px; color:#94a3b8; font-size:0.78rem;">2026-09-10</td>
+                            <td style="padding:8px 12px; color:#94a3b8;">M9454</td>
+                            <td style="padding:8px 12px; text-align:right; color:#60a5fa; font-family:monospace;">$75.709</td>
+                            <td style="padding:8px 12px; text-align:right; color:#10b981; font-weight:700; font-family:monospace;">$90.094</td>
+                            <td style="padding:8px 12px; text-align:right; color:#10b981; font-weight:700; font-family:monospace;">$90.094</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:8px 12px; text-align:center;"><div style="width:36px; height:20px; background:#10b981; border-radius:10px; display:inline-flex; align-items:center; justify-content:flex-end; padding-right:3px;"><div style="width:14px; height:14px; background:#fff; border-radius:50%;"></div></div></td>
+                            <td style="padding:8px 12px; font-weight:800; color:#f8fafc; font-family:monospace;">743695</td>
+                            <td style="padding:8px 12px; color:#94a3b8; font-size:0.78rem;">2026-09-10</td>
+                            <td style="padding:8px 12px; color:#94a3b8;">M9454</td>
+                            <td style="padding:8px 12px; text-align:right; color:#60a5fa; font-family:monospace;">$1.272.096</td>
+                            <td style="padding:8px 12px; text-align:right; color:#10b981; font-weight:700; font-family:monospace;">$1.528.692</td>
+                            <td style="padding:8px 12px; text-align:right; color:#10b981; font-weight:700; font-family:monospace;">$1.528.692</td>
+                        </tr>
+                        <!-- Factura suelta -->
+                        <tr style="background:rgba(239,68,68,0.06);">
+                            <td style="padding:8px 12px; text-align:center;"><div style="width:36px; height:20px; background:#334155; border-radius:10px; display:inline-flex; align-items:center; justify-content:flex-start; padding-left:3px;"><div style="width:14px; height:14px; background:#64748b; border-radius:50%;"></div></div></td>
+                            <td style="padding:8px 12px; font-weight:800; color:#f87171; font-family:monospace; text-decoration:line-through; opacity:0.7;">743689</td>
+                            <td style="padding:8px 12px; color:#64748b; font-size:0.78rem; opacity:0.7;">2026-09-10</td>
+                            <td style="padding:8px 12px; color:#64748b; opacity:0.7;">M9454</td>
+                            <td style="padding:8px 12px; text-align:right; color:#64748b; font-family:monospace; opacity:0.7;">$247.000</td>
+                            <td style="padding:8px 12px; text-align:right; color:#f87171; font-family:monospace; opacity:0.7;">$295.549</td>
+                            <td style="padding:8px 12px; text-align:right; color:#f87171; font-family:monospace; opacity:0.7;">$295.549</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div style="font-size:0.72rem; color:#64748b; margin-top:8px; font-style:italic; text-align:center;">
+                Toggle verde = factura asignada (llegó) &nbsp;·&nbsp; Toggle gris = factura suelta (no llegó)
+            </div>
+        </div>
+    </div>
+
+    <div class="annot info" style="margin-top:10px;">
+        <i class="ri-information-line"></i>
+        <span><strong>Toggle verde</strong> = la factura llegó y está asignada. <strong>Toggle gris</strong> = factura suelta, no llegó. Las filas rojas son las que no cuadraron.</span>
+    </div>
+    <div class="annot ok" style="margin-top:8px;">
+        <i class="ri-eye-line"></i>
+        <span>Úsalo para confirmar que el número de facturas cuadra con el físico en mano y para saber el valor exacto de cada una.</span>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SEC 5: EDITAR DESGLOSE -->
+<!-- ══════════════════════════════════════════ -->
+<div class="g-sec">
+    <div class="g-sec-titulo">
+        <div class="g-sec-n">5</div>
+        <h2>Editar desglose de recaudo</h2>
+        <span class="g-badge gb-azul">Botón morado</span>
+    </div>
+
+    <p style="font-size:0.88rem; color:#475569; margin-bottom:12px;">
+        El botón morado <strong>"Editar desglose"</strong> aparece en cada tarjeta CUADRADA. Sirve para detallar
+        cómo se recibió el dinero: cuánto fue en efectivo, cuánto en consignaciones, si hubo vales, etc.
+        Esto alimenta el PDF de cuadre de caja.
+    </p>
+
+    <!-- Mockup: tarjetas con botones visibles -->
+    <div class="mockup">
+        <div class="mockup-bar">
+            <span class="m-title">Tarjetas cuadradas — los tres botones</span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; padding:16px; background:#060d1a;">
+
+            <!-- Tarjeta sin diferencia -->
+            <div class="m-planilla-card cuadrada">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-family:monospace; font-weight:900; color:#f8fafc;">23679</span>
+                    <span class="m-badge m-verde">✓ CUADRADA</span>
+                </div>
+                <div style="font-size:0.75rem; color:#64748b; margin-bottom:4px;">📅 2026-09-10 · M9550</div>
+                <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+                    <span style="background:rgba(255,255,255,0.08); padding:1px 8px; border-radius:5px; font-family:monospace; font-weight:700; color:#fbbf24; font-size:0.8rem;">EQY944</span>
+                    <span style="font-size:0.8rem; color:#e2e8f0;">CRISTANCHO VILLADA</span>
+                </div>
+                <div style="font-size:0.78rem; color:#64748b; margin-bottom:4px;">📋 1 / 1 facturas</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <span style="font-weight:800; color:#10b981;">$2.943.869</span>
+                    <span class="m-badge m-azul">+$0</span>
+                </div>
+                <div style="padding:8px 10px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:8px; margin-bottom:8px; font-size:0.78rem;">
+                    <div>Recibido: <strong style="color:#10b981;">$2.943.869</strong></div>
+                    <div style="color:#64748b;">Por: Cajera</div>
+                    <div style="color:#94a3b8; font-style:italic;">"Cuadre completo sin novedades."</div>
+                </div>
+                <div class="m-btn m-btn-gris" style="width:100%; justify-content:center; padding:8px; margin-bottom:6px; font-size:0.82rem;"><i class="ri-eye-line"></i> Ver detalle</div>
+                <div class="m-btn m-btn-morado" style="width:100%; justify-content:center; padding:8px; font-size:0.82rem;"><i class="ri-edit-box-line"></i> Editar desglose</div>
+            </div>
+
+            <!-- Tarjeta con diferencia + botón naranja -->
+            <div class="m-planilla-card diff">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-family:monospace; font-weight:900; color:#f8fafc;">23689</span>
+                    <span class="m-badge m-verde">✓ CUADRADA</span>
+                </div>
+                <div style="font-size:0.75rem; color:#64748b; margin-bottom:4px;">📅 2026-09-10 · M9454</div>
+                <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+                    <span style="background:rgba(255,255,255,0.08); padding:1px 8px; border-radius:5px; font-family:monospace; font-weight:700; color:#fbbf24; font-size:0.8rem;">SP0480</span>
+                    <span style="font-size:0.8rem; color:#e2e8f0;">HERNANDO MONTES</span>
+                </div>
+                <div style="font-size:0.78rem; color:#64748b; margin-bottom:4px;">📋 67 / 68 facturas</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <span style="font-weight:800; color:#10b981;">$10.450.871</span>
+                    <span class="m-badge m-rojo">-$10.450.860</span>
+                </div>
+                <div style="padding:8px 10px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:8px; margin-bottom:8px; font-size:0.78rem;">
+                    <div>Recibido: <strong style="color:#10b981;">$11</strong></div>
+                    <div style="color:#64748b;">Por: Cajera</div>
+                    <div style="color:#fbbf24; font-style:italic;">"No cuadraron 2 facturas: #743688, #743689."</div>
+                </div>
+                <div class="m-btn m-btn-gris" style="width:100%; justify-content:center; padding:8px; margin-bottom:6px; font-size:0.82rem;"><i class="ri-eye-line"></i> Ver detalle</div>
+                <div class="m-btn m-btn-morado" style="width:100%; justify-content:center; padding:8px; margin-bottom:6px; font-size:0.82rem;"><i class="ri-edit-box-line"></i> Editar desglose</div>
+                <div class="m-btn m-btn-naranja" style="width:100%; justify-content:center; padding:10px; font-size:0.85rem;"><i class="ri-add-circle-line"></i> Crear planilla (1 faltante)</div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="annot info" style="margin-top:10px;">
+        <i class="ri-information-line"></i>
+        <span><strong>Ver detalle</strong> → facturas una a una. &nbsp;|&nbsp; <strong>Editar desglose</strong> → cómo llegó el dinero. &nbsp;|&nbsp; <strong>Crear planilla naranja</strong> → solo si hay facturas sueltas.</span>
+    </div>
+
+    <p style="font-size:0.9rem; font-weight:700; color:#1e293b; margin:20px 0 10px;">Al hacer clic en "Editar desglose" se abre esta ventana:</p>
+
+    <div class="mockup" style="max-width:640px; margin:0 auto;">
+        <div style="padding:20px 24px; background:#1e293b;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
+                <i class="ri-edit-box-line" style="color:#818cf8; font-size:1.3rem;"></i>
+                <span style="font-size:1.1rem; font-weight:800; color:#fff;">Desglose de recaudo</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; padding:8px 14px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:8px; margin-bottom:20px; flex-wrap:wrap;">
+                <span style="font-family:monospace; font-weight:900; color:#f8fafc;">23689</span>
+                <span style="background:rgba(255,255,255,0.1); padding:1px 8px; border-radius:5px; font-family:monospace; font-weight:700; color:#fbbf24; font-size:0.85rem;">SP0480</span>
+                <span style="margin-left:auto; font-size:0.82rem; color:#94a3b8;">Cuadre: <strong style="color:#10b981;">$11</strong></span>
+                <span class="m-badge" style="background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3);">Sin desglose</span>
+            </div>
+            <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:#f59e0b; margin-bottom:10px;">🟡 TRANSITORIA</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px;">
+                <div><div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#64748b; margin-bottom:4px;">PLANILLA TRANSITORIA</div><div style="background:#0a1628; border:1px solid #1e3a5f; border-radius:8px; padding:9px 12px; color:#94a3b8; font-size:0.85rem; text-align:center;">—</div></div>
+                <div><div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#64748b; margin-bottom:4px;">FACT. TRANSITORIA</div><div style="background:#0a1628; border:1px solid #1e3a5f; border-radius:8px; padding:9px 12px; color:#94a3b8; font-size:0.85rem; text-align:center;">—</div></div>
+            </div>
+            <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:#10b981; margin-bottom:10px;">💰 MEDIOS DE RECAUDO</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+                <div><div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#64748b; margin-bottom:4px;">DEVOLUCIÓN</div><div style="background:#0a1628; border:1px solid #1e3a5f; border-radius:6px; padding:7px 10px; color:#64748b; font-size:0.85rem; text-align:right; font-family:monospace;">0</div></div>
+                <div><div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#64748b; margin-bottom:4px;">EFECTIVO</div><div style="background:#0a1628; border:1px solid rgba(16,185,129,0.4); border-radius:6px; padding:7px 10px; color:#10b981; font-size:0.85rem; text-align:right; font-family:monospace; outline:2px solid rgba(16,185,129,0.3);">11</div></div>
+                <div><div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#64748b; margin-bottom:4px;">VALES</div><div style="background:#0a1628; border:1px solid #1e3a5f; border-radius:6px; padding:7px 10px; color:#64748b; font-size:0.85rem; text-align:right; font-family:monospace;">0</div></div>
+                <div><div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#64748b; margin-bottom:4px;">MONEDAS</div><div style="background:#0a1628; border:1px solid #1e3a5f; border-radius:6px; padding:7px 10px; color:#64748b; font-size:0.85rem; text-align:right; font-family:monospace;">0</div></div>
+                <div><div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#64748b; margin-bottom:4px;">DESCUENTO X NÓMINA</div><div style="background:#0a1628; border:1px solid #1e3a5f; border-radius:6px; padding:7px 10px; color:#64748b; font-size:0.85rem; text-align:right; font-family:monospace;">0</div></div>
+                <div><div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#64748b; margin-bottom:4px;">CONSIGNACIONES</div><div style="background:#0a1628; border:1px solid #1e3a5f; border-radius:6px; padding:7px 10px; color:#64748b; font-size:0.85rem; text-align:right; font-family:monospace;">0</div></div>
+                <div><div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#64748b; margin-bottom:4px;">RETEFUENTE</div><div style="background:#0a1628; border:1px solid #1e3a5f; border-radius:6px; padding:7px 10px; color:#64748b; font-size:0.85rem; text-align:right; font-family:monospace;">0</div></div>
+                <div><div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#64748b; margin-bottom:4px;">CONSIGNACIONES ALPINA</div><div style="background:#0a1628; border:1px solid #1e3a5f; border-radius:6px; padding:7px 10px; color:#64748b; font-size:0.85rem; text-align:right; font-family:monospace;">0</div></div>
+                <div><div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#64748b; margin-bottom:4px;">CRÉDITO</div><div style="background:#0a1628; border:1px solid #1e3a5f; border-radius:6px; padding:7px 10px; color:#64748b; font-size:0.85rem; text-align:right; font-family:monospace;">0</div></div>
+                <div><div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#64748b; margin-bottom:4px;">SOBRANTE DE CAJA</div><div style="background:#0a1628; border:1px solid #1e3a5f; border-radius:6px; padding:7px 10px; color:#64748b; font-size:0.85rem; text-align:right; font-family:monospace;">0</div></div>
+                <div><div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#64748b; margin-bottom:4px;">OTROS GASTOS</div><div style="background:#0a1628; border:1px solid #1e3a5f; border-radius:6px; padding:7px 10px; color:#64748b; font-size:0.85rem; text-align:right; font-family:monospace;">0</div></div>
+                <div><div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#64748b; margin-bottom:4px;">AJUSTE AL PESO ING.</div><div style="background:#0a1628; border:1px solid #1e3a5f; border-radius:6px; padding:7px 10px; color:#64748b; font-size:0.85rem; text-align:right; font-family:monospace;">0</div></div>
+            </div>
+            <div style="font-size:0.7rem; color:#475569; text-align:right; margin-bottom:14px; font-style:italic;">ℹ️ Los valores en 0 se dejan vacíos en el PDF.</div>
+            <div style="display:flex; gap:10px;">
+                <span class="m-btn m-btn-morado" style="flex:2; justify-content:center; padding:12px; font-size:0.88rem;"><i class="ri-save-3-line"></i> Guardar desglose</span>
+                <span class="m-btn m-btn-gris" style="flex:1; justify-content:center; padding:12px; font-size:0.88rem;">Cancelar</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="annot ok" style="margin-top:10px;">
+        <i class="ri-checkbox-circle-line"></i>
+        <span>Completa los campos que aplican y haz clic en <strong>"Guardar desglose"</strong>. Los valores en 0 no aparecen en el PDF — solo se imprimen los que tienen algún valor.</span>
+    </div>
+    <div class="annot warn" style="margin-top:8px;">
+        <i class="ri-alert-line"></i>
+        <span>Si la tarjeta dice <strong>"Sin desglose"</strong> en rojo, el PDF de cuadre quedará incompleto hasta que llenes este formulario.</span>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SEC 6: FACTURAS SUELTAS → NUEVA PLANILLA -->
+<!-- ══════════════════════════════════════════ -->
+<div class="g-sec">
+    <div class="g-sec-titulo">
+        <div class="g-sec-n">6</div>
         <h2>Facturas sueltas → crear nueva planilla</h2>
         <span class="g-badge gb-naranja">Botón naranja</span>
     </div>
@@ -406,7 +652,6 @@
                     <div style="display:flex; justify-content:space-between;"><span style="font-size:0.68rem; color:#94a3b8;">Recibido:</span><span style="font-weight:900; color:#10b981; font-size:0.9rem;">$930.000</span></div>
                     <div style="font-size:0.68rem; color:#f87171; margin-top:2px;">3 factura(s) sueltas.</div>
                 </div>
-                <!-- Botón naranja -->
                 <div class="m-btn m-btn-naranja" style="width:100%; justify-content:center; padding:10px; font-size:0.84rem;"><i class="ri-add-circle-line"></i> Crear planilla (3 faltante(s))</div>
             </div>
         </div>
@@ -415,35 +660,43 @@
     <div class="g-pasos" style="margin-top:12px;">
         <div class="g-paso ok">
             <div class="g-paso-n">①</div>
-            <div>
-                <h3>Haz clic en el botón naranja</h3>
-                <p>Se muestra un resumen de las facturas que quedaron sueltas y el total que representan. El sistema ya tiene la lista lista.</p>
-            </div>
+            <div><h3>Haz clic en el botón naranja</h3><p>Se muestra un resumen de las facturas sueltas y su total. El sistema ya tiene la lista lista.</p></div>
         </div>
         <div class="g-paso ok">
             <div class="g-paso-n">②</div>
-            <div>
-                <h3>Confirma la creación</h3>
-                <p>El sistema crea una nueva planilla en estado <strong>TRANSITORIA</strong> con esas facturas (el número de planilla lleva el sufijo <em>-PEND</em>). El programador la verá y podrá re-despacharla.</p>
-            </div>
+            <div><h3>Confirma la creación</h3><p>El sistema crea una nueva planilla en estado <strong>TRANSITORIA</strong> con esas facturas (sufijo <em>-PEND</em>). El programador la verá y podrá re-despacharla.</p></div>
         </div>
     </div>
-
-    <div class="annot warn">
+    <div class="annot warn" style="margin-top:10px;">
         <i class="ri-alert-line"></i>
-        <span>Solo aparece el botón naranja si hay facturas sueltas. Si la planilla cuadró exacto (sin facturas faltantes), el botón naranja no aparece.</span>
+        <span>Solo aparece el botón naranja si hay facturas sueltas. Si la planilla cuadró exacto, el botón naranja no aparece.</span>
     </div>
 </div>
 
 
 <!-- ══════════════════════════════════════════ -->
-<!-- SEC 5: VISTA CUADRE DETALLADO (TABLA EXCEL) -->
+<!-- SEC 7: VISTA CUADRE DETALLADO (TABLA EXCEL) -->
 <!-- ══════════════════════════════════════════ -->
 <div class="g-sec">
     <div class="g-sec-titulo">
-        <div class="g-sec-n">5</div>
+        <div class="g-sec-n">7</div>
         <h2>Vista Cuadre Detallado (tabla Excel)</h2>
         <span class="g-badge gb-azul">Alimentada por las tarjetas</span>
+    </div>
+
+    <!-- AVISO IMPORTANTE -->
+    <div style="background:linear-gradient(135deg,rgba(239,68,68,0.12),rgba(239,68,68,0.06)); border:2px solid rgba(239,68,68,0.5); border-radius:12px; padding:16px 20px; margin-bottom:20px; display:flex; gap:14px; align-items:flex-start;">
+        <div style="font-size:1.8rem; flex-shrink:0; line-height:1;">⚠️</div>
+        <div>
+            <div style="font-size:0.88rem; font-weight:800; color:#b91c1c; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">MUY IMPORTANTE — Llenar todos los días</div>
+            <div style="font-size:0.88rem; color:#1e293b; line-height:1.6;">
+                Esta tabla debe completarse <strong style="color:#b45309;">día a día</strong>, sin saltar ninguno.
+                Es el registro oficial de todos los cuadres: aquí vive la información de cuánto se recibió en efectivo,
+                consignaciones, vales y demás por cada planilla.<br><br>
+                Si un día queda sin llenar, <strong style="color:#b91c1c;">esa información se pierde</strong> y no se puede
+                recuperar después. El PDF de cuadre y los reportes del administrador se generan desde aquí.
+            </div>
+        </div>
     </div>
 
     <p style="font-size:0.88rem; color:#475569; margin-bottom:12px;">
@@ -672,29 +925,99 @@
 
 
 <!-- ══════════════════════════════════════════ -->
-<!-- SEC 6: EL DIF -->
+<!-- SEC 8: CASOS FRECUENTES — QUÉ HAGO SI... -->
 <!-- ══════════════════════════════════════════ -->
 <div class="g-sec">
     <div class="g-sec-titulo">
-        <div class="g-sec-n">6</div>
-        <h2>Qué significa el DIF en la tabla</h2>
-        <span class="g-badge gb-azul">Referencia rápida</span>
+        <div class="g-sec-n">8</div>
+        <h2>Casos frecuentes — ¿Qué hago si…?</h2>
+        <span class="g-badge gb-naranja">Situaciones del día a día</span>
     </div>
 
-    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px;">
-        <div class="annot ok"><i class="ri-checkbox-circle-line" style="font-size:1.3rem;"></i><span><strong>DIF = 0 (verde)</strong><br>Todo cuadra. Lo que el conductor trajo es exactamente lo esperado.</span></div>
-        <div class="annot danger"><i class="ri-arrow-down-circle-line" style="font-size:1.3rem;"></i><span><strong>DIF negativo (rojo)</strong><br>Falta dinero. Revisa si hay consignación sin registrar o un faltante real.</span></div>
-        <div class="annot info"><i class="ri-arrow-up-circle-line" style="font-size:1.3rem;"></i><span><strong>DIF positivo (azul)</strong><br>Sobra algo. Revisa si falta registrar un descuento o hay un error en los valores.</span></div>
+    <div class="g-pasos">
+
+        <div class="g-paso ok">
+            <div class="g-paso-n">✅</div>
+            <div>
+                <h3>El conductor trajo todo exacto</h3>
+                <p>Haz clic en <strong>"Cuadrar planilla"</strong>, el valor ya aparece precargado, haz clic en <strong>"Continuar"</strong>. El sistema lo guarda solo y la tarjeta queda verde. No hay que hacer nada más.</p>
+            </div>
+        </div>
+
+        <div class="g-paso warn">
+            <div class="g-paso-n">❓</div>
+            <div>
+                <h3>No veo ninguna tarjeta al entrar</h3>
+                <p>Verifica la fecha arriba — puede estar en un día sin planillas. Haz clic en <strong>"Actualizar"</strong>. Si sigue sin aparecer, consulta con el programador si ya despachó las planillas del día.</p>
+            </div>
+        </div>
+
+        <div class="g-paso warn">
+            <div class="g-paso-n">🔴</div>
+            <div>
+                <h3>El DIF está en rojo (falta plata)</h3>
+                <p>Antes de aceptar cualquier diferencia revisa: ¿hay una consignación que no digitaste? ¿contaste bien el efectivo? ¿hay monedas? Si revisaste todo y sigue faltando, <strong>desmarca las facturas que no llegaron</strong>, agrega una observación como <em>"Faltan facturas 1234 y 1235"</em> y guarda. Aparecerá el botón naranja para crear la planilla de las facturas pendientes.</p>
+            </div>
+        </div>
+
+        <div class="g-paso warn">
+            <div class="g-paso-n">🔵</div>
+            <div>
+                <h3>El DIF está en azul (sobra plata)</h3>
+                <p>Revisa si dejaste de registrar un descuento (vales, desc. nómina, retefuente). Si sobra por otro motivo, agrega en <strong>"Otros Gastos"</strong> o en <strong>"Sobrante Caja"</strong> para que cuadre, y escribe una observación explicando por qué.</p>
+            </div>
+        </div>
+
+        <div class="g-paso warn">
+            <div class="g-paso-n">🟠</div>
+            <div>
+                <h3>Aparece el botón naranja "Crear planilla (X faltante(s))"</h3>
+                <p>Significa que al cuadrar dejaste facturas sin marcar (sueltas). Haz clic en el botón naranja para crear automáticamente una nueva planilla en TRANSITORIA con esas facturas. El programador la verá y la re-despachará.</p>
+            </div>
+        </div>
+
+        <div class="g-paso warn">
+            <div class="g-paso-n">💾</div>
+            <div>
+                <h3>Edité valores en la tabla Excel pero se fueron al salir</h3>
+                <p>El auto-guardado es cada 60 segundos pero no es 100% confiable. Siempre haz clic en <strong>"Guardar todo"</strong> (botón verde) antes de cerrar o cambiar de módulo.</p>
+            </div>
+        </div>
+
+        <div class="g-paso danger">
+            <div class="g-paso-n">📋</div>
+            <div>
+                <h3>¿Por qué es obligatorio llenar la tabla cada día?</h3>
+                <p>La tabla de Cuadre Detallado es el <strong>registro oficial</strong> de todos los recaudos. El administrador genera reportes y verifica los cuadres desde ahí. <strong>Si un día no la llenas, esa información no se puede recuperar después.</strong> Aunque hayas cuadrado las tarjetas, el desglose (efectivo, consignaciones, vales…) solo queda registrado si lo ingresas en la tabla.</p>
+            </div>
+        </div>
+
+        <div class="g-paso warn">
+            <div class="g-paso-n">🔒</div>
+            <div>
+                <h3>Una planilla ya está en verde pero tiene un error</h3>
+                <p>Las planillas CUADRADAS están cerradas. Si necesitas corregir algo, <strong>no intentes editarla</strong>. Avisa al administrador para que la devuelva a DESPACHADA.</p>
+            </div>
+        </div>
+
+        <div class="g-paso danger">
+            <div class="g-paso-n">⛔</div>
+            <div>
+                <h3>¿Cuándo NO guardar?</h3>
+                <p>Si el DIF está en rojo y no entiendes por qué — <strong>no confirmes ni guardes</strong>. Consulta primero con el administrador. Es mejor esperar que registrar un cuadre incorrecto.</p>
+            </div>
+        </div>
+
     </div>
 </div>
 
 
 <!-- ══════════════════════════════════════════ -->
-<!-- SEC 7: RESUMEN DEL FLUJO -->
+<!-- SEC 9: RESUMEN DEL FLUJO -->
 <!-- ══════════════════════════════════════════ -->
 <div class="g-sec">
     <div class="g-sec-titulo">
-        <div class="g-sec-n">7</div>
+        <div class="g-sec-n">9</div>
         <h2>Resumen del flujo diario</h2>
         <span class="g-badge gb-verde">Cheat sheet</span>
     </div>

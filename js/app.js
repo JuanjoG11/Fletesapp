@@ -1,4 +1,4 @@
-let FLOTA_VEHICULOS = [];
+﻿let FLOTA_VEHICULOS = [];
 let ID_FLETE_EDITANDO = null;
 let CURRENT_SESSION = null; // Cache para la sesión
 let CACHED_FLETES = [];     // Cache para listados rápidos
@@ -559,12 +559,12 @@ async function checkAuth() {
         document.getElementById("estado-planillas")?.classList.add("visible");
         document.querySelectorAll(".nav-item[data-tab]").forEach(n =>
             n.classList.toggle("active", n.dataset.tab === 'estado-planillas'));
-        // Inicializar el kanban una vez que app.js y planillas.js estén cargados
+        // Inicializar módulo de planillas + tabla de cuadre
         setTimeout(() => {
-            if (typeof inicializarModuloEstado === 'function') {
-                inicializarModuloEstado();
-            }
-        }, 300);
+            if (typeof inicializarModuloEstado === 'function') inicializarModuloEstado();
+            if (typeof inicializarCuadreCaja   === 'function') inicializarCuadreCaja();
+        }, 400);
+
     } else if (role === 'caja') {
         // PERFIL CAJA: solo ve la pantalla de impresión de planillas, nada más
         // Ocultar toda la navegación
@@ -4786,10 +4786,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else if (['cargador','cargador_alpina','cargador_fleischmann','cajera_plan'].includes(role)) {
             // cargadores: fueron redirigidos arriba. cajera_plan: carga kanban
             if (role === 'cajera_plan') {
-                console.log("✅ Usuario 'cajera_plan' - Cargando kanban de planillas");
+                console.log('✅ Usuario cajera_plan - Cargando cuadre de caja');
                 setTimeout(() => {
                     if (typeof inicializarModuloEstado === 'function') inicializarModuloEstado();
-                }, 200);
+                    if (typeof inicializarCuadreCaja   === 'function') inicializarCuadreCaja();
+                }, 400);
             }
         } else if (role === 'programador') {
             // Programador carga fletes + KPIs
@@ -5127,3 +5128,54 @@ function exportarPromediosExcel() {
     const fmt        = d => d.toISOString().split('T')[0];
     XLSX.writeFile(wb, `promedios_placa_${fmt(desdeDate)}_${fmt(hastaDate)}.xlsx`);
 }
+
+// ==========================================================
+// CUADRE DE CAJA — funciones de UI (toggle vista + refresco)
+// Definidas en app.js para estar disponibles globalmente
+// antes de que cuadre_caja.js cargue.
+// ==========================================================
+
+/**
+ * Alterna entre vista "tabla" (Excel) y vista "cards" (tarjetas).
+ * @param {'tabla'|'cards'} vista
+ */
+function ccCambiarVista(vista) {
+    var vTabla     = document.getElementById('cc-vista-tabla');
+    var vCards     = document.getElementById('cc-vista-cards');
+    var btnT       = document.getElementById('cc-btn-vista-tabla');
+    var btnC       = document.getElementById('cc-btn-vista-cards');
+    var btnGuardar = document.getElementById('cc-btn-guardar');
+
+    if (vista === 'tabla') {
+        if (vTabla)  vTabla.style.display  = 'block';
+        if (vCards)  vCards.style.display  = 'none';
+        if (btnGuardar) { btnGuardar.style.display = 'flex'; }
+        if (btnT) { btnT.style.background = 'linear-gradient(135deg,#6366f1,#4f46e5)'; btnT.style.color = '#fff'; }
+        if (btnC) { btnC.style.background = 'transparent'; btnC.style.color = '#475569'; }
+        // Cargar tabla si no está cargada aún
+        if (typeof cargarTablaCuadre === 'function') cargarTablaCuadre();
+    } else {
+        if (vTabla)  vTabla.style.display  = 'none';
+        if (vCards)  vCards.style.display  = 'block';
+        if (btnGuardar) { btnGuardar.style.display = 'none'; }
+        if (btnC) { btnC.style.background = 'linear-gradient(135deg,#10b981,#059669)'; btnC.style.color = '#fff'; }
+        if (btnT) { btnT.style.background = 'transparent'; btnT.style.color = '#475569'; }
+        // Cargar tarjetas
+        if (typeof _cargarVistaCajera === 'function') _cargarVistaCajera();
+    }
+}
+window.ccCambiarVista = ccCambiarVista;
+
+/**
+ * Refresca la vista activa (tabla o cards) con la fecha seleccionada.
+ */
+function ccRefrescar() {
+    var vTabla = document.getElementById('cc-vista-tabla');
+    var activa = vTabla && vTabla.style.display !== 'none' ? 'tabla' : 'cards';
+    if (activa === 'tabla') {
+        if (typeof cargarTablaCuadre === 'function') cargarTablaCuadre();
+    } else {
+        if (typeof _cargarVistaCajera === 'function') _cargarVistaCajera();
+    }
+}
+window.ccRefrescar = ccRefrescar;

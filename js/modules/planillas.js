@@ -1187,9 +1187,9 @@ async function inicializarModuloEstado() {
         // Vista simplificada para cajera
         const fCajera = document.getElementById('pl-cajera-fecha');
         if (fCajera && !fCajera.value) fCajera.value = hoy;
-        document.getElementById('pl-cajera-fecha')?.addEventListener('change', _cargarVistaCajera);
-        document.getElementById('pl-cajera-btn-refresh')?.addEventListener('click', _cargarVistaCajera);
-        await _cargarVistaCajera();
+        // El refresh lo maneja ccRefrescar (cuadre_caja.js) — no sobreescribir
+        // _cargarVistaCajera se llama desde ccCambiarVista('cards') si la cajera cambia de vista
+        // No inicializar aquí — inicializarCuadreCaja() en cuadre_caja.js lo hace
         return;
     }
 
@@ -1775,6 +1775,7 @@ async function cargarResumenCuadre() {
     if (tablaWrap) tablaWrap.style.display = 'none';
     if (totalesEl) totalesEl.style.display = 'none';
     if (btnExport) btnExport.style.display = 'none';
+    var _btnPdfHide = document.getElementById('pl-btn-export-pdf'); if (_btnPdfHide) _btnPdfHide.style.display = 'none';
 
     // Consultar planillas CUADRADAS de esa fecha
     const result = await SupabaseClient.planillas.getAll({ estado: 'CUADRADA', fecha });
@@ -1852,6 +1853,7 @@ async function cargarResumenCuadre() {
     if (totalesEl) totalesEl.style.display = 'block';
     if (tablaWrap) tablaWrap.style.display = 'block';
     if (btnExport) btnExport.style.display = 'inline-flex';
+    var _btnPdfShow = document.getElementById('pl-btn-export-pdf'); if (_btnPdfShow) _btnPdfShow.style.display = 'inline-flex';
 
     // Guardar referencia para exportar
     window._CUADRE_DATA = cuadradas;
@@ -1896,6 +1898,185 @@ function exportarResumenCuadre() {
 // Exponer globalmente
 window.cargarResumenCuadre    = cargarResumenCuadre;
 window.exportarResumenCuadre  = exportarResumenCuadre;
+
+// ==========================================================
+// PDF CUADRE DE CAJA DIARIO TYM
+// Genera un PDF landscape con el mismo formato del Excel
+// de cuadre de caja. Usa jsPDF + jspdf-autotable.
+// ==========================================================
+function exportarPDFCuadreCaja() {
+    var data = window._CUADRE_DATA;
+    if (!data || !data.length) {
+        var cuadradasCache = (window.PL_CACHE || []).filter(function(p) { return p.estado === 'CUADRADA'; });
+        if (cuadradasCache.length) { data = cuadradasCache; }
+        else {
+            Swal.fire({ icon: 'warning', title: 'Sin datos', text: 'No hay planillas cuadradas. Selecciona una fecha y presiona Actualizar.', background: '#1e293b', color: '#fff' });
+            return;
+        }
+    }
+    if (typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined') {
+        Swal.fire({ icon: 'warning', title: 'jsPDF no disponible', text: 'Recarga la página e intenta de nuevo.', background: '#1e293b', color: '#fff' });
+        return;
+    }
+    var jsPDFLib = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : jsPDF;
+    var doc = new jsPDFLib({ orientation: 'landscape', unit: 'mm', format: 'a3' });
+    var fmtM = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    var n    = function(v) { return parseFloat(v) || 0; };
+    var m    = function(v) { return n(v) === 0 ? '' : fmtM.format(n(v)); };
+
+    var fechaStr = (document.getElementById('pl-cuadre-fecha') || {}).value
+        || (document.getElementById('pl-cajera-fecha') || {}).value
+        || (data[0] && data[0].fecha)
+        || new Date().toISOString().split('T')[0];
+    var fechaObj  = new Date(fechaStr + 'T12:00:00');
+    var meses     = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+    var mesNombre = meses[fechaObj.getMonth()];
+    var anio      = fechaObj.getFullYear();
+    var sede      = 'DOSQUEBRADAS';
+    var realizo   = (window.CURRENT_SESSION && window.CURRENT_SESSION.profile && window.CURRENT_SESSION.profile.nombre)
+                    ? window.CURRENT_SESSION.profile.nombre.toUpperCase() : '';
+
+    // Encabezado azul
+    doc.setFillColor(0, 176, 240);
+    doc.rect(10, 8, 397, 10, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CUADRE DE CAJA DIARIO  TYM', 14, 15);
+
+    // Fila meta-datos
+    doc.setFillColor(230, 230, 230);
+    doc.rect(10, 18, 397, 7, 'F');
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('MES: ' + mesNombre, 14, 23);
+    doc.text('AÑO: ' + anio, 80, 23);
+    doc.text('SEDE: ' + sede, 130, 23);
+    doc.text('REALIZÓ: ' + realizo, 200, 23);
+
+    // Totales
+    var totCuadre    = data.reduce(function(s,p){ return s+n(p.valor_cuadrado); }, 0);
+    var totDevol     = data.reduce(function(s,p){ return s+n(p.cuadre_devolucion); }, 0);
+    var totVales     = data.reduce(function(s,p){ return s+n(p.cuadre_vales); }, 0);
+    var totDescNom   = data.reduce(function(s,p){ return s+n(p.cuadre_descuento_nomina); }, 0);
+    var totConsig    = data.reduce(function(s,p){ return s+n(p.cuadre_consignaciones); }, 0);
+    var totConsAlp   = data.reduce(function(s,p){ return s+n(p.cuadre_consignaciones_alpina); }, 0);
+    var totEfectivo  = data.reduce(function(s,p){ return s+n(p.cuadre_efectivo); }, 0);
+    var totMonedas   = data.reduce(function(s,p){ return s+n(p.cuadre_monedas); }, 0);
+    var totCredito   = data.reduce(function(s,p){ return s+n(p.cuadre_credito); }, 0);
+    var totSobrante  = data.reduce(function(s,p){ return s+n(p.cuadre_sobrante_caja); }, 0);
+    var totRetefuente= data.reduce(function(s,p){ return s+n(p.cuadre_retefuente); }, 0);
+    var totAjPeso    = data.reduce(function(s,p){ return s+n(p.cuadre_ajuste_peso); }, 0);
+    var totAjIng     = data.reduce(function(s,p){ return s+n(p.cuadre_ajuste_peso_ing); }, 0);
+    var totOtros     = data.reduce(function(s,p){ return s+n(p.cuadre_otros_gastos); }, 0);
+
+    var calcTotal = function(p) {
+        return n(p.cuadre_devolucion)+n(p.cuadre_consignaciones)+n(p.cuadre_consignaciones_alpina)
+              +n(p.cuadre_efectivo)+n(p.cuadre_monedas)+n(p.cuadre_credito)
+              +n(p.cuadre_sobrante_caja)+n(p.cuadre_retefuente)+n(p.cuadre_ajuste_peso)
+              +n(p.cuadre_ajuste_peso_ing)+n(p.cuadre_otros_gastos);
+    };
+
+    var head = [[
+        'AUXILIAR TAT','RUTA','# PLANILLA',mesNombre.substring(0,3),
+        'CUADRE','TOTAL CUADRE',
+        'PLAN.TRANS.','FACT TRANS.',
+        'DEVOLUCION','VALES','DESC.NOMINA',
+        'CONSIGNACIONES','CONSIG.ALPINA','# CONSIG.',
+        'EFECTIVO','MONEDAS','CREDITO',
+        'SOBRANTE','RETEFUENTE','AJ.PESO','AJ.PESO ING','OTROS',
+        'TOTAL','DIF'
+    ]];
+
+    var body = data.map(function(p) {
+        var tf  = calcTotal(p);
+        var dif = n(p.valor_cuadrado) - tf;
+        return [
+            (p.auxiliares ? p.auxiliares.split(',')[0].trim() : (p.conductor||'')),
+            p.zona||'',
+            p.no_planilla||'',
+            mesNombre.substring(0,3),
+            p.cuadre_tipo||'MANUAL',
+            m(p.valor_cuadrado),
+            p.cuadre_planilla_transitoria||'',
+            p.cuadre_fact_transitoria||'',
+            m(p.cuadre_devolucion),
+            m(p.cuadre_vales),
+            m(p.cuadre_descuento_nomina),
+            m(p.cuadre_consignaciones),
+            m(p.cuadre_consignaciones_alpina),
+            p.cuadre_no_consignaciones||'',
+            m(p.cuadre_efectivo),
+            m(p.cuadre_monedas),
+            m(p.cuadre_credito),
+            m(p.cuadre_sobrante_caja),
+            m(p.cuadre_retefuente),
+            n(p.cuadre_ajuste_peso)===0?'':fmtM.format(n(p.cuadre_ajuste_peso)),
+            m(p.cuadre_ajuste_peso_ing),
+            m(p.cuadre_otros_gastos),
+            tf===0?'':fmtM.format(tf),
+            Math.abs(dif)<1?'0':fmtM.format(dif),
+        ];
+    });
+
+    // Fila totales
+    var totTotal = data.reduce(function(s,p){ return s+calcTotal(p); }, 0);
+    var totDif   = totCuadre - totTotal;
+    body.push([
+        'TOTAL CUADRE CAJA','','','','',
+        fmtM.format(totCuadre),'','',
+        fmtM.format(totDevol),fmtM.format(totVales),fmtM.format(totDescNom),
+        fmtM.format(totConsig),fmtM.format(totConsAlp),'',
+        fmtM.format(totEfectivo),fmtM.format(totMonedas),fmtM.format(totCredito),
+        fmtM.format(totSobrante),fmtM.format(totRetefuente),
+        fmtM.format(totAjPeso),fmtM.format(totAjIng),fmtM.format(totOtros),
+        fmtM.format(totTotal),
+        Math.abs(totDif)<1?'-':fmtM.format(totDif),
+    ]);
+
+    doc.autoTable({
+        startY: 27,
+        head: head,
+        body: body,
+        theme: 'grid',
+        styles: { fontSize:5.5, cellPadding:1.2, overflow:'linebreak', textColor:[0,0,0], lineColor:[180,180,180], lineWidth:0.2 },
+        headStyles: { fillColor:[0,176,240], textColor:[255,255,255], fontStyle:'bold', fontSize:5.5, halign:'center', valign:'middle' },
+        columnStyles: {
+            0:{cellWidth:28},  1:{cellWidth:13},  2:{cellWidth:16},  3:{cellWidth:9,halign:'center'},
+            4:{cellWidth:11,halign:'center'},  5:{cellWidth:18,halign:'right',fontStyle:'bold'},
+            6:{cellWidth:13},  7:{cellWidth:13},  8:{cellWidth:15,halign:'right'},
+            9:{cellWidth:11,halign:'right'},  10:{cellWidth:13,halign:'right'},
+            11:{cellWidth:16,halign:'right'}, 12:{cellWidth:16,halign:'right'},
+            13:{cellWidth:9,halign:'center'}, 14:{cellWidth:14,halign:'right'},
+            15:{cellWidth:11,halign:'right'}, 16:{cellWidth:11,halign:'right'},
+            17:{cellWidth:12,halign:'right'}, 18:{cellWidth:12,halign:'right'},
+            19:{cellWidth:10,halign:'right'}, 20:{cellWidth:12,halign:'right'},
+            21:{cellWidth:11,halign:'right'}, 22:{cellWidth:17,halign:'right',fontStyle:'bold'},
+            23:{cellWidth:13,halign:'right'},
+        },
+        didParseCell: function(d) {
+            if (d.row.index === body.length-1 && d.section === 'body') {
+                d.cell.styles.fillColor=[204,229,255];
+                d.cell.styles.fontStyle='bold';
+                d.cell.styles.fontSize=6;
+                d.cell.styles.textColor=[0,0,100];
+            }
+        },
+        margin: { left:10, right:10 },
+    });
+
+    var pc = doc.internal.getNumberOfPages();
+    for (var pg=1; pg<=pc; pg++) {
+        doc.setPage(pg);
+        doc.setFontSize(7);
+        doc.setTextColor(150);
+        doc.text('Generado: '+new Date().toLocaleString('es-CO'), 14, doc.internal.pageSize.height-5);
+        doc.text('Pag '+pg+'/'+pc, doc.internal.pageSize.width-25, doc.internal.pageSize.height-5);
+    }
+    doc.save('Cuadre_Caja_TYM_'+fechaStr+'.pdf');
+}
+window.exportarPDFCuadreCaja = exportarPDFCuadreCaja;
 
 // ==========================================================
 // VISTA SIMPLIFICADA CAJERA_PLAN
@@ -2005,6 +2186,7 @@ function _cardCajeraSimple(p, esCuadrada) {
     var factSueltas = (p.planilla_facturas || []).filter(function(f){ return !f.asignada; });
     var btnAccion = esCuadrada
         ? '<button onclick="abrirDetallePlanilla(\'' + p.id + '\')" style="width:100%;padding:10px;font-size:0.85rem;font-weight:600;background:rgba(255,255,255,0.05);color:#94a3b8;border:1px solid rgba(255,255,255,0.1);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="ri-eye-line"></i> Ver detalle</button>' +
+          '<button onclick="editarDesglosePlanilla(\'' + p.id + '\')" style="width:100%;margin-top:8px;padding:10px;font-size:0.85rem;font-weight:700;background:rgba(99,102,241,0.15);color:#818cf8;border:1px solid rgba(99,102,241,0.4);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="ri-edit-box-line"></i> Editar desglose</button>' +
           (factSueltas.length > 0
             ? '<button onclick="crearPlanillaDiferencias(\'' + p.id + '\')" style="width:100%;margin-top:8px;padding:11px;font-size:0.88rem;font-weight:700;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 10px rgba(245,158,11,0.35);transition:all 0.2s;" onmouseenter="this.style.transform=\'translateY(-2px)\'" onmouseleave="this.style.transform=\'translateY(0)\'"><i class="ri-add-circle-line" style="font-size:1.1rem;"></i> Crear planilla (' + factSueltas.length + ' faltante' + (factSueltas.length > 1 ? 's' : '') + ')</button>'
             : '')
@@ -2030,28 +2212,261 @@ function _cardCajeraSimple(p, esCuadrada) {
         '</div>';
 }
 
+// ==========================================================
+// EDITAR DESGLOSE DE PLANILLA CUADRADA
+// Permite a la cajera llenar/corregir todos los campos de
+// desglose (efectivo, consignaciones, etc.) sin recuadrar.
+// ==========================================================
+async function editarDesglosePlanilla(planillaId) {
+    var planilla = PL_CACHE.find(function(p) { return p.id === planillaId; });
+    if (!planilla) return;
+
+    var fmt2 = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    var pre  = function(v) { var n = parseFloat(v) || 0; return n === 0 ? '' : fmt2.format(n); };
+    var preT = function(v) { return v || ''; };
+
+    // Genera una fila de input
+    var _row = function(id, label, val, esTexto) {
+        var v = esTexto ? preT(val) : pre(val);
+        return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">'
+            + '<label style="width:185px;min-width:185px;font-size:0.72rem;color:#94a3b8;font-weight:600;text-transform:uppercase;">' + label + '</label>'
+            + '<input id="ed-' + id + '" type="text" value="' + v + '" placeholder="' + (esTexto ? '—' : '0') + '" '
+            + 'style="flex:1;padding:6px 10px;background:#0b1324;border:1px solid rgba(255,255,255,0.1);color:#f8fafc;'
+            + 'border-radius:7px;font-size:0.85rem;font-family:monospace;outline:none;box-sizing:border-box;'
+            + (esTexto ? '' : 'text-align:right;') + '" onfocus="this.select()">'
+            + '</div>';
+    };
+
+    // Resumen del desglose actual si ya tiene datos
+    var tieneDesglose = (parseFloat(planilla.cuadre_efectivo)||0) + (parseFloat(planilla.cuadre_consignaciones)||0)
+                      + (parseFloat(planilla.cuadre_monedas)||0) + (parseFloat(planilla.cuadre_credito)||0) > 0;
+    var estadoBadge = tieneDesglose
+        ? '<span style="font-size:0.7rem;padding:2px 8px;border-radius:10px;background:rgba(16,185,129,0.15);color:#10b981;font-weight:700;margin-left:8px;">✓ Con desglose</span>'
+        : '<span style="font-size:0.7rem;padding:2px 8px;border-radius:10px;background:rgba(245,158,11,0.15);color:#f59e0b;font-weight:700;margin-left:8px;">Sin desglose</span>';
+
+    var result = await Swal.fire({
+        title: '<i class="ri-edit-box-line"></i> Desglose de recaudo',
+        width: '640px',
+        html: '<div style="text-align:left;font-size:0.88rem;">'
+            // Info planilla
+            + '<div style="padding:8px 14px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;margin-bottom:14px;display:flex;align-items:center;flex-wrap:wrap;gap:8px;">'
+            + '<span style="font-family:monospace;font-weight:800;font-size:1rem;">' + planilla.no_planilla + '</span>'
+            + (planilla.placa ? '<span style="background:rgba(255,255,255,0.08);padding:2px 8px;border-radius:6px;font-family:monospace;font-weight:700;">' + planilla.placa + '</span>' : '')
+            + (planilla.auxiliares ? '<span style="color:#cbd5e1;font-size:0.82rem;">' + planilla.auxiliares.split(',')[0].trim() + '</span>' : '')
+            + '<span style="margin-left:auto;color:#94a3b8;font-size:0.78rem;">Cuadre: <strong style="color:#10b981;">' + fmt(planilla.valor_cuadrado) + '</strong></span>'
+            + estadoBadge
+            + '</div>'
+            // ── Sección planillas transitorias ──────────────────────
+            + '<div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;margin-bottom:10px;">'
+            + '<div style="font-size:0.68rem;color:#64748b;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;margin-bottom:8px;">📋 Transitoria</div>'
+            + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">'
+            + _row('plan-trans', 'Planilla transitoria', planilla.cuadre_planilla_transitoria, true)
+            + _row('fact-trans', 'Fact. transitoria',    planilla.cuadre_fact_transitoria,     true)
+            + '</div></div>'
+            // ── Sección desglose ────────────────────────────────────
+            + '<div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;">'
+            + '<div style="font-size:0.68rem;color:#64748b;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;margin-bottom:8px;">💵 Medios de recaudo</div>'
+            + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">'
+            + _row('devolucion',  'Devolución',              planilla.cuadre_devolucion,            false)
+            + _row('efectivo',    'Efectivo',                planilla.cuadre_efectivo,              false)
+            + _row('vales',       'Vales',                   planilla.cuadre_vales,                 false)
+            + _row('monedas',     'Monedas',                 planilla.cuadre_monedas,               false)
+            + _row('desc-nomina', 'Descuento x nómina',     planilla.cuadre_descuento_nomina,      false)
+            + _row('consig',      'Consignaciones',          planilla.cuadre_consignaciones,        false)
+            + _row('retefuente',  'Retefuente',              planilla.cuadre_retefuente,            false)
+            + _row('cons-alpina', 'Consignaciones Alpina',   planilla.cuadre_consignaciones_alpina, false)
+            + _row('ajuste-peso', 'Ajuste al peso',          planilla.cuadre_ajuste_peso,           false)
+            + _row('no-consig',   '# Consignaciones',        planilla.cuadre_no_consignaciones,     true)
+            + _row('credito',     'Crédito',                 planilla.cuadre_credito,               false)
+            + _row('sobrante',    'Sobrante de caja',        planilla.cuadre_sobrante_caja,         false)
+            + _row('otros',       'Otros gastos',            planilla.cuadre_otros_gastos,          false)
+            + _row('ajuste-ing',  'Ajuste al peso ing.',     planilla.cuadre_ajuste_peso_ing,       false)
+            + '</div></div>'
+            + '<p style="color:#475569;font-size:0.7rem;margin-top:10px;text-align:right;"><i class="ri-information-line"></i> Los valores en 0 se dejan vacíos en el PDF.</p>'
+            + '</div>',
+        showCancelButton: true,
+        confirmButtonText: '<i class="ri-save-line"></i> Guardar desglose',
+        cancelButtonText:  'Cancelar',
+        confirmButtonColor: '#6366f1',
+        background: '#1e293b', color: '#fff',
+        focusConfirm: false,
+        preConfirm: function() {
+            var _n = function(id) { var s=((document.getElementById(id)||{}).value||'').replace(/\./g,'').replace(',','.').replace(/[^0-9.-]/g,''); return parseFloat(s)||0; };
+            var _t = function(id) { return ((document.getElementById(id)||{}).value||'').trim(); };
+            return {
+                cuadre_planilla_transitoria:   _t('ed-plan-trans')  || null,
+                cuadre_fact_transitoria:       _t('ed-fact-trans')  || null,
+                cuadre_devolucion:             _n('ed-devolucion'),
+                cuadre_efectivo:               _n('ed-efectivo'),
+                cuadre_vales:                  _n('ed-vales'),
+                cuadre_monedas:                _n('ed-monedas'),
+                cuadre_descuento_nomina:       _n('ed-desc-nomina'),
+                cuadre_consignaciones:         _n('ed-consig'),
+                cuadre_retefuente:             _n('ed-retefuente'),
+                cuadre_consignaciones_alpina:  _n('ed-cons-alpina'),
+                cuadre_ajuste_peso:            _n('ed-ajuste-peso'),
+                cuadre_no_consignaciones:      _t('ed-no-consig')   || null,
+                cuadre_credito:                _n('ed-credito'),
+                cuadre_sobrante_caja:          _n('ed-sobrante'),
+                cuadre_otros_gastos:           _n('ed-otros'),
+                cuadre_ajuste_peso_ing:        _n('ed-ajuste-ing'),
+            };
+        }
+    });
+
+    if (!result.isConfirmed || !result.value) return;
+
+    Swal.fire({ title: 'Guardando desglose...', allowOutsideClick: false,
+        background: '#1e293b', color: '#fff', didOpen: function() { Swal.showLoading(); } });
+
+    var saveRes = await SupabaseClient.planillas.updateEstado(planillaId, 'CUADRADA', result.value);
+
+    if (!saveRes.success) {
+        Swal.fire({ icon: 'error', title: 'Error al guardar',
+            text: saveRes.error || 'No se pudo guardar el desglose.',
+            background: '#1e293b', color: '#fff' });
+        return;
+    }
+
+    // Actualizar cache local
+    Object.assign(planilla, result.value);
+
+    await Swal.fire({
+        icon: 'success',
+        title: '✅ Desglose guardado',
+        html: '<span style="color:#10b981;font-weight:700;">' + planilla.no_planilla + '</span> actualizada.',
+        timer: 1800, showConfirmButton: false,
+        background: '#1e293b', color: '#fff'
+    });
+}
+window.editarDesglosePlanilla = editarDesglosePlanilla;
+
+// ==================================================================
+// AUTO-DISTRIBUCION DE DESGLOSE
+// Genera automaticamente los campos de desglose basandose en el
+// valor recibido vs valor esperado.
+//
+// Reglas:
+//   - Cuadre exacto: cuadre_consignaciones = valor_total
+//   - Recibio mas:   sobrante_caja = diferencia positiva
+//   - Recibio menos: ajuste_peso   = diferencia negativa
+//   - Si ya tenia desglose guardado: lo preserva (no sobreescribe)
+// ==================================================================
+function _autoDistribuirDesglose(valorRecibido, valorEsperado, planilla) {
+    // Si ya tiene desglose guardado, lo preserva exactamente como está.
+    // Si no, deja todo en cero — la cajera lo completa después en 'Editar desglose'
+    // o directamente en la tabla de Cuadre Detallado.
+    var tieneDesglose = (parseFloat(planilla.cuadre_consignaciones)  || 0)
+                      + (parseFloat(planilla.cuadre_efectivo)        || 0)
+                      + (parseFloat(planilla.cuadre_monedas)         || 0)
+                      + (parseFloat(planilla.cuadre_credito)         || 0)
+                      + (parseFloat(planilla.cuadre_consignaciones_alpina) || 0) > 0;
+
+    if (tieneDesglose) {
+        // Preservar desglose ya ingresado
+        return {
+            cuadre_consignaciones:        parseFloat(planilla.cuadre_consignaciones)        || 0,
+            cuadre_consignaciones_alpina: parseFloat(planilla.cuadre_consignaciones_alpina) || 0,
+            cuadre_efectivo:              parseFloat(planilla.cuadre_efectivo)              || 0,
+            cuadre_monedas:               parseFloat(planilla.cuadre_monedas)               || 0,
+            cuadre_credito:               parseFloat(planilla.cuadre_credito)               || 0,
+            cuadre_devolucion:            parseFloat(planilla.cuadre_devolucion)            || 0,
+            cuadre_vales:                 parseFloat(planilla.cuadre_vales)                 || 0,
+            cuadre_descuento_nomina:      parseFloat(planilla.cuadre_descuento_nomina)      || 0,
+            cuadre_retefuente:            parseFloat(planilla.cuadre_retefuente)            || 0,
+            cuadre_ajuste_peso:           parseFloat(planilla.cuadre_ajuste_peso)           || 0,
+            cuadre_ajuste_peso_ing:       parseFloat(planilla.cuadre_ajuste_peso_ing)       || 0,
+            cuadre_sobrante_caja:         parseFloat(planilla.cuadre_sobrante_caja)         || 0,
+            cuadre_otros_gastos:          parseFloat(planilla.cuadre_otros_gastos)          || 0,
+            cuadre_planilla_transitoria:  planilla.cuadre_planilla_transitoria              || null,
+            cuadre_fact_transitoria:      planilla.cuadre_fact_transitoria                  || null,
+            cuadre_no_consignaciones:     planilla.cuadre_no_consignaciones                 || null,
+        };
+    }
+
+    // Sin desglose previo: devolver todos en cero.
+    // La cajera los completa despues usando 'Editar desglose' o la tabla de Cuadre Detallado.
+    return {
+        cuadre_consignaciones:        0,
+        cuadre_consignaciones_alpina: 0,
+        cuadre_efectivo:              0,
+        cuadre_monedas:               0,
+        cuadre_credito:               0,
+        cuadre_devolucion:            0,
+        cuadre_vales:                 0,
+        cuadre_descuento_nomina:      0,
+        cuadre_retefuente:            0,
+        cuadre_ajuste_peso:           0,
+        cuadre_ajuste_peso_ing:       0,
+        cuadre_sobrante_caja:         0,
+        cuadre_otros_gastos:          0,
+        cuadre_planilla_transitoria:  null,
+        cuadre_fact_transitoria:      null,
+        cuadre_no_consignaciones:     null,
+    };
+}
+
 async function cuadrarPlanillaCajera(planillaId) {
     var planilla = PL_CACHE.find(function(p) { return p.id === planillaId; });
     if (!planilla) return;
 
     var valorEsperado = parseFloat(planilla.valor_total) || 0;
     var facturas      = (planilla.planilla_facturas || []).map(function(f) { return Object.assign({}, f); });
+    var userName      = (window.CURRENT_SESSION && window.CURRENT_SESSION.profile && window.CURRENT_SESSION.profile.nombre) || 'Cajera';
 
-    // PASO 1: ingresar valor recibido
+    // PASO 1: modal simplificado con indicador de diferencia en tiempo real
+    var _fmtCOP = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    var fmtExp = _fmtCOP.format(valorEsperado);
     var paso1 = await Swal.fire({
-        title: '&#x1F4B5; &#xBF;Cu&#xE1;nto recibiste?',
-        html: '<div style="text-align:left;font-size:0.9rem;">' +
-            '<div style="padding:12px 14px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:10px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">' +
-            '<span style="color:#94a3b8;font-size:0.82rem;">Planilla:</span>' +
-            '<strong style="font-family:monospace;">' + planilla.no_planilla + '</strong>' +
-            (planilla.placa ? '<span style="background:rgba(255,255,255,0.08);padding:2px 8px;border-radius:6px;font-family:monospace;font-weight:700;">' + planilla.placa + '</span>' : '') +
-            '<span style="color:#94a3b8;font-size:0.82rem;">Valor esperado:</span>' +
-            '<strong style="color:#10b981;font-size:1.05rem;">' + fmt(valorEsperado) + '</strong>' +
-            '</div>' +
-            '<label style="display:block;margin-bottom:8px;color:#94a3b8;font-size:0.8rem;font-weight:700;text-transform:uppercase;">Valor recibido <span style="color:#ef4444;">*</span></label>' +
-            '<input id="swal-cajera-valor" type="text" value="' + fmt(valorEsperado) + '" style="width:100%;padding:14px 16px;background:#0f172a;border:2px solid rgba(16,185,129,0.4);color:#10b981;border-radius:10px;font-size:1.2rem;font-weight:800;font-family:inherit;outline:none;box-sizing:border-box;text-align:right;" oninput="this.style.borderColor=\'rgba(59,130,246,0.5)\'">' +
-            '<p style="color:#64748b;font-size:0.77rem;margin-top:8px;text-align:right;"><i class="ri-information-line"></i> Si todo cuadra, deja el valor y confirma.</p>' +
-            '</div>',
+        title: '<i class="ri-safe-2-line" style="color:#10b981;"></i> Cuadrar planilla',
+        width: '460px',
+        html: '<div style="text-align:left;">'
+            + '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:10px;margin-bottom:16px;flex-wrap:wrap;gap:8px;">'
+            + '<div style="display:flex;align-items:center;gap:10px;">'
+            + '<span style="font-family:monospace;font-weight:900;font-size:1.05rem;color:#f8fafc;">' + planilla.no_planilla + '</span>'
+            + (planilla.placa ? '<span style="background:rgba(255,255,255,0.1);padding:2px 10px;border-radius:6px;font-family:monospace;font-weight:700;color:#fbbf24;">' + planilla.placa + '</span>' : '')
+            + '</div>'
+            + '<div style="text-align:right;">'
+            + '<div style="font-size:0.65rem;color:#475569;text-transform:uppercase;font-weight:700;">Valor esperado</div>'
+            + '<div style="font-size:1.15rem;font-weight:900;color:#10b981;">' + fmtExp + '</div>'
+            + '</div>'
+            + '</div>'
+            + '<label style="display:block;margin-bottom:8px;font-size:0.75rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Valor recibido <span style="color:#ef4444;">*</span></label>'
+            + '<input id="swal-cajera-valor" type="text" value="' + fmtExp + '" '
+            + 'style="width:100%;padding:16px;background:#0a1628;border:2px solid rgba(16,185,129,0.5);color:#10b981;border-radius:10px;font-size:1.4rem;font-weight:900;font-family:monospace;outline:none;box-sizing:border-box;text-align:right;letter-spacing:1px;" '
+            + 'oninput="(function(el){'
++ 'var raw=el.value.replace(/\\./g,\'\').replace(\',\',\'.\');'
++ 'var vv=parseFloat(raw)||0;'
+            + 'var exp=' + valorEsperado + ';'
+            + 'var dif=vv-exp;'
+            + 'var di=document.getElementById(\'swal-cj-dif\');'
+            + 'if(di){'
+            + 'if(vv===0){di.style.display=\'none\';}else{'
+            + 'di.style.display=\'flex\';'
+            + 'if(Math.abs(dif)<1){'
+            + 'di.innerHTML=\'<i class="ri-checkbox-circle-fill"></i> Cuadra exacto \u2014 se guardar\u00e1 autom\u00e1ticamente\';'
+            + 'di.style.background=\'rgba(16,185,129,0.12)\';di.style.borderColor=\'rgba(16,185,129,0.35)\';di.style.color=\'#10b981\';'
+            + 'el.style.borderColor=\'rgba(16,185,129,0.7)\';'
+            + '}else if(dif>0){'
+            + 'di.innerHTML=\'<i class="ri-arrow-up-circle-fill"></i> Sobrante: +\'+(dif).toLocaleString(\'es-CO\',{minimumFractionDigits:2,maximumFractionDigits:2});'
+            + 'di.style.background=\'rgba(59,130,246,0.1)\';di.style.borderColor=\'rgba(59,130,246,0.3)\';di.style.color=\'#60a5fa\';'
+            + 'el.style.borderColor=\'rgba(59,130,246,0.5)\';'
+            + '}else{'
+            + 'di.innerHTML=\'<i class="ri-arrow-down-circle-fill"></i> Faltante: \'+(dif).toLocaleString(\'es-CO\',{minimumFractionDigits:2,maximumFractionDigits:2});'
+            + 'di.style.background=\'rgba(239,68,68,0.1)\';di.style.borderColor=\'rgba(239,68,68,0.3)\';di.style.color=\'#f87171\';'
+            + 'el.style.borderColor=\'rgba(239,68,68,0.5)\';'
+            + '}'
+            + '}'
+            + '}'
+            + '})(this)">'
+            + '<div id="swal-cj-dif" style="display:flex;align-items:center;gap:8px;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:0.88rem;font-weight:800;border:1px solid rgba(16,185,129,0.35);background:rgba(16,185,129,0.12);color:#10b981;">'
+            + '<i class="ri-checkbox-circle-fill"></i> Cuadra exacto \u2014 se guardar\u00e1 autom\u00e1ticamente'
+            + '</div>'
+            + '<div style="margin-top:12px;padding:9px 12px;background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.18);border-radius:8px;font-size:0.72rem;color:#a5b4fc;display:flex;align-items:center;gap:8px;">'
+            + '<i class="ri-magic-line" style="color:#818cf8;font-size:1rem;flex-shrink:0;"></i>'
+            + '<span>Si cuadra exacto se guarda solo. Si hay diferencia, revisa las facturas en el siguiente paso.</span>'
+            + '</div>'
+            + '</div>',
         showCancelButton: true,
         confirmButtonText: '<i class="ri-arrow-right-line"></i> Continuar',
         cancelButtonText:  'Cancelar',
@@ -2060,7 +2475,7 @@ async function cuadrarPlanillaCajera(planillaId) {
         focusConfirm: false,
         didOpen: function() {
             var inp = document.getElementById('swal-cajera-valor');
-            if (inp) inp.addEventListener('focus', function() { inp.select(); });
+            if (inp) { inp.focus(); inp.select(); }
         },
         preConfirm: function() {
             var v = (document.getElementById('swal-cajera-valor') || {}).value || '';
@@ -2071,15 +2486,60 @@ async function cuadrarPlanillaCajera(planillaId) {
 
     if (!paso1.isConfirmed || !paso1.value) return;
 
-    var valorRecibido = parseFloat(paso1.value.replace(/[^0-9]/g, '')) || 0;
+    var valorRecibido = parseFloat((paso1.value || '').replace(/\./g,'').replace(',','.').replace(/[^0-9.-]/g,'')) || 0;
     var diferencia    = valorRecibido - valorEsperado;
     var hasDiff       = Math.abs(diferencia) > 0;
+
+    // Calcular desglose automatico
+    var desglose = _autoDistribuirDesglose(valorRecibido, valorEsperado, planilla);
 
     var cuadradasIds   = facturas.map(function(f) { return f.id; });
     var noCuadradasIds = [];
     var observacion    = hasDiff
         ? ('Diferencia de ' + fmt(Math.abs(diferencia)) + ' ' + (diferencia > 0 ? 'a favor' : 'faltante') + '.')
         : 'Cuadre completo sin novedades.';
+
+    // CUADRE EXACTO: guardar directo sin pasos adicionales
+    if (!hasDiff) {
+        Swal.fire({ title: '<i class="ri-magic-line"></i> Guardando autom\u00e1ticamente...', allowOutsideClick: false,
+            background: '#1e293b', color: '#fff', didOpen: function() { Swal.showLoading(); } });
+
+        if (cuadradasIds.length > 0) await SupabaseClient.planillas.toggleFacturasBatch(cuadradasIds, true);
+
+        var saveExacto = await SupabaseClient.planillas.updateEstado(planillaId, 'CUADRADA', Object.assign({
+            cuadrado_por:   userName,
+            valor_cuadrado: valorRecibido,
+            obs_cuadre:     'Cuadre completo sin novedades.',
+            fecha_cuadre:   new Date().toISOString().split('T')[0],
+            cuadre_tipo:    'MANUAL',
+        }, desglose));
+
+        if (!saveExacto.success) {
+            Swal.fire({ icon: 'error', title: 'Error al guardar', text: saveExacto.error || 'No se pudo guardar.',
+                background: '#1e293b', color: '#fff' });
+            return;
+        }
+
+        planilla.estado         = 'CUADRADA';
+        planilla.valor_cuadrado = valorRecibido;
+        planilla.cuadrado_por   = userName;
+        planilla.obs_cuadre     = 'Cuadre completo sin novedades.';
+        planilla.fecha_cuadre   = new Date().toISOString().split('T')[0];
+        Object.assign(planilla, desglose);
+
+        await _cargarVistaCajera();
+
+        Swal.fire({
+            icon: 'success',
+            title: '\u2705 \u00a1Cuadrado autom\u00e1ticamente!',
+            html: '<strong>' + planilla.no_planilla + '</strong><br>'
+                + '<span style="color:#10b981;font-weight:900;font-size:1.3rem;">' + fmt(valorRecibido) + '</span><br>'
+                + '<small style="color:#10b981;">\u2713 Cuadra exacto \u2014 sin pasos adicionales</small>',
+            timer: 2800, showConfirmButton: true, confirmButtonText: 'Listo',
+            background: '#1e293b', color: '#fff'
+        });
+        return;
+    }
 
     // PASO 2 (solo si hay diferencia y hay facturas)
     if (hasDiff && facturas.length > 0) {
@@ -2192,14 +2652,14 @@ async function cuadrarPlanillaCajera(planillaId) {
     if (noCuadradasIds.length > 0) await SupabaseClient.planillas.toggleFacturasBatch(noCuadradasIds, false);
     if (cuadradasIds.length   > 0) await SupabaseClient.planillas.toggleFacturasBatch(cuadradasIds,   true);
 
-    var userName = (window.CURRENT_SESSION && window.CURRENT_SESSION.profile && window.CURRENT_SESSION.profile.nombre) || 'Cajera';
-    var saveResult = await SupabaseClient.planillas.updateEstado(planillaId, 'CUADRADA', {
+    // userName ya definido al inicio de la función
+    var saveResult = await SupabaseClient.planillas.updateEstado(planillaId, 'CUADRADA', Object.assign({
         cuadrado_por:   userName,
         valor_cuadrado: valorRecibido,
         obs_cuadre:     observacion || null,
         fecha_cuadre:   new Date().toISOString().split('T')[0],
-    });
-
+        cuadre_tipo:    'MANUAL',
+    }, desglose));
     if (!saveResult.success) {
         Swal.fire({ icon: 'error', title: 'Error al guardar', text: saveResult.error || 'No se pudo registrar el cuadre.', background: '#1e293b', color: '#fff' });
         return;
@@ -2210,7 +2670,7 @@ async function cuadrarPlanillaCajera(planillaId) {
     planilla.cuadrado_por   = userName;
     planilla.obs_cuadre     = observacion || null;
     planilla.fecha_cuadre   = new Date().toISOString().split('T')[0];
-
+    Object.assign(planilla, desglose);
     await _cargarVistaCajera();
 
     Swal.fire({

@@ -4166,7 +4166,7 @@ async function cargarModuloPagos() {
 
     let query = SupabaseClient.supabase
         .from('fletes')
-        .select('id, fecha, dia, proveedor, contratista, placa, poblacion, precio, estado_pago, fecha_pago, pagado_por')
+        .select('id, fecha, dia, proveedor, contratista, placa, poblacion, precio, estado_pago, fecha_pago, pagado_por, desc_retencion, desc_seguridad, desc_vales')
         .gte('fecha', desde)
         .lte('fecha', hasta)
         .order('fecha', { ascending: true })
@@ -4183,7 +4183,7 @@ async function cargarModuloPagos() {
     }
 
     if (!fletes || fletes.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color: var(--text-muted);">No hay fletes en este período</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="14" style="text-align:center; color: var(--text-muted);">No hay fletes en este período</td></tr>`;
         if (resumen) resumen.style.display = 'none';
         return;
     }
@@ -4205,32 +4205,116 @@ async function cargarModuloPagos() {
         document.getElementById('pagos-total-total').textContent      = moneyFormatter.format(sumTotal);
     }
 
+    // ── Retención automática 2% por placa ───────────────────
+    // Calcular el total de fletes PENDIENTES agrupados por placa
+    // para distribuir proporcionalmente la retención del 2%
+    const TASA_RETENCION = 0.02;
+    const totalPorPlaca = {};
+    pendientes.forEach(f => {
+        if (!totalPorPlaca[f.placa]) totalPorPlaca[f.placa] = 0;
+        totalPorPlaca[f.placa] += (f.precio || 0);
+    });
+
+    // Estilo compartido para inputs de descuento
+    const inputDescStyle = `width:90px; background:rgba(15,23,42,0.8); border:1px solid rgba(255,255,255,0.12);
+        border-radius:6px; padding:4px 8px; color:#e2e8f0; font-size:0.8rem; font-family:inherit; text-align:right;`;
+
     // Renderizar tabla
     const fragment = document.createDocumentFragment();
     fletes.forEach(f => {
         const esPagado = f.estado_pago === 'PAGADO';
+        const ret = f.desc_retencion || 0;
+        const seg = f.desc_seguridad || 0;
+        const val = f.desc_vales     || 0;
+        const neto = (f.precio || 0) - ret - seg - val;
+
+        // Retención automática proporcional para fletes pendientes:
+        // cada flete paga (su valor / total placa) × (total placa × 2%)
+        // lo que simplifica a: precio × 2%
+        const retAutoCalculada = esPagado ? ret : Math.round((f.precio || 0) * TASA_RETENCION);
+
         const tr = document.createElement('tr');
         tr.style.opacity = esPagado ? '0.65' : '1';
-        tr.innerHTML = `
-            <td><input type="checkbox" class="chk-pago" data-id="${f.id}" ${esPagado ? 'disabled' : ''}></td>
-            <td>
-                <span class="badge" style="background:${esPagado ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'}; color:${esPagado ? '#22c55e' : '#ef4444'}; font-size:0.7rem; padding:2px 8px;">
-                    ${esPagado ? '✓ PAGADO' : '⏳ PENDIENTE'}
-                </span>
-            </td>
-            <td>${f.fecha}</td>
-            <td><span class="badge" style="background:var(--accent-blue);font-size:0.7rem;padding:2px 6px;">${f.proveedor}</span></td>
-            <td><strong>${f.contratista || '-'}</strong></td>
-            <td><span class="badge-plate">${f.placa}</span></td>
-            <td>${f.poblacion || '-'}</td>
-            <td class="price-cell" style="font-weight:600;">${moneyFormatter.format(f.precio || 0)}</td>
-            <td style="color:var(--text-muted); font-size:0.85rem;">${f.fecha_pago || '-'}</td>
-            <td style="color:var(--text-muted); font-size:0.85rem;">${f.pagado_por || '-'}</td>
-        `;
+        tr.dataset.id = f.id;
+
+        if (esPagado) {
+            // Fila ya pagada: mostrar descuentos como texto
+            tr.innerHTML = `
+                <td><input type="checkbox" class="chk-pago" data-id="${f.id}" disabled></td>
+                <td>
+                    <span class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; font-size:0.7rem; padding:2px 8px;">
+                        ✓ PAGADO
+                    </span>
+                </td>
+                <td>${f.fecha}</td>
+                <td><span class="badge" style="background:var(--accent-blue);font-size:0.7rem;padding:2px 6px;">${f.proveedor}</span></td>
+                <td><strong>${f.contratista || '-'}</strong></td>
+                <td><span class="badge-plate">${f.placa}</span></td>
+                <td>${f.poblacion || '-'}</td>
+                <td class="price-cell" style="font-weight:600;">${moneyFormatter.format(f.precio || 0)}</td>
+                <td style="text-align:right; color:${ret > 0 ? '#fbbf24' : 'var(--text-muted)'}; font-size:0.85rem;">${ret > 0 ? moneyFormatter.format(ret) : '—'}</td>
+                <td style="text-align:right; color:${seg > 0 ? '#c4b5fd' : 'var(--text-muted)'}; font-size:0.85rem;">${seg > 0 ? moneyFormatter.format(seg) : '—'}</td>
+                <td style="text-align:right; color:${val > 0 ? '#f9a8d4' : 'var(--text-muted)'}; font-size:0.85rem;">${val > 0 ? moneyFormatter.format(val) : '—'}</td>
+                <td style="text-align:right; font-weight:600; color:#86efac; font-size:0.85rem;">${moneyFormatter.format(neto)}</td>
+                <td style="color:var(--text-muted); font-size:0.85rem;">${f.fecha_pago || '-'}</td>
+                <td style="color:var(--text-muted); font-size:0.85rem;">${f.pagado_por || '-'}</td>
+            `;
+        } else {
+            // Flete pendiente: retención pre-calculada (2% del flete), editable
+            const netoAuto = (f.precio || 0) - retAutoCalculada - seg - val;
+            tr.innerHTML = `
+                <td><input type="checkbox" class="chk-pago" data-id="${f.id}"
+                    onchange="_recalcNetoFila(this)"></td>
+                <td>
+                    <span class="badge" style="background:rgba(239,68,68,0.15); color:#ef4444; font-size:0.7rem; padding:2px 8px;">
+                        ⏳ PENDIENTE
+                    </span>
+                </td>
+                <td>${f.fecha}</td>
+                <td><span class="badge" style="background:var(--accent-blue);font-size:0.7rem;padding:2px 6px;">${f.proveedor}</span></td>
+                <td><strong>${f.contratista || '-'}</strong></td>
+                <td><span class="badge-plate">${f.placa}</span></td>
+                <td>${f.poblacion || '-'}</td>
+                <td class="price-cell" data-precio="${f.precio || 0}" style="font-weight:600;">${moneyFormatter.format(f.precio || 0)}</td>
+                <td title="2% automático del valor del flete. Editable.">
+                    <input type="text" inputmode="numeric" class="desc-input desc-retencion" data-id="${f.id}"
+                        value="${_fmtDesc(retAutoCalculada)}"
+                        data-raw="${retAutoCalculada}"
+                        style="${inputDescStyle} border-color:rgba(245,158,11,0.4); color:#fbbf24;"
+                        oninput="_onDescInput(this)" onfocus="_descFocus(this)" onblur="_descBlur(this)">
+                    <div style="font-size:0.63rem; color:#64748b; text-align:right; margin-top:2px;">2% auto</div>
+                </td>
+                <td>
+                    <input type="text" inputmode="numeric" class="desc-input desc-seguridad" data-id="${f.id}"
+                        value="${_fmtDesc(seg)}"
+                        data-raw="${seg}"
+                        placeholder="0"
+                        style="${inputDescStyle} border-color:rgba(139,92,246,0.3);"
+                        oninput="_onDescInput(this)" onfocus="_descFocus(this)" onblur="_descBlur(this)">
+                </td>
+                <td>
+                    <input type="text" inputmode="numeric" class="desc-input desc-vales" data-id="${f.id}"
+                        value="${_fmtDesc(val)}"
+                        data-raw="${val}"
+                        placeholder="0"
+                        style="${inputDescStyle} border-color:rgba(236,72,153,0.3);"
+                        oninput="_onDescInput(this)" onfocus="_descFocus(this)" onblur="_descBlur(this)">
+                </td>
+                <td class="neto-fila-${f.id}" style="text-align:right; font-weight:700; color:#86efac; font-size:0.85rem;">
+                    ${moneyFormatter.format(netoAuto)}
+                </td>
+                <td style="color:var(--text-muted); font-size:0.85rem;">-</td>
+                <td style="color:var(--text-muted); font-size:0.85rem;">-</td>
+            `;
+        }
         fragment.appendChild(tr);
     });
     tbody.innerHTML = '';
     tbody.appendChild(fragment);
+
+    // Mostrar hint de descuentos si hay pendientes
+    const hint = document.getElementById('pagos-desc-hint');
+    if (hint) hint.style.display = pendientes.length > 0 ? 'flex' : 'none';
 
     // Sync checkbox maestro
     document.getElementById('chk-todos-pagos').checked = false;
@@ -4280,15 +4364,90 @@ async function togglePagoFlete(id, estadoActual) {
     }
 }
 
+// ── Helpers para inputs de descuento formateados (COP con puntos de miles) ──
+
+// Formatea un número como COP sin símbolo: 8900 → "8.900"
+function _fmtDesc(v) {
+    const n = parseFloat(v) || 0;
+    if (n === 0) return '';
+    return new Intl.NumberFormat('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
+}
+
+// Parsea "8.900" o "8900" → 8900
+function _parseDesc(v) {
+    return parseFloat(String(v).replace(/\./g, '').replace(',', '.')) || 0;
+}
+
+// Al escribir: actualiza data-raw y recalcula neto
+function _onDescInput(input) {
+    // Permitir solo dígitos mientras escribe
+    const raw = String(input.value).replace(/[^0-9]/g, '');
+    input.dataset.raw = raw || '0';
+    // Mostrar número sin formato mientras edita (para no romper la escritura)
+    input.value = raw;
+    _recalcNetoFila(input);
+}
+
+// Al entrar al campo: mostrar número sin puntos para editar fácilmente
+function _descFocus(input) {
+    const raw = input.dataset.raw || '0';
+    input.value = raw === '0' ? '' : raw;
+    input.select();
+}
+
+// Al salir del campo: formatear con puntos de miles
+function _descBlur(input) {
+    const raw = parseFloat(input.dataset.raw || '0') || 0;
+    input.value = _fmtDesc(raw);
+}
+
+// Recalcular el neto de una fila cuando cambia un input de descuento
+function _recalcNetoFila(input) {
+    const id  = input.dataset.id || input.closest('tr')?.dataset?.id;
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    if (!row) return;
+
+    // Leer precio desde data-precio (evita problemas con formato de moneda)
+    const precio = parseFloat(row.querySelector('.price-cell')?.dataset?.precio || '0') || 0;
+    const ret = parseFloat(row.querySelector('.desc-retencion')?.dataset?.raw || '0') || 0;
+    const seg = parseFloat(row.querySelector('.desc-seguridad')?.dataset?.raw || '0') || 0;
+    const val = parseFloat(row.querySelector('.desc-vales')?.dataset?.raw     || '0') || 0;
+    const neto = precio - ret - seg - val;
+
+    const netoCell = row.querySelector(`.neto-fila-${id}`);
+    if (netoCell) {
+        netoCell.textContent = moneyFormatter.format(neto);
+        netoCell.style.color = neto < 0 ? '#ef4444' : '#86efac';
+    }
+}
+
 async function marcarFletesPagados() {
     const seleccionados = [...document.querySelectorAll('.chk-pago:checked')].map(c => c.dataset.id);
     if (seleccionados.length === 0) {
         return Swal.fire({ icon: 'warning', title: 'Sin selección', text: 'Selecciona al menos un flete para marcar como pagado.', background: '#1e293b', color: '#fff' });
     }
 
+    // Recoger descuentos de cada fila seleccionada
+    const descuentos = {};
+    seleccionados.forEach(id => {
+        const row = document.querySelector(`tr[data-id="${id}"]`);
+        descuentos[id] = {
+            desc_retencion: parseFloat(row?.querySelector('.desc-retencion')?.dataset?.raw || '0') || 0,
+            desc_seguridad: parseFloat(row?.querySelector('.desc-seguridad')?.dataset?.raw || '0') || 0,
+            desc_vales:     parseFloat(row?.querySelector('.desc-vales')?.dataset?.raw     || '0') || 0,
+        };
+    });
+
+    const totalDesc = Object.values(descuentos).reduce((s, d) => s + d.desc_retencion + d.desc_seguridad + d.desc_vales, 0);
+    const resumenDesc = totalDesc > 0
+        ? `<div style="margin-top:10px; font-size:0.85rem; color:#94a3b8;">
+               Total descuentos aplicados: <strong style="color:#fbbf24;">${moneyFormatter.format(totalDesc)}</strong>
+           </div>`
+        : `<div style="margin-top:10px; font-size:0.85rem; color:#64748b;">Sin descuentos registrados.</div>`;
+
     const { isConfirmed } = await Swal.fire({
         title: `¿Marcar ${seleccionados.length} flete(s) como pagados?`,
-        text: 'Esta acción registrará la fecha y usuario de pago.',
+        html: `Esta acción registrará la fecha y usuario de pago.${resumenDesc}`,
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'Sí, marcar pagados',
@@ -4302,21 +4461,30 @@ async function marcarFletesPagados() {
 
     Swal.fire({ title: 'Procesando...', allowOutsideClick: false, background: '#1e293b', color: '#fff', didOpen: () => Swal.showLoading() });
 
-    const session = CURRENT_SESSION;
+    const session  = CURRENT_SESSION;
     const userName = session?.profile?.nombre || session?.user?.user_metadata?.nombre || 'Contabilidad';
     const fechaHoy = new Date().toISOString().split('T')[0];
 
-    const { error } = await SupabaseClient.supabase
-        .from('fletes')
-        .update({
-            estado_pago: 'PAGADO',
-            fecha_pago: fechaHoy,
-            pagado_por: userName
-        })
-        .in('id', seleccionados);
+    // Actualizar cada flete individualmente para incluir sus propios descuentos
+    const promesas = seleccionados.map(id =>
+        SupabaseClient.supabase
+            .from('fletes')
+            .update({
+                estado_pago:    'PAGADO',
+                fecha_pago:     fechaHoy,
+                pagado_por:     userName,
+                desc_retencion: descuentos[id].desc_retencion,
+                desc_seguridad: descuentos[id].desc_seguridad,
+                desc_vales:     descuentos[id].desc_vales,
+            })
+            .eq('id', id)
+    );
 
-    if (error) {
-        return Swal.fire({ icon: 'error', title: 'Error', text: error.message, background: '#1e293b', color: '#fff' });
+    const resultados = await Promise.all(promesas);
+    const errores    = resultados.filter(r => r.error);
+
+    if (errores.length > 0) {
+        return Swal.fire({ icon: 'error', title: 'Error parcial', text: `${errores.length} flete(s) no se pudieron actualizar.`, background: '#1e293b', color: '#fff' });
     }
 
     Swal.fire({

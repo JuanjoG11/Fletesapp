@@ -36,7 +36,7 @@
         let deferredPrompt;
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js?v=7')
+                navigator.serviceWorker.register('../sw.js?v=8')
                     .then(reg => console.log('Service Worker registrado', reg))
                     .catch(err => console.error('Error al registrar Service Worker', err));
             });
@@ -863,6 +863,12 @@
                     </div>
                 </div>
 
+                <!-- Leyenda de campos de descuento -->
+                <div id="pagos-desc-hint" style="display:none; padding: 8px 16px; background: rgba(245,158,11,0.08); border-bottom: 1px solid rgba(245,158,11,0.2); font-size: 0.78rem; color: #f59e0b; display: none; align-items: center; gap: 8px;">
+                    <i class="ri-information-line"></i>
+                    Digita los descuentos directamente en cada fila antes de marcar como pagado. Deja en 0 si no aplica.
+                </div>
+
                 <div class="table-container">
                     <table>
                         <thead>
@@ -875,12 +881,16 @@
                                 <th>Placa</th>
                                 <th>Población</th>
                                 <th>Valor Flete</th>
+                                <th style="color:#fbbf24;" title="Retención en la fuente">Retención</th>
+                                <th style="color:#c4b5fd;" title="Descuento de seguridad">Seguridad</th>
+                                <th style="color:#f9a8d4;" title="Vales / anticipos">Vales</th>
+                                <th style="color:#86efac;">Neto</th>
                                 <th>Fecha Pago</th>
                                 <th>Pagado por</th>
                             </tr>
                         </thead>
                         <tbody id="tablaPagos">
-                            <tr><td colspan="10" style="text-align:center; color: var(--text-muted);">Selecciona una quincena para comenzar</td></tr>
+                            <tr><td colspan="14" style="text-align:center; color: var(--text-muted);">Selecciona una quincena para comenzar</td></tr>
                         </tbody>
                     </table>
                 </div>

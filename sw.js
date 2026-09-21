@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fletes-app-v7';
+const CACHE_NAME = 'fletes-app-v8';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -40,6 +40,9 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
     // ── IGNORAR siempre ──────────────────────────────────────────────
+    // 0. Solo procesar http/https — ignorar chrome-extension://, data:, etc.
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+
     // 1. Peticiones que no son GET (POST/PATCH/DELETE de Supabase)
     if (event.request.method !== 'GET') return;
 

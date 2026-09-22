@@ -994,7 +994,14 @@
                         <p id="pl-kpi-transitoria" class="kpi-value" style="color:#f59e0b;">0</p>
                     </div>
                 </div>
-                <div class="card glass-card kpi-card" style="border-left-color:#8b5cf6;">
+                <div class="card glass-card kpi-card" style="border-left-color:#3b82f6;">
+                    <div class="kpi-icon" style="color:#3b82f6;background:rgba(59,130,246,0.1);"><i class="ri-calendar-check-line"></i></div>
+                    <div class="kpi-info">
+                        <h3>Programadas</h3>
+                        <p id="pl-kpi-programada" class="kpi-value" style="color:#3b82f6;">0</p>
+                    </div>
+                </div>
+                <div class="card glass-card kpi-card" style="border-left-color:#3b82f6;"><div class="kpi-icon" style="color:#3b82f6;background:rgba(59,130,246,0.1);"><i class="ri-calendar-check-line"></i></div><div class="kpi-info"><h3>Programadas</h3><p id="pl-kpi-programada" class="kpi-value" style="color:#3b82f6;">0</p></div></div><div class="card glass-card kpi-card" style="border-left-color:#8b5cf6;">
                     <div class="kpi-icon" style="color:#8b5cf6;background:rgba(139,92,246,0.1);"><i class="ri-truck-line"></i></div>
                     <div class="kpi-info">
                         <h3>Despachadas</h3>
@@ -1164,6 +1171,7 @@
                         <select id="pl-filtro-estado" class="input-modern" style="width:180px;">
                             <option value="">Todos los estados</option>
                             <option value="TRANSITORIA">Transitoria</option>
+                            <option value="PROGRAMADA">Programada</option>
                             <option value="DESPACHADA">Despachada</option>
                             <option value="CUADRADA">Cuadrada</option>
                         </select>
@@ -1199,6 +1207,17 @@
                         <span class="pl-kanban-count" id="pl-cnt-transitoria">0</span>
                     </div>
                     <div class="pl-kanban-cards" id="pl-col-transitoria">
+                        <div class="pl-kanban-empty"><i class="ri-loader-4-line rotate"></i><span>Cargando...</span></div>
+                    </div>
+                </div>
+
+                <!-- Columna PROGRAMADA -->
+                <div class="pl-kanban-col">
+                    <div class="pl-kanban-col-header" style="border-top-color:#3b82f6;">
+                        <span style="color:#3b82f6;"><i class="ri-calendar-check-line"></i> PROGRAMADA</span>
+                        <span class="pl-kanban-count" id="pl-cnt-programada">0</span>
+                    </div>
+                    <div class="pl-kanban-cards" id="pl-col-programada">
                         <div class="pl-kanban-empty"><i class="ri-loader-4-line rotate"></i><span>Cargando...</span></div>
                     </div>
                 </div>

@@ -816,7 +816,7 @@ async function crearPlanillaConFacturas(planillaData, facturas = []) {
 /**
  * Actualizar estado de una planilla
  * @param {string} planillaId
- * @param {string} nuevoEstado - TRANSITORIA | DESPACHADA | CUADRADA
+ * @param {string} nuevoEstado - TRANSITORIA | PROGRAMADA | DESPACHADA | CUADRADA
  * @param {object} extraData   - Campos adicionales a actualizar (ej. placa, conductor)
  */
 async function actualizarEstadoPlanilla(planillaId, nuevoEstado, extraData = {}) {
@@ -924,7 +924,7 @@ async function eliminarPlanilla(planillaId) {
 async function obtenerKPIPlanillas() {
     try {
         const razonSocial = await _getRazonSocialUsuario();
-        const estados = ['TRANSITORIA', 'DESPACHADA', 'CUADRADA'];
+        const estados = ['TRANSITORIA', 'PROGRAMADA', 'DESPACHADA', 'CUADRADA'];
         const counts = {};
 
         for (const estado of estados) {
@@ -1125,7 +1125,8 @@ async function aprobarProgramacion(programacionId) {
             .eq('id', programacionId);
         if (eUpd) throw eUpd;
 
-        // 4. Actualizar TODAS las planillas del flete a DESPACHADA
+        // 4. Actualizar TODAS las planillas del flete a PROGRAMADA
+        // (el programador las programó — aún no han salido físicamente)
         // Primero construir la lista de IDs: usar planillas_ids (CSV) si existe,
         // y caer de vuelta a planilla_id para compatibilidad con registros viejos.
         const planillasIdsRaw = prog.planillas_ids || (prog.planilla_id ? prog.planilla_id : null);
@@ -1137,7 +1138,7 @@ async function aprobarProgramacion(programacionId) {
             await _supabase
                 .from('planillas')
                 .update({
-                    estado:             'DESPACHADA',
+                    estado:             'PROGRAMADA',
                     placa:              prog.placa,
                     conductor:          prog.contratista,
                     fecha_programacion: prog.fecha,

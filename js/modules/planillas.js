@@ -18,10 +18,13 @@ let PL_ID_MODAL       = null; // Planilla abierta en modal
 let PL_ROLE           = null; // Rol del usuario ('admin'|'cargador'|'programador'|'cajera_plan')
 let PL_INITIALIZED    = false;
 
-const PL_ESTADOS = ['TRANSITORIA', 'DESPACHADA', 'CUADRADA'];
+const PL_ESTADOS = ['TRANSITORIA', 'PROGRAMADA', 'DESPACHADA', 'CUADRADA'];
 
 const PL_ESTADO_META = {
     'TRANSITORIA':    { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)',  icon: 'ri-time-line',            label: 'TRANSITORIA'    },
+    'PROGRAMADA':     { color: '#3b82f6', bg: 'rgba(59,130,246,0.12)',  icon: 'ri-calendar-check-line',  label: 'PROGRAMADA'     },
+    'PROGRAMADA':     { color: '#3b82f6', bg: 'rgba(59,130,246,0.12)',  icon: 'ri-calendar-check-line',  label: 'PROGRAMADA'     },
+    'PROGRAMADA':     { color: '#3b82f6', bg: 'rgba(59,130,246,0.12)',  icon: 'ri-calendar-check-line',  label: 'PROGRAMADA'     },
     'DESPACHADA':     { color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)', icon: 'ri-truck-line',            label: 'DESPACHADA'     },
     'CUADRADA':       { color: '#10b981', bg: 'rgba(16,185,129,0.12)', icon: 'ri-checkbox-circle-line',  label: 'CUADRADA'       },
 };
@@ -799,7 +802,7 @@ async function guardarProgramacionPlanilla() {
         conductorFinal = res?.data?.conductor || '';
     }
 
-    const result = await SupabaseClient.planillas.updateEstado(PL_ID_MODAL, 'DESPACHADA', {
+    const result = await SupabaseClient.planillas.updateEstado(PL_ID_MODAL, 'PROGRAMADA', {
         placa:            placa,
         conductor:        conductorFinal,
         fecha_programacion: new Date().toISOString().split('T')[0],
@@ -816,7 +819,7 @@ async function guardarProgramacionPlanilla() {
     if (planilla) {
         planilla.placa     = placa;
         planilla.conductor = conductorFinal;
-        planilla.estado    = 'DESPACHADA';
+        planilla.estado    = 'PROGRAMADA';
     }
 
     cerrarModalPlanilla();
@@ -1265,12 +1268,15 @@ async function cargarPlanillasProgramacion() {
     const result = await SupabaseClient.planillas.getAll(filtros);
     if (!result.success) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#ef4444;">Error al cargar</td></tr>'; return; }
 
-    const sinProg = result.data.filter(p => p.estado === 'TRANSITORIA').length;
-    const conProg = result.data.filter(p => p.estado !== 'TRANSITORIA').length;
-    const elSin = document.getElementById('pl-prog-kpi-transitoria');
-    const elCon = document.getElementById('pl-prog-kpi-programadas');
-    if (elSin) elSin.textContent = sinProg;
-    if (elCon) elCon.textContent = conProg;
+    const sinProg     = result.data.filter(p => p.estado === 'TRANSITORIA').length;
+    const programadas = result.data.filter(p => p.estado === 'PROGRAMADA').length;
+    const conProg     = result.data.filter(p => p.estado !== 'TRANSITORIA').length;
+    const elSin  = document.getElementById('pl-prog-kpi-transitoria');
+    const elProg = document.getElementById('pl-prog-kpi-programadas');
+    const elCon  = document.getElementById('pl-prog-kpi-total');
+    if (elSin)  elSin.textContent  = sinProg;
+    if (elProg) elProg.textContent = programadas;
+    if (elCon)  elCon.textContent  = conProg;
 
     PL_CACHE = result.data;
 
@@ -1429,7 +1435,7 @@ async function programarPlanillasSeleccionadas() {
         const el = document.getElementById('swal-multi-prog');
         if (el) el.textContent = (i + 1) + ' / ' + ids.length;
 
-        const res = await SupabaseClient.planillas.updateEstado(ids[i], 'DESPACHADA', {
+        const res = await SupabaseClient.planillas.updateEstado(ids[i], 'PROGRAMADA', {
             placa:             placa,
             conductor:         conductor,
             fecha_programacion: fecha_prog,
@@ -1439,7 +1445,7 @@ async function programarPlanillasSeleccionadas() {
         if (res.success) {
             ok++;
             const p = PL_CACHE.find(function(x) { return x.id === ids[i]; });
-            if (p) { p.placa = placa; p.conductor = conductor; p.estado = 'DESPACHADA'; }
+            if (p) { p.placa = placa; p.conductor = conductor; p.estado = 'PROGRAMADA'; }
         } else {
             errores++;
             console.error('Error planilla ' + ids[i] + ':', res.error);

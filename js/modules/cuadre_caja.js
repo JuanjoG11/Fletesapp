@@ -110,12 +110,14 @@ async function cargarTablaCuadre() {
             + '<i class="ri-inbox-line" style="font-size:3rem;opacity:0.35;"></i>'
             + '<p style="margin-top:14px;font-size:1rem;">Sin planillas para el ' + CC.fecha + '</p></div>';
         _actualizarKpisCuadre();
+        _toggleBotonesExportCuadre(false);
         return;
     }
 
     _renderTabla();
     _actualizarKpisCuadre();
     _iniciarAutoSave();
+    _toggleBotonesExportCuadre(true);
 }
 window.cargarTablaCuadre = cargarTablaCuadre;
 
@@ -282,13 +284,13 @@ function _bindEventos() {
         if (e.target.classList.contains('cc-input')) {
             e.target.style.background = 'transparent';
             e.target.style.outline    = 'none';
-            _procesarCambio(e.target);
+            _procesarCambio(e.target, true); // true = formatear al salir
         }
     });
 
     tabla.addEventListener('input', function(e) {
         if (e.target.classList.contains('cc-input')) {
-            _procesarCambio(e.target);
+            _procesarCambio(e.target, false); // false = solo actualizar datos, NO reformatear
         }
     });
 
@@ -298,7 +300,7 @@ function _bindEventos() {
 
         if (e.key === 'Tab' || e.key === 'Enter') {
             e.preventDefault();
-            _procesarCambio(e.target);
+            _procesarCambio(e.target, true);
             _navegarSiguiente(e.target, e.shiftKey);
         }
         if (e.key === 'Escape') { e.target.blur(); }
@@ -306,17 +308,17 @@ function _bindEventos() {
         // Flechas — navegar entre celdas en cualquier dirección
         if (e.key === 'ArrowRight') {
             e.preventDefault();
-            _procesarCambio(e.target);
+            _procesarCambio(e.target, true);
             _navegarSiguiente(e.target, false);
         }
         if (e.key === 'ArrowLeft') {
             e.preventDefault();
-            _procesarCambio(e.target);
+            _procesarCambio(e.target, true);
             _navegarSiguiente(e.target, true);
         }
         if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             e.preventDefault();
-            _procesarCambio(e.target);
+            _procesarCambio(e.target, true);
             var idx  = parseInt(e.target.dataset.idx);
             var col  = parseInt(e.target.dataset.col);
             var next = idx + (e.key === 'ArrowDown' ? 1 : -1);
@@ -337,15 +339,15 @@ function _navegarSiguiente(input, reverse) {
 }
 
 // ── Procesar cambio en un input ──────────────────────────────
-function _procesarCambio(input) {
+function _procesarCambio(input, formatear) {
     var id   = input.dataset.id;
     var key  = input.dataset.key;
     var tipo = input.dataset.tipo;
     var raw  = input.value.trim();
 
-    // Parsear valor
+    // Parsear valor — limpiar puntos de miles y convertir coma decimal
     var valor = tipo === 'num'
-        ? (_n(raw))
+        ? _n(raw)
         : raw;
 
     // Actualizar objeto en CC.data
@@ -357,8 +359,9 @@ function _procesarCambio(input) {
     if (!CC.cambios[id]) CC.cambios[id] = {};
     CC.cambios[id][key] = valor;
 
-    // Formatear display
-    if (tipo === 'num' && raw !== '') {
+    // Formatear display SOLO al salir del campo (focusout, Tab, Enter, flechas)
+    // Durante la escritura (evento input) NO reformatear para no corromper la entrada
+    if (formatear && tipo === 'num') {
         input.value = valor === 0 ? '' : _fmtCC2.format(valor);
     }
 
@@ -583,3 +586,13 @@ function exportarExcelCuadre() {
     XLSX.writeFile(wb, 'Cuadre_Caja_TYM_' + CC.fecha + '.xlsx');
 }
 window.exportarExcelCuadre = exportarExcelCuadre;
+
+// ── Mostrar/ocultar botones Excel y PDF según si hay datos ───
+function _toggleBotonesExportCuadre(visible) {
+    var d = visible ? 'flex' : 'none';
+    var btnExcel = document.getElementById('cc-btn-excel');
+    var btnPdf   = document.getElementById('cc-btn-pdf');
+    if (btnExcel) btnExcel.style.display = d;
+    if (btnPdf)   btnPdf.style.display   = d;
+}
+window._toggleBotonesExportCuadre = _toggleBotonesExportCuadre;

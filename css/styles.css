@@ -756,8 +756,6 @@ select:focus {
 #sticky-hscroll-track {
     position: fixed;
     bottom: 0;
-    left: 0;
-    right: 0;
     height: 14px;
     overflow-x: auto;
     overflow-y: hidden;
@@ -765,6 +763,7 @@ select:focus {
     border-top: 1px solid var(--glass-border);
     z-index: 999;
     display: none;          /* oculto hasta que haya tabla ancha visible */
+    /* left y width los pone JS con getBoundingClientRect() */
 }
 #sticky-hscroll-track::-webkit-scrollbar        { height: 8px; }
 #sticky-hscroll-track::-webkit-scrollbar-track  { background: transparent; }

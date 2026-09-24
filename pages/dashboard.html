@@ -1832,6 +1832,78 @@
     </div>
 
     <!-- APP SCRIPTS are loaded in HEAD -->
+
+    <!-- ── Scrollbar horizontal sticky al pie ── -->
+    <div id="sticky-hscroll-track"><div id="sticky-hscroll-inner"></div></div>
+    <script>
+    (function () {
+        const track = document.getElementById('sticky-hscroll-track');
+        const inner = document.getElementById('sticky-hscroll-inner');
+        let activeTable = null;   // .table-container actualmente visible
+        let syncing = false;
+
+        // Sincroniza scroll track → tabla
+        track.addEventListener('scroll', () => {
+            if (syncing || !activeTable) return;
+            syncing = true;
+            activeTable.scrollLeft = track.scrollLeft;
+            syncing = false;
+        });
+
+        // Función que vincula una tabla al track
+        function bindTable(tc) {
+            if (activeTable === tc) return;
+            // Desvincula anterior
+            if (activeTable) {
+                activeTable._stickyHandler && activeTable.removeEventListener('scroll', activeTable._stickyHandler);
+            }
+            activeTable = tc;
+            // Ajustar ancho del inner al ancho scrollable de la tabla
+            inner.style.width = tc.scrollWidth + 'px';
+            track.scrollLeft = tc.scrollLeft;
+            track.style.display = 'block';
+
+            tc._stickyHandler = () => {
+                if (syncing) return;
+                syncing = true;
+                track.scrollLeft = tc.scrollLeft;
+                syncing = false;
+            };
+            tc.addEventListener('scroll', tc._stickyHandler);
+        }
+
+        // IntersectionObserver: detecta qué .table-container está visible en pantalla
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(e => {
+                if (e.isIntersecting && e.target.scrollWidth > e.target.clientWidth) {
+                    bindTable(e.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        // Observar todas las tablas (incluyendo las que se agreguen después)
+        function observarTablas() {
+            document.querySelectorAll('.table-container').forEach(tc => observer.observe(tc));
+        }
+
+        // Observar también cuando cambia el tab activo (el app usa clases visible)
+        const tabObserver = new MutationObserver(() => {
+            observarTablas();
+            // Si ninguna tabla ancha está visible, ocultar el track
+            const alguna = Array.from(document.querySelectorAll('.table-container'))
+                .some(tc => tc.scrollWidth > tc.clientWidth + 4 && tc.offsetParent !== null);
+            if (!alguna) track.style.display = 'none';
+        });
+        tabObserver.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+
+        // Inicializar cuando el DOM esté listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', observarTablas);
+        } else {
+            observarTablas();
+        }
+    })();
+    </script>
 </body>
 
 </html>

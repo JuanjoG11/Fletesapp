@@ -744,6 +744,37 @@ select:focus {
     border-radius: 12px;
     border: 1px solid var(--glass-border);
     margin-top: 16px;
+    /* Ocultar scrollbar nativo — se reemplaza por el sticky al pie */
+    scrollbar-width: none;        /* Firefox */
+    -ms-overflow-style: none;     /* IE/Edge */
+}
+.table-container::-webkit-scrollbar {
+    display: none;                /* Chrome/Safari */
+}
+
+/* ── Scrollbar horizontal sticky al pie de la ventana ── */
+#sticky-hscroll-track {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 14px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: var(--bg-card, #1e293b);
+    border-top: 1px solid var(--glass-border);
+    z-index: 999;
+    display: none;          /* oculto hasta que haya tabla ancha visible */
+}
+#sticky-hscroll-track::-webkit-scrollbar        { height: 8px; }
+#sticky-hscroll-track::-webkit-scrollbar-track  { background: transparent; }
+#sticky-hscroll-track::-webkit-scrollbar-thumb  { background: #475569; border-radius: 4px; }
+#sticky-hscroll-track::-webkit-scrollbar-thumb:hover { background: #64748b; }
+/* Firefox */
+#sticky-hscroll-track { scrollbar-width: thin; scrollbar-color: #475569 transparent; }
+
+#sticky-hscroll-inner {
+    height: 1px;            /* sólo necesitamos el ancho para que aparezca el scroll */
 }
 
 table {

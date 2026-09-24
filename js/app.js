@@ -3175,6 +3175,91 @@ async function actualizarKPI() {
 }
 
 // ==========================================================
+// 🚗 LISTA RÁPIDA DE FLOTA DESDE DASHBOARD
+// ==========================================================
+
+/**
+ * Muestra un popup con la lista de vehículos filtrada por estado.
+ * Si el cache FLOTA_VEHICULOS está vacío lo carga primero.
+ * @param {'activo'|'inactivo'|'temporal'|'todos'} filtro
+ */
+async function mostrarListaFlota(filtro = 'todos') {
+    // Cargar flota si el cache está vacío (p.ej. usuario llega directo al dashboard)
+    if (FLOTA_VEHICULOS.length === 0) {
+        Swal.fire({ title: 'Cargando flota...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
+        const res = await SupabaseClient.vehiculos.getAll();
+        FLOTA_VEHICULOS = res.success ? res.data : [];
+        Swal.close();
+    }
+
+    const CFG = {
+        activo:   { label: 'Vehículos Activos',   color: '#10b981', icon: 'ri-checkbox-circle-line' },
+        inactivo: { label: 'Vehículos Inactivos',  color: '#ef4444', icon: 'ri-close-circle-line'    },
+        temporal: { label: 'Vehículos Temporales', color: '#f97316', icon: 'ri-time-line'             },
+        todos:    { label: 'Toda la Flota',         color: '#3b82f6', icon: 'ri-truck-line'            },
+    };
+    const cfg = CFG[filtro] || CFG.todos;
+
+    const lista = filtro === 'todos'
+        ? FLOTA_VEHICULOS
+        : FLOTA_VEHICULOS.filter(v => _resolverEstadoVehiculo(v) === filtro);
+
+    if (lista.length === 0) {
+        return Swal.fire({
+            icon: 'info',
+            title: cfg.label,
+            text: 'No hay vehículos en este estado.',
+            background: '#1e293b', color: '#fff'
+        });
+    }
+
+    // Ordenar: primero por estado, luego alfabéticamente por placa
+    const ordenEstado = { activo: 0, temporal: 1, inactivo: 2 };
+    const sorted = [...lista].sort((a, b) => {
+        const ea = _resolverEstadoVehiculo(a), eb = _resolverEstadoVehiculo(b);
+        if (ea !== eb) return (ordenEstado[ea] ?? 9) - (ordenEstado[eb] ?? 9);
+        return a.placa.localeCompare(b.placa);
+    });
+
+    const filas = sorted.map(v => {
+        const est = _resolverEstadoVehiculo(v);
+        const badge = _badgeEstadoVehiculo(est);
+        return `
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:7px 10px; font-weight:700; color:#f8fafc; letter-spacing:0.5px;">
+                    <span style="background:rgba(255,255,255,0.06); padding:2px 8px; border-radius:6px; font-size:0.85rem;">${v.placa}</span>
+                </td>
+                <td style="padding:7px 10px; color:#cbd5e1; font-size:0.85rem;">${v.conductor || '—'}</td>
+                <td style="padding:7px 10px;">${badge}</td>
+            </tr>`;
+    }).join('');
+
+    await Swal.fire({
+        title: `<i class="${cfg.icon}" style="color:${cfg.color};margin-right:8px;"></i>${cfg.label}`,
+        html: `
+            <div style="max-height:420px; overflow-y:auto; margin-top:8px;">
+                <table style="width:100%; border-collapse:collapse; font-size:0.88rem;">
+                    <thead>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.12);">
+                            <th style="padding:6px 10px; text-align:left; color:#94a3b8; font-weight:600; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.5px;">Placa</th>
+                            <th style="padding:6px 10px; text-align:left; color:#94a3b8; font-weight:600; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.5px;">Conductor</th>
+                            <th style="padding:6px 10px; text-align:left; color:#94a3b8; font-weight:600; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.5px;">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>${filas}</tbody>
+                </table>
+            </div>
+            <p style="color:#64748b; font-size:0.78rem; margin-top:10px; text-align:right;">${lista.length} vehículo${lista.length !== 1 ? 's' : ''}</p>
+        `,
+        showConfirmButton: false,
+        showCloseButton: true,
+        background: '#1e293b',
+        color: '#f8fafc',
+        width: 520,
+    });
+}
+
+// ==========================================================
 // 🎨 TEMA (Dark/Light)
 // ==========================================================
 function setupTheme() {

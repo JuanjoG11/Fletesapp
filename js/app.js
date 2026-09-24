@@ -770,6 +770,38 @@ function buscarConductorPorPlaca(placaId, conductorId) {
     });
 }
 
+// ==========================================================
+// 🚦 HELPERS DE ESTADO VEHÍCULO (activo / inactivo / temporal)
+// ==========================================================
+
+/**
+ * Resuelve el estado lógico de un vehículo.
+ * Prioriza el campo texto `estado_vehiculo` (nuevo); si no existe hace fallback
+ * al booleano `activo` (campo legado) para retrocompatibilidad.
+ * @param {object} v - Registro de vehículo
+ * @returns {'activo'|'inactivo'|'temporal'}
+ */
+function _resolverEstadoVehiculo(v) {
+    if (v.estado_vehiculo) return v.estado_vehiculo.toLowerCase();
+    return v.activo ? 'activo' : 'inactivo';
+}
+
+/**
+ * Devuelve el HTML del badge según el estado del vehículo.
+ * @param {'activo'|'inactivo'|'temporal'} estado
+ * @returns {string} HTML del badge
+ */
+function _badgeEstadoVehiculo(estado) {
+    switch (estado) {
+        case 'activo':
+            return '<span class="status-badge-active" style="background:rgba(16,185,129,0.1);color:#10b981;padding:2px 8px;border-radius:12px;font-size:0.75rem;"><i class="ri-checkbox-circle-line"></i> Activo</span>';
+        case 'temporal':
+            return '<span class="status-badge-temporal" style="background:rgba(249,115,22,0.12);color:#f97316;padding:2px 8px;border-radius:12px;font-size:0.75rem;"><i class="ri-time-line"></i> Temporal</span>';
+        default:
+            return '<span class="status-badge-inactive" style="background:rgba(239,68,68,0.1);color:#ef4444;padding:2px 8px;border-radius:12px;font-size:0.75rem;"><i class="ri-error-warning-line"></i> Inactivo</span>';
+    }
+}
+
 async function listarVehiculos() {
     const tbody = document.getElementById("tablaVehiculos");
     if (!tbody) return;
@@ -807,14 +839,32 @@ async function listarVehiculos() {
     let totalVencidosGral = 0;
     let htmlAlertas = '';
 
+    // Contadores para la tarjeta resumen (usando todos los vehículos, no solo el filtrado)
+    let cntActivos = 0, cntInactivos = 0, cntTemporales = 0;
+    FLOTA_VEHICULOS.forEach(v => {
+        const est = _resolverEstadoVehiculo(v);
+        if (est === 'activo') cntActivos++;
+        else if (est === 'inactivo') cntInactivos++;
+        else if (est === 'temporal') cntTemporales++;
+    });
+    const elActivos    = document.getElementById('flotaActivos');
+    const elInactivos  = document.getElementById('flotaInactivos');
+    const elTemporales = document.getElementById('flotaTemporales');
+    const elTotal      = document.getElementById('flotaTotal');
+    if (elActivos)    elActivos.innerText    = cntActivos;
+    if (elInactivos)  elInactivos.innerText  = cntInactivos;
+    if (elTemporales) elTemporales.innerText = cntTemporales;
+    if (elTotal)      elTotal.innerText      = FLOTA_VEHICULOS.length;
+
     // OPTIMIZACIÓN: Usar DocumentFragment para minimizar reflujos del DOM
     const fragment = document.createDocumentFragment();
 
     filtered.forEach(v => {
         const tr = document.createElement("tr");
-        const statusBadge = v.activo
-            ? '<span class="status-badge-active" style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;"><i class="ri-checkbox-circle-line"></i> Activo</span>'
-            : '<span class="status-badge-inactive" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;"><i class="ri-error-warning-line"></i> Inactivo</span>';
+
+        // Resolver estado (nuevo campo estado_vehiculo con fallback al booleano activo)
+        const estado = _resolverEstadoVehiculo(v);
+        const statusBadge = _badgeEstadoVehiculo(estado);
 
         // Helper para resaltar fechas vencidas
         const formatFecha = (fechaStr) => {
@@ -857,8 +907,8 @@ async function listarVehiculos() {
                 <button class="btn-icon edit" onclick="abrirModalEditarVehiculo('${v.id}')" title="Editar Vehículo">
                     <i class="ri-edit-line"></i>
                 </button>
-                <button class="btn-icon ${v.activo ? 'delete' : 'edit'}" onclick="toggleEstadoVehiculo('${v.id}', ${v.activo}, '${v.placa}')" title="${v.activo ? 'Inactivar' : 'Activar'} Vehículo">
-                    <i class="${v.activo ? 'ri-close-circle-line' : 'ri-checkbox-circle-line'}"></i>
+                <button class="btn-icon ${estado === 'activo' ? 'delete' : 'edit'}" onclick="toggleEstadoVehiculo('${v.id}', '${estado}', '${v.placa}')" title="Cambiar Estado">
+                    <i class="${estado === 'activo' ? 'ri-close-circle-line' : estado === 'temporal' ? 'ri-checkbox-circle-line' : 'ri-checkbox-circle-line'}"></i>
                 </button>
             </td>
         `;
@@ -930,7 +980,7 @@ async function exportarVehiculosExcel() {
             'ARL': v.arl_afiliacion || 'N/A',
             'EPS': v.eps_afiliacion || 'N/A',
             'Exámenes Médicos Venc.': v.examenes_medicos_vencimiento || 'N/A',
-            'Estado': v.activo ? 'ACTIVO' : 'INACTIVO',
+            'Estado': _resolverEstadoVehiculo(v).toUpperCase(),
             'Empresa': v.razon_social || 'TYM'
         }));
 
@@ -1092,39 +1142,89 @@ async function guardarCambiosVehiculo() {
 }
 
 async function toggleEstadoVehiculo(id, estadoActual, placa) {
-    const nuevoEstado = !estadoActual;
-    const accion = nuevoEstado ? 'Activar' : 'Inactivar';
+    const OPCIONES = [
+        { key: 'activo',   label: 'Activo',    desc: 'Puede registrar fletes',        icon: 'ri-checkbox-circle-line', color: '#10b981', bg: 'rgba(16,185,129,0.12)'  },
+        { key: 'temporal', label: 'Temporal',  desc: 'Habilitado temporalmente',       icon: 'ri-time-line',            color: '#f97316', bg: 'rgba(249,115,22,0.12)'  },
+        { key: 'inactivo', label: 'Inactivo',  desc: 'No puede registrar fletes',      icon: 'ri-close-circle-line',    color: '#ef4444', bg: 'rgba(239,68,68,0.12)'   },
+    ];
 
-    const { isConfirmed } = await Swal.fire({
-        title: `¿${accion} Vehículo?`,
-        text: `El vehículo con placa ${placa} quedará ${nuevoEstado ? 'activo' : 'inactivo'}. ${nuevoEstado ? '' : 'No se podrán registrar nuevos fletes con este vehículo.'}`,
-        icon: 'question',
+    const botonesHtml = OPCIONES
+        .filter(o => o.key !== estadoActual)
+        .map(o => `
+            <button type="button"
+                data-estado="${o.key}"
+                style="
+                    display:flex; align-items:center; gap:12px;
+                    width:100%; padding:12px 16px; margin-bottom:8px;
+                    background:${o.bg}; border:1px solid ${o.color}40;
+                    border-radius:10px; cursor:pointer; transition:all 0.2s;
+                    color:#f8fafc; text-align:left;
+                "
+                onmouseover="this.style.background='${o.bg.replace('0.12','0.22')}'; this.style.borderColor='${o.color}99';"
+                onmouseout="this.style.background='${o.bg}'; this.style.borderColor='${o.color}40';"
+                onclick="Swal.clickConfirm(); this.closest('.swal2-popup').setAttribute('data-chosen','${o.key}')">
+                <i class="${o.icon}" style="font-size:1.4rem; color:${o.color}; flex-shrink:0;"></i>
+                <span>
+                    <strong style="color:${o.color}; display:block; font-size:0.95rem;">${o.label}</strong>
+                    <span style="color:#94a3b8; font-size:0.8rem;">${o.desc}</span>
+                </span>
+            </button>
+        `).join('');
+
+    const labelActual = OPCIONES.find(o => o.key === estadoActual);
+    const popup = await Swal.fire({
+        title: `Cambiar estado de <strong>${placa}</strong>`,
+        html: `
+            <p style="color:#94a3b8; font-size:0.85rem; margin:0 0 16px;">
+                Estado actual:
+                <span style="color:${labelActual?.color || '#fff'}; font-weight:700;">
+                    <i class="${labelActual?.icon || ''}"></i> ${labelActual?.label || estadoActual}
+                </span>
+            </p>
+            <div id="swal-estado-btns">${botonesHtml}</div>
+        `,
+        showConfirmButton: false,
         showCancelButton: true,
-        confirmButtonColor: nuevoEstado ? '#10b981' : '#ef4444',
-        cancelButtonColor: '#64748b',
-        confirmButtonText: `Sí, ${accion.toLowerCase()}`,
         cancelButtonText: 'Cancelar',
+        cancelButtonColor: '#64748b',
         background: '#1e293b',
-        color: '#f8fafc'
+        color: '#f8fafc',
+        width: 420,
+        didOpen: (popup) => { popup.setAttribute('data-chosen', ''); }
     });
 
-    if (isConfirmed) {
-        const result = await SupabaseClient.vehiculos.update(id, { activo: nuevoEstado });
-        if (result.success) {
-            FLOTA_VEHICULOS = []; // Reset cache
-            await listarVehiculos();
-            await actualizarKPI();
-            Swal.fire({
-                title: nuevoEstado ? 'Activado' : 'Inactivado',
-                icon: 'success',
-                timer: 1500,
-                showConfirmButton: false,
-                background: '#1e293b',
-                color: '#f8fafc'
-            });
-        } else {
-            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar el estado del vehículo.', background: '#1e293b', color: '#f8fafc' });
+    // Leer la opción elegida del atributo que seteamos al hacer click
+    const nuevoEstado = document.querySelector('.swal2-popup')?.getAttribute('data-chosen') || '';
+    if (!nuevoEstado || popup.isDismissed) return;
+
+    // Calcular campos a actualizar (activo booleano + estado_vehiculo texto)
+    const activo = nuevoEstado === 'activo';
+    const result = await SupabaseClient.vehiculos.update(id, {
+        activo,
+        estado_vehiculo: nuevoEstado
+    });
+
+    if (result.success) {
+        // Parchear cache local en lugar de descartar todo
+        const idx = FLOTA_VEHICULOS.findIndex(v => v.id === id);
+        if (idx !== -1) {
+            FLOTA_VEHICULOS[idx].activo = activo;
+            FLOTA_VEHICULOS[idx].estado_vehiculo = nuevoEstado;
         }
+        await listarVehiculos();
+        await actualizarKPI();
+
+        const labelEstado = { activo: 'Activado', temporal: 'Marcado como Temporal', inactivo: 'Inactivado' };
+        Swal.fire({
+            title: labelEstado[nuevoEstado] || 'Actualizado',
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false,
+            background: '#1e293b',
+            color: '#f8fafc'
+        });
+    } else {
+        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar el estado del vehículo.', background: '#1e293b', color: '#f8fafc' });
     }
 }
 

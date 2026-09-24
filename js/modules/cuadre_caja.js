@@ -346,23 +346,28 @@ function _procesarCambio(input, formatear) {
     var raw  = input.value.trim();
 
     // Parsear valor — limpiar puntos de miles y convertir coma decimal
-    var valor = tipo === 'num'
-        ? _n(raw)
-        : raw;
+    var valor = tipo === 'num' ? _n(raw) : raw;
 
     // Actualizar objeto en CC.data
     var p = CC.data.find(function(x){ return x.id === id; });
     if (!p) return;
-    p[key] = valor;
 
-    // Registrar cambio pendiente
-    if (!CC.cambios[id]) CC.cambios[id] = {};
-    CC.cambios[id][key] = valor;
+    // Solo registrar cambio si el valor realmente difiere del guardado en DB
+    var valorOriginal = tipo === 'num' ? _n(p[key]) : (p[key] || '');
+    var valorNuevo    = valor;
+    var cambioReal    = String(valorOriginal) !== String(valorNuevo);
+
+    p[key] = valorNuevo;
+
+    if (cambioReal) {
+        if (!CC.cambios[id]) CC.cambios[id] = {};
+        CC.cambios[id][key] = valorNuevo;
+    }
 
     // Formatear display SOLO al salir del campo (focusout, Tab, Enter, flechas)
     // Durante la escritura (evento input) NO reformatear para no corromper la entrada
     if (formatear && tipo === 'num') {
-        input.value = valor === 0 ? '' : _fmtCC2.format(valor);
+        input.value = valorNuevo === 0 ? '' : _fmtCC2.format(valorNuevo);
     }
 
     // Recalcular TOTAL y DIF de la fila
@@ -374,15 +379,15 @@ function _procesarCambio(input, formatear) {
     // Actualizar KPIs
     _actualizarKpisCuadre();
 
-    // Marcar fila como modificada
-    var row = document.getElementById('cc-row-' + id);
-    if (row && !row.dataset.dirty) {
-        row.dataset.dirty = '1';
-        row.style.borderLeft = '3px solid #f59e0b';
+    // Marcar fila como modificada solo si hay cambio real
+    if (cambioReal) {
+        var row = document.getElementById('cc-row-' + id);
+        if (row) {
+            row.dataset.dirty    = '1';
+            row.style.borderLeft = '3px solid #f59e0b';
+        }
+        _mostrarPendientes(true);
     }
-
-    // Mostrar indicador de cambios pendientes
-    _mostrarPendientes(true);
 }
 
 function _recalcFila(id) {
@@ -480,8 +485,8 @@ async function guardarCuadreLote() {
         var p          = CC.data.find(function(x){ return x.id === planillaId; });
         if (!p) continue;
 
-        // Si tiene valor_cuadrado > 0 lo marcamos CUADRADA, si no, DESPACHADA
-        var nuevoEstado = _n(p.valor_cuadrado) > 0 ? 'CUADRADA' : 'DESPACHADA';
+        // Si tiene valor_cuadrado > 0 lo marcamos CUADRADA, si no dejamos el estado actual
+        var nuevoEstado = _n(p.valor_cuadrado) > 0 ? 'CUADRADA' : p.estado;
 
         // Añadir campos de auditoría si se está cuadrando
         if (nuevoEstado === 'CUADRADA' && !p.cuadrado_por) {

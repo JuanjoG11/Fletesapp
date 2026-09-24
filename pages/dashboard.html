@@ -512,6 +512,39 @@
 
         <!-- 👷 SECCIÓN OPERARIO: REGISTRAR VEHÍCULO -->
         <section id="operario-vehiculos" class="tab-content fade-in">
+
+            <!-- 📊 TARJETA RESUMEN DE ESTADOS DE FLOTA -->
+            <div class="kpi-grid" style="margin-bottom: 20px;" id="flota-resumen-grid">
+                <div class="card glass-card kpi-card">
+                    <div class="kpi-icon icon-green"><i class="ri-checkbox-circle-line"></i></div>
+                    <div class="kpi-info">
+                        <h3>Vehículos Activos</h3>
+                        <p id="flotaActivos" class="kpi-value">0</p>
+                    </div>
+                </div>
+                <div class="card glass-card kpi-card">
+                    <div class="kpi-icon icon-red" style="background: rgba(239,68,68,0.15);"><i class="ri-close-circle-line" style="color:#ef4444;"></i></div>
+                    <div class="kpi-info">
+                        <h3>Vehículos Inactivos</h3>
+                        <p id="flotaInactivos" class="kpi-value">0</p>
+                    </div>
+                </div>
+                <div class="card glass-card kpi-card">
+                    <div class="kpi-icon icon-orange"><i class="ri-time-line"></i></div>
+                    <div class="kpi-info">
+                        <h3>Temporales</h3>
+                        <p id="flotaTemporales" class="kpi-value">0</p>
+                    </div>
+                </div>
+                <div class="card glass-card kpi-card">
+                    <div class="kpi-icon icon-blue"><i class="ri-truck-line"></i></div>
+                    <div class="kpi-info">
+                        <h3>Total Flota</h3>
+                        <p id="flotaTotal" class="kpi-value">0</p>
+                    </div>
+                </div>
+            </div>
+
             <div id="card-operario" class="card glass-card">
                 <div class="card-header">
                     <h2><i class="ri-truck-line"></i> Registrar Nuevo Vehículo</h2>

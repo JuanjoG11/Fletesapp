@@ -1,4 +1,4 @@
-﻿// ==========================================================
+// ==========================================================
 // 🔌 SUPABASE CLIENT - Singleton para Fletesapp
 // ==========================================================
 // Cliente de conexión a Supabase con funciones helper reutilizables
@@ -1247,7 +1247,7 @@ async function actualizarProgramacion(programacionId, cambios) {
             .from('programaciones')
             .update({ ...cambios, updated_at: new Date().toISOString() })
             .eq('id', programacionId)
-            .eq('estado', 'PENDIENTE'); // solo se pueden editar las PENDIENTE
+            .in('estado', ['PENDIENTE', 'RECHAZADA']); // permite editar PENDIENTE y RECHAZADA
         if (error) throw error;
         return { success: true };
     } catch (error) {
@@ -1256,7 +1256,50 @@ async function actualizarProgramacion(programacionId, cambios) {
     }
 }
 
+/**
+ * Eliminar una programación PENDIENTE o RECHAZADA y restaurar facturas
+ */
+async function eliminarProgramacion(programacionId) {
+    try {
+        const { data: prog, error: eGet } = await _supabase
+            .from('programaciones')
+            .select('*')
+            .eq('id', programacionId)
+            .single();
+
+        if (eGet) throw eGet;
+        if (!prog) throw new Error('Programación no encontrada');
+        if (prog.estado === 'APROBADA') {
+            throw new Error('No se puede eliminar una programación que ya ha sido APROBADA.');
+        }
+
+        // Restaurar asignada=true en las facturas que se habían liberado
+        if (prog.facturas_deseleccionadas) {
+            const ids = prog.facturas_deseleccionadas.split(',').map(s => s.trim()).filter(Boolean);
+            if (ids.length > 0) {
+                await _supabase
+                    .from('planilla_facturas')
+                    .update({ asignada: true })
+                    .in('id', ids);
+            }
+        }
+
+        const { error } = await _supabase
+            .from('programaciones')
+            .delete()
+            .eq('id', programacionId)
+            .in('estado', ['PENDIENTE', 'RECHAZADA']);
+
+        if (error) throw error;
+        return { success: true };
+    } catch (error) {
+        console.error('Error al eliminar programación:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 // Agregar al objeto global
 SupabaseClientAPI.programaciones.actualizar = actualizarProgramacion;
+SupabaseClientAPI.programaciones.eliminar   = eliminarProgramacion;
 window.supabaseClient = SupabaseClientAPI;
 window.SupabaseClient = SupabaseClientAPI;

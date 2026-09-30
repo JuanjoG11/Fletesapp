@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es" data-theme="dark">
 <head>
     <meta charset="UTF-8">
@@ -330,6 +330,60 @@
             text-transform: uppercase;
         }
 
+        /* ── Botones de acción en tablas de programación ── */
+        .btn-action-tbl {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 4px 8px; border-radius: 6px;
+            font-size: 0.74rem; font-weight: 700; cursor: pointer;
+            font-family: inherit; border: 1px solid transparent;
+            transition: all 0.15s ease;
+        }
+        .btn-action-tbl.btn-edit {
+            background: rgba(59,130,246,0.12); color: #3b82f6;
+            border-color: rgba(59,130,246,0.3);
+        }
+        .btn-action-tbl.btn-edit:hover {
+            background: rgba(59,130,246,0.25);
+            transform: translateY(-1px);
+        }
+        .btn-action-tbl.btn-delete {
+            background: rgba(239,68,68,0.1); color: #ef4444;
+            border-color: rgba(239,68,68,0.25);
+        }
+        .btn-action-tbl.btn-delete:hover {
+            background: rgba(239,68,68,0.22);
+            transform: translateY(-1px);
+        }
+
+        /* ── Modal y banner de edición de programación ── */
+        .edit-section-title {
+            font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.8px; color: var(--primary); margin: 18px 0 10px;
+            padding-bottom: 6px; border-bottom: 1px solid rgba(59,130,246,0.2);
+            display: flex; align-items: center; gap: 6px;
+        }
+        .prog-rechazo-alert {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 12px 14px; background: rgba(239,68,68,0.12);
+            border: 1px solid rgba(239,68,68,0.35); border-radius: 10px;
+            color: #fca5a5; font-size: 0.84rem; margin-bottom: 16px;
+        }
+        .prog-rechazo-alert i { font-size: 1.15rem; color: #ef4444; flex-shrink: 0; margin-top: 1px; }
+
+        .edit-mode-indicator {
+            display: none; align-items: center; justify-content: space-between;
+            padding: 10px 16px; background: rgba(59,130,246,0.12);
+            border: 1px solid rgba(59,130,246,0.35); border-radius: 10px;
+            margin-bottom: 16px; gap: 12px; flex-wrap: wrap;
+        }
+        .edit-mode-indicator.visible { display: flex; }
+
+        @keyframes rowHighlight {
+            0% { background: rgba(59,130,246,0.3); }
+            100% { background: transparent; }
+        }
+        .row-just-created { animation: rowHighlight 3.5s ease-out; }
+
         @media (max-width: 768px) {
             .page-body { padding: 14px 12px; }
         }
@@ -465,6 +519,20 @@
                 <h2><i class="ri-add-circle-line"></i> Datos del Flete</h2>
             </div>
             <div class="card-body">
+                <!-- Banner cuando se está en modo edición de una programación -->
+                <div id="form-edit-banner" class="edit-mode-indicator">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <i class="ri-edit-2-line" style="color:var(--primary); font-size:1.1rem;"></i>
+                        <div>
+                            <strong style="color:#fff;">Modo Edición:</strong>
+                            <span id="form-edit-title" style="color:var(--primary); font-weight:700;">Editando programación</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="cancelarEdicionFormulario()" style="padding:4px 10px; font-size:0.75rem;">
+                        <i class="ri-close-line"></i> Cancelar edición
+                    </button>
+                </div>
+
                 <div class="form-grid">
 
                     <div class="input-group">
@@ -497,7 +565,7 @@
 
                     <div class="input-group">
                         <label>Fecha</label>
-                        <input id="fecha" type="date" onchange="actualizarDiaPorFecha('')">
+                        <input id="fecha" type="date" onchange="actualizarDiaPorFecha(''); onFechaFormularioChange(this.value);">
                     </div>
 
                     <div class="input-group">
@@ -571,7 +639,8 @@
 
                     <div class="input-group" id="pg-grp-adicional-negociado">
                         <label>Adicional Negociado</label>
-                        <input id="valor_adicional" type="text" placeholder="$ 0" class="money-input">
+                        <input id="valor_adicional" type="text" placeholder="$ 0" class="money-input"
+                               oninput="if(typeof formatMoneyInput==='function') formatMoneyInput(this); if(typeof calcularTotal==='function') calcularTotal('');">
                     </div>
 
                     <div class="input-group full-width" id="pg-grp-razon-adicional">
@@ -595,10 +664,65 @@
                     <button class="btn btn-secondary" onclick="limpiarFormularioProg()">
                         <i class="ri-eraser-line"></i> Limpiar
                     </button>
+                    <button id="btnCancelarEdicion" class="btn btn-secondary" onclick="cancelarEdicionFormulario()" style="display:none; color:#ef4444; border-color:rgba(239,68,68,0.3);">
+                        <i class="ri-close-line"></i> Cancelar Edición
+                    </button>
                     <button id="btnGestionarFlete" class="btn btn-primary btn-glow">
                         <i class="ri-send-plane-line"></i> Guardar Programación
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════
+             PROGRAMACIONES CREADAS (en vivo para la fecha)
+        ════════════════════════════════════════════════════ -->
+        <div class="card glass-card" id="pg-creadas-card" style="margin-top:24px; border-top: 3px solid var(--primary);">
+            <div class="card-header flex-header" style="flex-wrap:wrap; gap:12px;">
+                <div>
+                    <h2 style="font-size:1.02rem; display:flex; align-items:center; gap:8px; margin:0;">
+                        <i class="ri-list-check-2" style="color:var(--primary);"></i>
+                        Programaciones Creadas
+                        <span id="pg-creadas-count" class="badge" style="background:rgba(59,130,246,0.15);color:var(--primary);border:1px solid rgba(59,130,246,0.3);font-size:0.75rem;">0 rutas</span>
+                        <span id="pg-creadas-total-fletes" class="badge" style="background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.3);font-size:0.75rem;">$ 0</span>
+                    </h2>
+                    <div style="font-size:0.74rem; color:var(--text-muted); margin-top:2px;">
+                        Rutas programadas que se van creando en tiempo real para esta fecha.
+                    </div>
+                </div>
+                <div class="filters" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Fecha:</span>
+                        <input type="date" id="pg-creadas-fecha" class="input-modern" style="width:145px; height:34px; font-size:0.82rem;" onchange="cargarProgramacionesCreadas()">
+                    </div>
+                    <button class="btn btn-secondary" onclick="cargarProgramacionesCreadas()" style="height:34px; padding:0 10px; font-size:0.8rem;" title="Refrescar lista">
+                        <i class="ri-refresh-line"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Placa</th>
+                            <th>Conductor</th>
+                            <th>Zona / Prov</th>
+                            <th>Población</th>
+                            <th>Planilla</th>
+                            <th style="text-align:center;">Ped.</th>
+                            <th class="price-cell">Valor Ruta</th>
+                            <th class="price-cell">Adicional</th>
+                            <th class="price-cell">Total Flete</th>
+                            <th>Estado</th>
+                            <th style="text-align:center; width:130px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pg-creadas-body">
+                        <tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text-muted);">
+                            <i class="ri-loader-4-line spin"></i> Cargando programaciones...
+                        </td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -691,17 +815,30 @@
     ════════════════════════════════════════════════════ -->
     <div id="view-listado">
         <div class="card glass-card">
-            <div class="card-header flex-header">
-                <h2><i class="ri-file-list-3-line"></i> Fletes Programados</h2>
-                <div class="filters">
-                    <input type="date" id="pg-list-fecha" class="input-modern" style="width:155px;"
+            <div class="card-header flex-header" style="flex-wrap:wrap; gap:12px;">
+                <div>
+                    <h2 style="margin:0;"><i class="ri-file-list-3-line"></i> Fletes Programados</h2>
+                    <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
+                        Consulta histórico, revisa estados de aprobación y edita programaciones.
+                    </div>
+                </div>
+                <div class="filters" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <input type="date" id="pg-list-fecha" class="input-modern" style="width:145px;"
                            onchange="cargarListadoProgramaciones()">
-                    <select id="pg-list-proveedor" class="input-modern" style="width:175px;"
+                    <select id="pg-list-proveedor" class="input-modern" style="width:160px;"
                             onchange="cargarListadoProgramaciones()">
                         <option value="">Todos los proveedores</option>
                         <option value="ALPINA">ALPINA</option>
                         <option value="FLEISCHMANN">FLEISCHMANN</option>
+                        <option value="ALPINA-FLEISCHMANN">ALPINA-FLEISCHMANN</option>
                         <option value="ZENU">ZENU</option>
+                    </select>
+                    <select id="pg-list-estado" class="input-modern" style="width:140px;"
+                            onchange="cargarListadoProgramaciones()">
+                        <option value="">Todos los estados</option>
+                        <option value="PENDIENTE">Pendientes</option>
+                        <option value="APROBADA">Aprobadas</option>
+                        <option value="RECHAZADA">Rechazadas</option>
                     </select>
                     <button class="btn btn-primary" onclick="cargarListadoProgramaciones()" style="height:38px;padding:0 14px;font-size:0.83rem;">
                         <i class="ri-search-line"></i> Buscar
@@ -718,14 +855,16 @@
                             <th>Zona</th>
                             <th>Población</th>
                             <th>No. Planilla</th>
-                            <th>Pedidos</th>
+                            <th style="text-align:center;">Ped.</th>
                             <th class="price-cell">Valor Ruta</th>
+                            <th class="price-cell">Adicional</th>
                             <th class="price-cell">Flete</th>
                             <th>Estado</th>
+                            <th style="text-align:center; width:130px;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="pg-listado-body">
-                        <tr><td colspan="10" style="text-align:center;padding:32px;color:var(--text-muted);">
+                        <tr><td colspan="12" style="text-align:center;padding:32px;color:var(--text-muted);">
                             Selecciona una fecha y haz clic en Buscar
                         </td></tr>
                     </tbody>
@@ -733,6 +872,151 @@
             </div>
         </div>
     </div><!-- /view-listado -->
+
+    <!-- ── Modal Editar Programación ── -->
+    <div id="modal-editar-prog" class="modal-overlay">
+        <div class="modal-glass" style="max-width:850px;">
+            <div class="modal-header">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <h2 style="margin:0;"><i class="ri-edit-2-line" style="color:var(--primary);"></i> Editar Programación</h2>
+                    <span id="modal-prog-estado-badge" class="badge">PENDIENTE</span>
+                </div>
+                <button class="close-btn" onclick="cerrarModalEditar()"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="modal-body">
+                <!-- Alerta si está rechazada -->
+                <div id="modal-prog-rechazo-banner" class="prog-rechazo-alert" style="display:none;">
+                    <i class="ri-error-warning-line"></i>
+                    <div>
+                        <strong style="color:#ef4444;">Programación Rechazada por Administrador</strong>
+                        <div id="modal-prog-rechazo-texto" style="margin-top:2px; font-weight:600;"></div>
+                        <div style="font-size:0.75rem; color:#fca5a5; margin-top:4px;">
+                            Corrige los campos y guarda los cambios para reenviarla a aprobación automáticamente.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 1: Vehículo y Ruta -->
+                <div class="edit-section-title"><i class="ri-truck-line"></i> Vehículo y Ruta</div>
+                <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
+                    <div class="input-group">
+                        <label>Placa Vehículo</label>
+                        <input id="modal-placa" placeholder="EJ: ABC123"
+                               oninput="this.value = this.value.toUpperCase().replace('-', '')">
+                    </div>
+                    <div class="input-group">
+                        <label>Conductor (Auto)</label>
+                        <input id="modal-contratista" placeholder="Nombre Conductor" class="input-readonly">
+                    </div>
+                    <div class="input-group">
+                        <label>Proveedor</label>
+                        <select id="modal-proveedor" onchange="actualizarZonasPorProveedor('modal-')">
+                            <option value="" disabled>Seleccione...</option>
+                            <option value="ALPINA">ALPINA</option>
+                            <option value="FLEISCHMANN">FLEISCHMANN</option>
+                            <option value="ALPINA-FLEISCHMANN">ALPINA-FLEISCHMANN</option>
+                            <option value="ZENU">ZENU</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Zona (Selección Múltiple)</label>
+                        <div id="modal-zona-container" class="select-checkbox-container">
+                            <div style="padding: 10px; color: #666;">Seleccione Proveedor primero</div>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Fecha</label>
+                        <input id="modal-fecha" type="date" onchange="actualizarDiaPorFecha('modal-')">
+                    </div>
+                    <div class="input-group">
+                        <label>Día</label>
+                        <select id="modal-dia">
+                            <option value="" disabled>Seleccione...</option>
+                            <option>Lunes</option>
+                            <option>Martes</option>
+                            <option>Miercoles</option>
+                            <option>Jueves</option>
+                            <option>Viernes</option>
+                            <option>Sabado</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Población</label>
+                        <select id="modal-poblacion" onchange="calcularTotal('modal-')">
+                            <option value="" disabled>Seleccione...</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Auxiliar 1</label>
+                        <select id="modal-auxiliares" onchange="_sincronizarModalAux(); calcularTotal('modal-');">
+                            <option value="" disabled>Seleccione...</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Auxiliar 2 <span style="font-size:0.75rem;color:var(--text-muted);font-weight:400;">(opcional)</span></label>
+                        <select id="modal-auxiliar2" onchange="_sincronizarModalAux(); calcularTotal('modal-');">
+                            <option value="">— Sin auxiliar 2 —</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Cant. Auxiliares</label>
+                        <select id="modal-no_auxiliares" onchange="calcularTotal('modal-')">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 2: Valores del flete -->
+                <div class="edit-section-title" style="margin-top:20px;"><i class="ri-money-dollar-circle-line"></i> Valores y Adicional</div>
+                <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">
+                    <div class="input-group">
+                        <label>No. Pedidos</label>
+                        <input id="modal-no_pedidos" type="number" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label>Valor Ruta</label>
+                        <input id="modal-valor_ruta" class="money-input" placeholder="$ 0">
+                    </div>
+                    <div class="input-group">
+                        <label>Adicional Negociado</label>
+                        <input id="modal-valor_adicional" class="money-input" placeholder="$ 0">
+                    </div>
+                    <div class="input-group">
+                        <label>Total Flete (Auto)</label>
+                        <input id="modal-total_flete" readonly class="input-total">
+                    </div>
+                    <div class="input-group">
+                        <label>Participación %</label>
+                        <input id="modal-porcentaje_ruta" readonly style="font-weight:bold;">
+                    </div>
+                </div>
+                <div class="input-group" style="margin-top:12px;">
+                    <label>Razón del Adicional</label>
+                    <textarea id="modal-razon_adicional" rows="2"
+                        style="width:100%;padding:10px;background:var(--input-bg);border:1px solid var(--glass-border);
+                               color:var(--text-main);border-radius:8px;font-family:inherit;font-size:0.88rem;resize:vertical;"
+                        placeholder="Escriba el motivo de la negociación o adicional..."></textarea>
+                </div>
+
+                <!-- SECCIÓN 3: Planillas y Facturas -->
+                <div class="edit-section-title" style="margin-top:20px;"><i class="ri-file-list-2-line"></i> Planilla(s) y Facturas Asociadas</div>
+                <div id="modal-planillas-badges" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;"></div>
+                <div id="modal-facturas-texto" style="font-size:0.8rem; color:var(--text-muted); padding:8px 12px; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:8px; max-height:80px; overflow-y:auto; line-height:1.6;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cargarProgEnFormularioPrincipal()" title="Cargar en el formulario principal">
+                    <i class="ri-external-link-line"></i> Cargar en Formulario
+                </button>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-secondary" onclick="cerrarModalEditar()">Cancelar</button>
+                    <button id="btn-guardar-modal-prog" class="btn btn-primary" onclick="guardarEdicionModalProg()">
+                        <i class="ri-save-line"></i> Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </div><!-- /page-body -->
 
@@ -748,10 +1032,20 @@
 /* ─────────────────────────────────────────────────────────
    Estado local del módulo de programación
 ──────────────────────────────────────────────────────────── */
-let PG_PLANILLAS_HOY   = [];        // todas las planillas disponibles del día
-let PG_PLANILLA_SEL    = null;      // última planilla seleccionada (alias compat.)
-let PG_PLANILLAS_ACUM  = [];        // ARRAY de planillas acumuladas al flete
-let PG_FACTURAS_SEL    = new Set(); // IDs de facturas marcadas (de todas las planillas)
+let PG_PLANILLAS_HOY        = [];        // todas las planillas disponibles del día
+let PG_PLANILLA_SEL         = null;      // última planilla seleccionada (alias compat.)
+let PG_PLANILLAS_ACUM       = [];        // ARRAY de planillas acumuladas al flete
+let PG_FACTURAS_SEL         = new Set(); // IDs de facturas marcadas (de todas las planillas)
+let PG_PROGRAMACIONES_CACHE = new Map(); // Cache local de programaciones para edición
+let CURRENT_EDIT_PROG_ID    = null;      // ID cuando se edita en el formulario principal
+let EDIT_MODAL_ID           = null;      // ID cuando se edita en el modal
+let LAST_CREATED_ID         = null;      // ID de la última programación creada o editada
+
+const ESTADO_PROG = {
+    'PENDIENTE': { color:'#f59e0b', bg:'rgba(245,158,11,0.12)', icon:'ri-time-line',            label:'PENDIENTE'  },
+    'APROBADA':  { color:'#10b981', bg:'rgba(16,185,129,0.12)', icon:'ri-checkbox-circle-line', label:'APROBADA'   },
+    'RECHAZADA': { color:'#ef4444', bg:'rgba(239,68,68,0.12)',  icon:'ri-close-circle-line',    label:'RECHAZADA'  },
+};
 
 const moneyFmt = new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
 const fmt = v => moneyFmt.format(v || 0);
@@ -780,13 +1074,11 @@ window.addEventListener('load', async () => {
     if (companyBadge) companyBadge.textContent = rs;
     if (roleBadge)    roleBadge.textContent    = `${userName} · ${role === 'admin' ? 'Administrador' : 'Programador'}`;
 
-    // Ocultar "Adicional Negociado" si no es admin
-    if (role !== 'admin') {
-        ['pg-grp-adicional-negociado', 'pg-grp-razon-adicional'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.style.display = 'none';
-        });
-    }
+    // Habilitar siempre los campos de Adicional Negociado y Razón del Adicional para el programador
+    ['pg-grp-adicional-negociado', 'pg-grp-razon-adicional'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'block';
+    });
 
     // Setear variables globales que usa app.js internamente
     window.CURRENT_ROLE         = role;
@@ -809,16 +1101,22 @@ window.addEventListener('load', async () => {
         }
     }, 400);
 
-    // Fecha de hoy por defecto (solo para los filtros de listado y sueltas)
+    // Fecha de hoy por defecto
     const hoy = new Date().toISOString().split('T')[0];
-    // El selector de planillas NO filtra por fecha → muestra todas disponibles
     document.getElementById('pg-list-fecha').value     = hoy;
     document.getElementById('pg-sueltas-fecha').value  = hoy;
+    const fechaCreadasEl = document.getElementById('pg-creadas-fecha');
+    if (fechaCreadasEl) fechaCreadasEl.value = hoy;
 
-    // Cargar planillas del día y facturas sueltas
-    // Pasar razon_social directamente para evitar timing issues con _getRazonSocialUsuario
+    const fechaFormEl = document.getElementById('fecha');
+    if (fechaFormEl && !fechaFormEl.value) {
+        fechaFormEl.value = hoy;
+        if (typeof actualizarDiaPorFecha === 'function') actualizarDiaPorFecha('');
+    }
+
+    // Cargar planillas del día, facturas sueltas y listado de programaciones creadas en vivo
     window.PG_RAZON_SOCIAL_OVERRIDE = rs.toUpperCase();
-    await Promise.all([cargarPlanillasDelDia(), cargarSueltasProg()]);
+    await Promise.all([cargarPlanillasDelDia(), cargarSueltasProg(), cargarProgramacionesCreadas()]);
 
     // Sobrescribir el botón de guardar para usar nuestra versión
     const btn = document.getElementById('btnGestionarFlete');
@@ -827,13 +1125,17 @@ window.addEventListener('load', async () => {
         document.getElementById('btnGestionarFlete').addEventListener('click', guardarFleteProgramacion);
     }
 
-    // Activar autocompletado de conductor al escribir la placa
+    // Activar autocompletado de conductor al escribir la placa en form y modal
     if (typeof buscarConductorPorPlaca === 'function') {
         buscarConductorPorPlaca('placa', 'contratista');
+        buscarConductorPorPlaca('modal-placa', 'modal-contratista');
     }
 
-    // Activar cálculos del formulario
-    if (typeof setupCalculators === 'function') setupCalculators('');
+    // Activar cálculos del formulario principal y modal
+    if (typeof setupCalculators === 'function') {
+        setupCalculators('');
+        setupCalculators('modal-');
+    }
     if (typeof actualizarListaAuxiliares === 'function') {
         actualizarListaAuxiliares('');
     }
@@ -857,16 +1159,14 @@ window.addEventListener('load', async () => {
     // Cargar badge de rechazadas y notificar si hay nuevas
     await actualizarBadgeRechazadas({ notificar: true });
 
-    // Realtime: actualizar badge sin recargar cuando el admin rechaza una programación
+    // Realtime: actualizar badge y listados en tiempo real
     window.SupabaseClient.supabase
-        .channel('prog-badge-rechazadas')
+        .channel('prog-channel-realtime')
         .on('postgres_changes',
-            { event: 'UPDATE', schema: 'public', table: 'programaciones' },
+            { event: '*', schema: 'public', table: 'programaciones' },
             async (payload) => {
-                // Solo nos interesa cuando el estado cambia a RECHAZADA
-                if (payload.new?.estado === 'RECHAZADA') {
+                if (payload.eventType === 'UPDATE' && payload.new?.estado === 'RECHAZADA') {
                     await actualizarBadgeRechazadas({ notificar: false });
-                    // Toast compacto para no interrumpir mientras el programador trabaja
                     const placa = payload.new?.placa || '';
                     Swal.fire({
                         toast: true,
@@ -880,8 +1180,12 @@ window.addEventListener('load', async () => {
                         background: '#1e293b', color: '#fff',
                     });
                 } else {
-                    // Cualquier otro cambio actualiza el badge silenciosamente
                     await actualizarBadgeRechazadas({ notificar: false });
+                }
+                // Refrescar lista de programaciones creadas en vivo
+                cargarProgramacionesCreadas();
+                if (document.getElementById('view-listado')?.classList.contains('visible')) {
+                    cargarListadoProgramaciones();
                 }
             }
         )
@@ -1499,21 +1803,44 @@ async function guardarFleteProgramacion() {
         programado_por:              window.CURRENT_SESSION?.profile?.nombre || 'Programador',
     };
 
-    Swal.fire({ title: 'Guardando programación...', allowOutsideClick: false,
-        didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
-
-    const result = await window.SupabaseClient.programaciones.create(payload);
-
-    if (!result.success) {
-        Swal.fire({ icon:'error', title:'Error al guardar',
-            text: result.error || 'No se pudo guardar la programación.',
-            background:'#1e293b', color:'#fff' });
-        return;
+    // Si estaba rechazada y se edita desde el form principal, regresa a PENDIENTE
+    if (CURRENT_EDIT_PROG_ID) {
+        payload.estado = 'PENDIENTE';
+        payload.motivo_rechazo = null;
     }
 
     Swal.fire({
+        title: CURRENT_EDIT_PROG_ID ? 'Actualizando programación...' : 'Guardando programación...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+        background: '#1e293b', color: '#fff'
+    });
+
+    let result;
+    if (CURRENT_EDIT_PROG_ID) {
+        result = await window.SupabaseClient.programaciones.actualizar(CURRENT_EDIT_PROG_ID, payload);
+        LAST_CREATED_ID = CURRENT_EDIT_PROG_ID;
+    } else {
+        result = await window.SupabaseClient.programaciones.create(payload);
+        LAST_CREATED_ID = result.data?.id || null;
+    }
+
+    if (!result.success) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error al guardar',
+            text: result.error || 'No se pudo guardar la programación.',
+            background: '#1e293b', color: '#fff'
+        });
+        return;
+    }
+
+    const fueEdicion = !!CURRENT_EDIT_PROG_ID;
+    CURRENT_EDIT_PROG_ID = null;
+
+    Swal.fire({
         icon: 'success',
-        title: '¡Programación guardada!',
+        title: fueEdicion ? '¡Programación actualizada!' : '¡Programación guardada!',
         html: `La programación para <strong>${placa}</strong><br>
                Planillas: <strong style="color:var(--primary);font-family:monospace;">${noPlanillasStr}</strong><br>
                quedó <strong style="color:#f59e0b;">PENDIENTE de aprobación</strong> por el administrador.
@@ -1527,9 +1854,28 @@ async function guardarFleteProgramacion() {
         showConfirmButton: false,
     });
 
+    // Reset banner y botones de edición
+    const banner = document.getElementById('form-edit-banner');
+    if (banner) banner.classList.remove('visible');
+    const btnGuardar = document.getElementById('btnGestionarFlete');
+    if (btnGuardar) {
+        btnGuardar.innerHTML = '<i class="ri-send-plane-line"></i> Guardar Programación';
+    }
+    const btnCancelar = document.getElementById('btnCancelarEdicion');
+    if (btnCancelar) btnCancelar.style.display = 'none';
+
     limpiarFormularioProg();
-    // Actualizar la sección de facturas sueltas
-    await cargarSueltasProg();
+
+    // Sincronizar fecha en la lista de creadas
+    const fechaCreadasEl = document.getElementById('pg-creadas-fecha');
+    if (fechaCreadasEl && fecha) fechaCreadasEl.value = fecha;
+
+    await Promise.all([
+        cargarProgramacionesCreadas(),
+        cargarListadoProgramaciones(),
+        cargarSueltasProg(),
+        actualizarBadgeRechazadas({ notificar: false })
+    ]);
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -1552,6 +1898,12 @@ function limpiarFormularioProg() {
     // La limpieza del formulario de flete la maneja limpiarFormulario de app.js
     if (typeof limpiarFormulario === 'function') limpiarFormulario('');
 
+    // Limpiar adicional negociado y razón del adicional
+    const adicEl = document.getElementById('valor_adicional');
+    if (adicEl) adicEl.value = '';
+    const razonEl = document.getElementById('razon_adicional');
+    if (razonEl) razonEl.value = '';
+
     // Limpiar auxiliar 2
     const aux2El = document.getElementById('auxiliar2');
     if (aux2El) aux2El.value = '';
@@ -1562,61 +1914,661 @@ function limpiarFormularioProg() {
 }
 
 /* ─────────────────────────────────────────────────────────
-   Cargar listado de MIS programaciones guardadas
+   Sincronizar fecha del formulario con la tabla de creadas
+──────────────────────────────────────────────────────────── */
+function onFechaFormularioChange(fechaVal) {
+    if (!fechaVal) return;
+    const fechaCreadasEl = document.getElementById('pg-creadas-fecha');
+    if (fechaCreadasEl) {
+        fechaCreadasEl.value = fechaVal;
+        cargarProgramacionesCreadas();
+    }
+}
+
+/* ─────────────────────────────────────────────────────────
+   Listado de Programaciones Creadas (en vivo en la vista crear)
+──────────────────────────────────────────────────────────── */
+async function cargarProgramacionesCreadas() {
+    const tbody = document.getElementById('pg-creadas-body');
+    const cntEl = document.getElementById('pg-creadas-count');
+    const totEl = document.getElementById('pg-creadas-total-fletes');
+    if (!tbody) return;
+
+    let fecha = document.getElementById('pg-creadas-fecha')?.value;
+    if (!fecha) {
+        fecha = document.getElementById('fecha')?.value || new Date().toISOString().split('T')[0];
+        const fechaEl = document.getElementById('pg-creadas-fecha');
+        if (fechaEl) fechaEl.value = fecha;
+    }
+
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text-muted);">
+        <i class="ri-loader-4-line spin"></i> Cargando programaciones del ${fecha}...
+    </td></tr>`;
+
+    const filtros = { fecha };
+    const rs = window.PG_RAZON_SOCIAL_OVERRIDE || window.CURRENT_RAZON_SOCIAL;
+    const result = await window.SupabaseClient.programaciones.getAll(filtros);
+
+    if (!result.success || !result.data || result.data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:28px;color:var(--text-muted);font-size:0.86rem;">
+            <i class="ri-inbox-line" style="font-size:1.5rem;display:block;margin-bottom:6px;opacity:0.6;"></i>
+            Sin programaciones creadas para el <strong>${fecha}</strong>.<br>
+            <span style="font-size:0.75rem;opacity:0.8;">Las rutas que vayas guardando se listarán aquí en tiempo real.</span>
+        </td></tr>`;
+        if (cntEl) cntEl.textContent = '0 rutas';
+        if (totEl) totEl.textContent = '$ 0';
+        return;
+    }
+
+    // Filtrar por razón social del usuario
+    const rows = result.data.filter(p => !rs || (p.razon_social || '').toUpperCase() === rs.toUpperCase());
+
+    if (rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:28px;color:var(--text-muted);font-size:0.86rem;">
+            <i class="ri-inbox-line" style="font-size:1.5rem;display:block;margin-bottom:6px;opacity:0.6;"></i>
+            Sin programaciones para esta empresa en la fecha indicada.
+        </td></tr>`;
+        if (cntEl) cntEl.textContent = '0 rutas';
+        if (totEl) totEl.textContent = '$ 0';
+        return;
+    }
+
+    // Actualizar cache local
+    rows.forEach(p => PG_PROGRAMACIONES_CACHE.set(p.id, p));
+
+    // Totales
+    const sumFletes = rows.reduce((s, p) => s + (p.precio || 0), 0);
+    if (cntEl) cntEl.textContent = `${rows.length} ruta${rows.length > 1 ? 's' : ''}`;
+    if (totEl) totEl.textContent = fmt(sumFletes);
+
+    tbody.innerHTML = rows.map(p => {
+        const meta = ESTADO_PROG[p.estado] || ESTADO_PROG['PENDIENTE'];
+        const esAprobada = p.estado === 'APROBADA';
+        const motivo = p.motivo_rechazo
+            ? `<div style="font-size:0.7rem;color:#ef4444;margin-top:3px;line-height:1.3;" title="${p.motivo_rechazo}"><i class="ri-alert-line"></i> ${p.motivo_rechazo}</div>`
+            : '';
+        const adicionalVal = p.valor_adicional_negociacion || 0;
+        const razonTitle = p.razon_adicional_negociacion ? `Razón: ${p.razon_adicional_negociacion}` : 'Sin razón especificada';
+        const adicionalStr = adicionalVal > 0
+            ? `<span style="color:#10b981;font-weight:700;cursor:help;" title="${razonTitle}">${fmt(adicionalVal)} <i class="ri-information-line" style="font-size:0.75rem;"></i></span>`
+            : `<span style="color:var(--text-muted);opacity:0.6;">$ 0</span>`;
+
+        const isJustCreated = p.id === LAST_CREATED_ID ? 'row-just-created' : '';
+
+        const editBtn = `<button class="btn-action-tbl btn-edit" onclick="abrirModalEditarProgramacion('${p.id}')" title="Editar programación">
+            <i class="ri-edit-2-line"></i> Editar
+        </button>`;
+
+        const delBtn = !esAprobada
+            ? `<button class="btn-action-tbl btn-delete" onclick="confirmarEliminarProgramacion('${p.id}', '${p.placa || ''}', '${p.no_planilla || ''}')" title="Eliminar programación">
+                <i class="ri-delete-bin-line"></i>
+               </button>`
+            : '';
+
+        return `<tr id="prog-row-${p.id}" class="${isJustCreated}">
+            <td><span class="badge-plate">${p.placa || '—'}</span></td>
+            <td style="font-size:0.82rem;font-weight:600;">${p.contratista || '—'}</td>
+            <td style="font-size:0.78rem;">
+                <div style="font-weight:700;color:var(--text-main);">${p.proveedor || ''}</div>
+                <div style="color:var(--text-muted);">${p.zona || '—'}</div>
+            </td>
+            <td style="font-size:0.82rem;">${p.poblacion || '—'}</td>
+            <td><span style="background:rgba(59,130,246,0.1);color:var(--primary);border:1px solid rgba(59,130,246,0.25);padding:2px 7px;border-radius:5px;font-family:monospace;font-size:0.78rem;font-weight:700;">${p.no_planilla || '—'}</span></td>
+            <td style="text-align:center;font-weight:600;">${p.no_pedidos || 0}</td>
+            <td class="price-cell">${fmt(p.valor_ruta || 0)}</td>
+            <td class="price-cell">${adicionalStr}</td>
+            <td class="price-cell" style="font-weight:800;color:#10b981;">${fmt(p.precio || 0)}</td>
+            <td>
+                <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:0.7rem;font-weight:700;border:1px solid;background:${meta.bg};color:${meta.color};border-color:${meta.color}40;">
+                    <i class="${meta.icon}"></i> ${meta.label}
+                </span>
+                ${motivo}
+            </td>
+            <td style="text-align:center;">
+                <div style="display:inline-flex;gap:4px;align-items:center;">
+                    ${editBtn}
+                    ${delBtn}
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+/* ─────────────────────────────────────────────────────────
+   Cargar listado de TODAS las programaciones (Tab Listado)
 ──────────────────────────────────────────────────────────── */
 async function cargarListadoProgramaciones() {
     const tbody = document.getElementById('pg-listado-body');
     if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted);">
-        <i class="ri-loader-4-line" style="animation:spin 0.9s linear infinite;display:inline-block;"></i> Cargando...
+    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:24px;color:var(--text-muted);">
+        <i class="ri-loader-4-line spin"></i> Cargando...
     </td></tr>`;
 
     const filtros = {};
     const fFecha = document.getElementById('pg-list-fecha')?.value;
     const fProv  = document.getElementById('pg-list-proveedor')?.value;
+    const fEst   = document.getElementById('pg-list-estado')?.value;
     if (fFecha) filtros.fecha     = fFecha;
     if (fProv)  filtros.proveedor = fProv;
+    if (fEst)   filtros.estado    = fEst;
 
     const result = await window.SupabaseClient.programaciones.getAll(filtros);
 
-    if (!result.success || result.data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted);">
+    if (!result.success || !result.data || result.data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:28px;color:var(--text-muted);">
             <i class="ri-inbox-line"></i> Sin programaciones para los filtros aplicados
         </td></tr>`;
         return;
     }
 
-    const moneyF = new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 });
+    const rs = window.PG_RAZON_SOCIAL_OVERRIDE || window.CURRENT_RAZON_SOCIAL;
+    const rows = result.data.filter(p => !rs || (p.razon_social || '').toUpperCase() === rs.toUpperCase());
 
-    const ESTADO_PROG = {
-        'PENDIENTE': { color:'#f59e0b', bg:'rgba(245,158,11,0.12)', icon:'ri-time-line',            label:'PENDIENTE'  },
-        'APROBADA':  { color:'#10b981', bg:'rgba(16,185,129,0.12)', icon:'ri-checkbox-circle-line', label:'APROBADA'   },
-        'RECHAZADA': { color:'#ef4444', bg:'rgba(239,68,68,0.12)',  icon:'ri-close-circle-line',    label:'RECHAZADA'  },
-    };
+    if (rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:28px;color:var(--text-muted);">
+            <i class="ri-inbox-line"></i> Sin programaciones para la empresa seleccionada
+        </td></tr>`;
+        return;
+    }
 
-    tbody.innerHTML = result.data.map(p => {
+    // Actualizar cache local
+    rows.forEach(p => PG_PROGRAMACIONES_CACHE.set(p.id, p));
+
+    tbody.innerHTML = rows.map(p => {
         const meta = ESTADO_PROG[p.estado] || ESTADO_PROG['PENDIENTE'];
+        const esAprobada = p.estado === 'APROBADA';
         const motivo = p.motivo_rechazo
-            ? `<div style="font-size:0.72rem;color:#ef4444;margin-top:2px;"><i class="ri-information-line"></i> ${p.motivo_rechazo}</div>`
+            ? `<div style="font-size:0.7rem;color:#ef4444;margin-top:2px;" title="${p.motivo_rechazo}"><i class="ri-alert-line"></i> ${p.motivo_rechazo}</div>`
             : '';
+        const adicionalVal = p.valor_adicional_negociacion || 0;
+        const razonTitle = p.razon_adicional_negociacion ? `Razón: ${p.razon_adicional_negociacion}` : 'Sin razón especificada';
+        const adicionalStr = adicionalVal > 0
+            ? `<span style="color:#10b981;font-weight:700;cursor:help;" title="${razonTitle}">${fmt(adicionalVal)} <i class="ri-information-line" style="font-size:0.75rem;"></i></span>`
+            : `<span style="color:var(--text-muted);opacity:0.6;">$ 0</span>`;
+
+        const editBtn = `<button class="btn-action-tbl btn-edit" onclick="abrirModalEditarProgramacion('${p.id}')" title="Editar programación">
+            <i class="ri-edit-2-line"></i> Editar
+        </button>`;
+
+        const delBtn = !esAprobada
+            ? `<button class="btn-action-tbl btn-delete" onclick="confirmarEliminarProgramacion('${p.id}', '${p.placa || ''}', '${p.no_planilla || ''}')" title="Eliminar programación">
+                <i class="ri-delete-bin-line"></i>
+               </button>`
+            : '';
+
         return `<tr>
             <td><span class="badge-plate">${p.placa || '—'}</span></td>
-            <td style="font-size:0.82rem;">${p.contratista || '—'}</td>
+            <td style="font-size:0.82rem;font-weight:600;">${p.contratista || '—'}</td>
             <td>${p.fecha || '—'}</td>
             <td style="font-size:0.8rem;">${p.zona || '—'}</td>
             <td style="font-size:0.82rem;">${p.poblacion || '—'}</td>
             <td><span style="background:rgba(59,130,246,0.1);color:var(--primary);border:1px solid rgba(59,130,246,0.25);padding:2px 8px;border-radius:5px;font-family:monospace;font-size:0.8rem;font-weight:700;">${p.no_planilla || '—'}</span></td>
             <td style="text-align:center;">${p.no_pedidos || 0}</td>
-            <td class="price-cell">${moneyF.format(p.valor_ruta || 0)}</td>
-            <td class="price-cell">${moneyF.format(p.precio || 0)}</td>
+            <td class="price-cell">${fmt(p.valor_ruta || 0)}</td>
+            <td class="price-cell">${adicionalStr}</td>
+            <td class="price-cell" style="font-weight:800;color:#10b981;">${fmt(p.precio || 0)}</td>
             <td>
                 <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:0.72rem;font-weight:700;border:1px solid;background:${meta.bg};color:${meta.color};border-color:${meta.color}40;">
                     <i class="${meta.icon}"></i> ${meta.label}
                 </span>
                 ${motivo}
             </td>
+            <td style="text-align:center;">
+                <div style="display:inline-flex;gap:4px;align-items:center;">
+                    ${editBtn}
+                    ${delBtn}
+                </div>
+            </td>
         </tr>`;
     }).join('');
+}
+
+/* ─────────────────────────────────────────────────────────
+   MODAL DE EDICIÓN: Abrir, sincronizar y guardar
+──────────────────────────────────────────────────────────── */
+async function abrirModalEditarProgramacion(progId) {
+    let p = PG_PROGRAMACIONES_CACHE.get(progId);
+    if (!p) {
+        const res = await window.SupabaseClient.supabase
+            .from('programaciones')
+            .select('*')
+            .eq('id', progId)
+            .single();
+        if (res.data) {
+            p = res.data;
+            PG_PROGRAMACIONES_CACHE.set(progId, p);
+        }
+    }
+    if (!p) {
+        Swal.fire({ icon:'error', title:'No encontrada', text:'No se pudo cargar la programación.', background:'#1e293b', color:'#fff' });
+        return;
+    }
+
+    EDIT_MODAL_ID = progId;
+
+    // Estado y badge
+    const meta = ESTADO_PROG[p.estado] || ESTADO_PROG['PENDIENTE'];
+    const badgeEl = document.getElementById('modal-prog-estado-badge');
+    if (badgeEl) {
+        badgeEl.textContent = p.estado;
+        badgeEl.style.background = meta.bg;
+        badgeEl.style.color = meta.color;
+        badgeEl.style.borderColor = meta.color + '60';
+    }
+
+    // Banner de rechazo si aplica
+    const bannerEl = document.getElementById('modal-prog-rechazo-banner');
+    const rechazoTxt = document.getElementById('modal-prog-rechazo-texto');
+    if (p.estado === 'RECHAZADA') {
+        if (rechazoTxt) rechazoTxt.textContent = p.motivo_rechazo || 'El administrador solicitó correcciones.';
+        if (bannerEl) bannerEl.style.display = 'flex';
+    } else {
+        if (bannerEl) bannerEl.style.display = 'none';
+    }
+
+    // Rellenar campos básicos
+    const placaEl = document.getElementById('modal-placa');
+    if (placaEl) placaEl.value = p.placa || '';
+    const condEl = document.getElementById('modal-contratista');
+    if (condEl) condEl.value = p.contratista || '';
+
+    const provEl = document.getElementById('modal-proveedor');
+    if (provEl && p.proveedor) provEl.value = p.proveedor;
+
+    const fechaEl = document.getElementById('modal-fecha');
+    if (fechaEl) fechaEl.value = p.fecha || '';
+    const diaEl = document.getElementById('modal-dia');
+    if (diaEl) diaEl.value = p.dia || '';
+
+    // Actualizar zonas y seleccionar las guardadas
+    actualizarZonasPorProveedor('modal-');
+    setTimeout(() => {
+        const zonas = (p.zona || '').split(',').map(s => s.trim());
+        const zonaContainer = document.getElementById('modal-zona-container');
+        if (zonaContainer) {
+            zonaContainer.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+                chk.checked = zonas.includes(chk.value);
+            });
+        }
+        actualizarPoblaciones('modal-');
+        setTimeout(() => {
+            const pobEl = document.getElementById('modal-poblacion');
+            if (pobEl && p.poblacion) pobEl.value = p.poblacion;
+            calcularTotal('modal-');
+        }, 150);
+    }, 150);
+
+    // Auxiliares
+    const auxPartes = (p.auxiliares || '').split(',').map(s => s.trim()).filter(Boolean);
+    const aux1 = auxPartes[0] || '';
+    const aux2 = auxPartes[1] || '';
+
+    actualizarListaAuxiliares('modal-');
+    setTimeout(() => {
+        const aux1El = document.getElementById('modal-auxiliares');
+        if (aux1El && aux1) {
+            for (const opt of aux1El.options) {
+                if (opt.value === aux1 || opt.text === aux1) {
+                    aux1El.value = opt.value;
+                    break;
+                }
+            }
+        }
+        _sincronizarModalAux();
+        const aux2El = document.getElementById('modal-auxiliar2');
+        if (aux2El && aux2) {
+            for (const opt of aux2El.options) {
+                if (opt.value === aux2 || opt.text === aux2) {
+                    aux2El.value = opt.value;
+                    break;
+                }
+            }
+        }
+        const noAuxEl = document.getElementById('modal-no_auxiliares');
+        if (noAuxEl) noAuxEl.value = p.no_auxiliares || (aux2 ? '2' : '1');
+    }, 250);
+
+    // Valores
+    const noPedEl = document.getElementById('modal-no_pedidos');
+    if (noPedEl) noPedEl.value = p.no_pedidos || 0;
+
+    const rutaEl = document.getElementById('modal-valor_ruta');
+    if (rutaEl) rutaEl.value = fmt(p.valor_ruta || 0);
+
+    const adicEl = document.getElementById('modal-valor_adicional');
+    if (adicEl) adicEl.value = fmt(p.valor_adicional_negociacion || 0);
+
+    const razonEl = document.getElementById('modal-razon_adicional');
+    if (razonEl) razonEl.value = p.razon_adicional_negociacion || '';
+
+    const totalEl = document.getElementById('modal-total_flete');
+    if (totalEl) totalEl.value = fmt(p.precio || 0);
+
+    // Planillas y Facturas preview
+    const planillas = (p.no_planilla || '').split(',').map(s => s.trim()).filter(Boolean);
+    const planBadges = document.getElementById('modal-planillas-badges');
+    if (planBadges) {
+        planBadges.innerHTML = planillas.map(pl =>
+            `<span style="background:rgba(59,130,246,0.12);color:var(--primary);border:1px solid rgba(59,130,246,0.3);padding:3px 10px;border-radius:6px;font-family:monospace;font-size:0.82rem;font-weight:700;">${pl}</span>`
+        ).join('');
+    }
+
+    const factTxt = document.getElementById('modal-facturas-texto');
+    if (factTxt) factTxt.textContent = p.facturas_seleccionadas || 'Sin facturas asociadas';
+
+    // Botón Guardar
+    const btnGuardar = document.getElementById('btn-guardar-modal-prog');
+    if (btnGuardar) {
+        if (p.estado === 'RECHAZADA') {
+            btnGuardar.innerHTML = '<i class="ri-refresh-line"></i> Guardar y Reenviar';
+            btnGuardar.style.display = 'inline-flex';
+        } else if (p.estado === 'APROBADA') {
+            btnGuardar.style.display = 'none';
+        } else {
+            btnGuardar.innerHTML = '<i class="ri-save-line"></i> Guardar Cambios';
+            btnGuardar.style.display = 'inline-flex';
+        }
+    }
+
+    // Modo solo lectura si está aprobada
+    const isApproved = p.estado === 'APROBADA';
+    document.querySelectorAll('#modal-editar-prog input, #modal-editar-prog select, #modal-editar-prog textarea')
+        .forEach(el => {
+            if (['modal-total_flete', 'modal-porcentaje_ruta', 'modal-contratista'].includes(el.id)) return;
+            el.disabled = isApproved;
+        });
+
+    setTimeout(() => {
+        calcularTotal('modal-');
+    }, 350);
+
+    document.getElementById('modal-editar-prog').classList.add('visible');
+}
+
+function cerrarModalEditar() {
+    EDIT_MODAL_ID = null;
+    document.getElementById('modal-editar-prog')?.classList.remove('visible');
+}
+
+function _sincronizarModalAux() {
+    const src = document.getElementById('modal-auxiliares');
+    const dst = document.getElementById('modal-auxiliar2');
+    if (!src || !dst) return;
+    const val = dst.value;
+    dst.innerHTML = '<option value="">— Sin auxiliar 2 —</option>';
+    Array.from(src.options).forEach(opt => {
+        if (!opt.value || opt.value === 'EXTRA') return;
+        const o = document.createElement('option');
+        o.value = opt.value;
+        o.textContent = opt.textContent;
+        dst.appendChild(o);
+    });
+    if (val) dst.value = val;
+
+    const noAuxEl = document.getElementById('modal-no_auxiliares');
+    if (noAuxEl) {
+        noAuxEl.value = (dst.value && dst.value !== '') ? '2' : '1';
+    }
+}
+
+/* Guardar cambios desde el modal */
+async function guardarEdicionModalProg() {
+    if (!EDIT_MODAL_ID) return;
+
+    const p = PG_PROGRAMACIONES_CACHE.get(EDIT_MODAL_ID);
+    if (!p) return;
+
+    const placa = document.getElementById('modal-placa')?.value?.trim().toUpperCase();
+    if (!placa) {
+        Swal.fire({ icon:'warning', title:'Placa requerida', text:'Ingresa la placa del vehículo.', background:'#1e293b', color:'#fff' });
+        return;
+    }
+
+    const proveedor = document.getElementById('modal-proveedor')?.value;
+    const poblacion = document.getElementById('modal-poblacion')?.value;
+    const fecha     = document.getElementById('modal-fecha')?.value;
+    if (!proveedor || !poblacion || !fecha) {
+        Swal.fire({ icon:'warning', title:'Campos incompletos', text:'Completa Proveedor, Población y Fecha.', background:'#1e293b', color:'#fff' });
+        return;
+    }
+
+    // Auxiliares
+    const aux1 = document.getElementById('modal-auxiliares')?.value?.trim() || '';
+    const aux2 = document.getElementById('modal-auxiliar2')?.value?.trim() || '';
+    const auxFinal = aux2 ? `${aux1}, ${aux2}` : aux1;
+
+    // Zona
+    const zonaChecks = document.querySelectorAll('#modal-zona-container input[type="checkbox"]:checked');
+    const zonaStr = Array.from(zonaChecks).map(c => c.value).join(', ') || '';
+
+    // Valores
+    const valorRutaStr = document.getElementById('modal-valor_ruta')?.value || '0';
+    const valorRuta    = parseFloat(valorRutaStr.replace(/[^0-9]/g, '')) || 0;
+
+    const adicStr   = document.getElementById('modal-valor_adicional')?.value || '0';
+    const adicional = parseFloat(adicStr.replace(/[^0-9]/g, '')) || 0;
+
+    const razonAdic = document.getElementById('modal-razon_adicional')?.value?.trim() || '';
+
+    const precioStr = document.getElementById('modal-total_flete')?.value || '0';
+    const precio    = parseFloat(precioStr.replace(/[^0-9]/g, '')) || 0;
+
+    const cambios = {
+        placa,
+        contratista:                 document.getElementById('modal-contratista')?.value?.trim() || '',
+        proveedor,
+        zona:                        zonaStr,
+        dia:                         document.getElementById('modal-dia')?.value || '',
+        fecha,
+        poblacion,
+        auxiliares:                  auxFinal,
+        no_auxiliares:               parseInt(document.getElementById('modal-no_auxiliares')?.value || '1'),
+        no_pedidos:                  parseInt(document.getElementById('modal-no_pedidos')?.value || '0'),
+        valor_ruta:                  valorRuta,
+        valor_adicional_negociacion: adicional,
+        razon_adicional_negociacion: razonAdic,
+        precio,
+    };
+
+    // Si estaba rechazada, al corregirla y guardar vuelve a quedar PENDIENTE
+    if (p.estado === 'RECHAZADA') {
+        cambios.estado = 'PENDIENTE';
+        cambios.motivo_rechazo = null;
+    }
+
+    Swal.fire({ title:'Guardando cambios...', allowOutsideClick:false, didOpen:() => Swal.showLoading(), background:'#1e293b', color:'#fff' });
+
+    const result = await window.SupabaseClient.programaciones.actualizar(EDIT_MODAL_ID, cambios);
+    if (!result.success) {
+        Swal.fire({ icon:'error', title:'Error al actualizar', text: result.error || 'No se pudo guardar la edición.', background:'#1e293b', color:'#fff' });
+        return;
+    }
+
+    LAST_CREATED_ID = EDIT_MODAL_ID;
+    cerrarModalEditar();
+
+    // Actualizar fecha del listado creado para que coincida si cambió
+    const fechaCreadasEl = document.getElementById('pg-creadas-fecha');
+    if (fechaCreadasEl) fechaCreadasEl.value = fecha;
+
+    await Promise.all([
+        cargarProgramacionesCreadas(),
+        cargarListadoProgramaciones(),
+        actualizarBadgeRechazadas({ notificar: false })
+    ]);
+
+    Swal.fire({
+        icon: 'success',
+        title: '¡Programación actualizada!',
+        html: `Los cambios para <strong>${placa}</strong> fueron guardados correctamente.${p.estado === 'RECHAZADA' ? '<br><small style="color:#10b981;">Quedó PENDIENTE de aprobación por el admin.</small>' : ''}`,
+        timer: 2000,
+        showConfirmButton: false,
+        background: '#1e293b', color: '#fff'
+    });
+}
+
+/* Confirmar y eliminar programación */
+async function confirmarEliminarProgramacion(id, placa, noPlanilla) {
+    const c = await Swal.fire({
+        title: '¿Eliminar programación?',
+        html: `Se eliminará la programación para <strong>${placa || 'esta ruta'}</strong> (Planilla: ${noPlanilla || '—'}).<br>
+               <small style="color:#94a3b8;">Las facturas asociadas volverán a estar disponibles para programar.</small>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '<i class="ri-delete-bin-line"></i> Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#ef4444',
+        background: '#1e293b', color: '#fff'
+    });
+    if (!c.isConfirmed) return;
+
+    Swal.fire({ title:'Eliminando...', allowOutsideClick:false, didOpen:() => Swal.showLoading(), background:'#1e293b', color:'#fff' });
+
+    const res = await window.SupabaseClient.programaciones.eliminar(id);
+    if (!res.success) {
+        Swal.fire({ icon:'error', title:'Error', text: res.error || 'No se pudo eliminar la programación.', background:'#1e293b', color:'#fff' });
+        return;
+    }
+
+    PG_PROGRAMACIONES_CACHE.delete(id);
+    if (CURRENT_EDIT_PROG_ID === id) cancelarEdicionFormulario();
+
+    await Promise.all([
+        cargarProgramacionesCreadas(),
+        cargarListadoProgramaciones(),
+        cargarPlanillasDelDia(),
+        cargarSueltasProg(),
+        actualizarBadgeRechazadas({ notificar: false })
+    ]);
+
+    Swal.fire({
+        icon: 'success',
+        title: 'Programación eliminada',
+        timer: 1800,
+        showConfirmButton: false,
+        background: '#1e293b', color: '#fff'
+    });
+}
+
+/* Cargar los datos de una programación en el formulario principal */
+function cargarProgEnFormularioPrincipal() {
+    if (!EDIT_MODAL_ID) return;
+    const p = PG_PROGRAMACIONES_CACHE.get(EDIT_MODAL_ID);
+    if (!p) return;
+
+    CURRENT_EDIT_PROG_ID = p.id;
+
+    // Cambiar vista a crear si estamos en listado
+    cambiarVista('crear');
+
+    // Llenar campos del formulario principal
+    const placaEl = document.getElementById('placa');
+    if (placaEl) placaEl.value = p.placa || '';
+    const condEl = document.getElementById('contratista');
+    if (condEl) condEl.value = p.contratista || '';
+
+    const provEl = document.getElementById('proveedor');
+    if (provEl && p.proveedor) provEl.value = p.proveedor;
+
+    const fechaEl = document.getElementById('fecha');
+    if (fechaEl && p.fecha) fechaEl.value = p.fecha;
+    const diaEl = document.getElementById('dia');
+    if (diaEl && p.dia) diaEl.value = p.dia;
+
+    actualizarZonasPorProveedor('');
+    setTimeout(() => {
+        const zonas = (p.zona || '').split(',').map(s => s.trim());
+        const zonaContainer = document.getElementById('zona-container');
+        if (zonaContainer) {
+            zonaContainer.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+                chk.checked = zonas.includes(chk.value);
+            });
+        }
+        actualizarPoblaciones('');
+        setTimeout(() => {
+            const pobEl = document.getElementById('poblacion');
+            if (pobEl && p.poblacion) pobEl.value = p.poblacion;
+            calcularTotal('');
+        }, 150);
+    }, 150);
+
+    const auxPartes = (p.auxiliares || '').split(',').map(s => s.trim()).filter(Boolean);
+    actualizarListaAuxiliares('');
+    setTimeout(() => {
+        const aux1El = document.getElementById('auxiliares');
+        if (aux1El && auxPartes[0]) {
+            for (const opt of aux1El.options) {
+                if (opt.value === auxPartes[0] || opt.text === auxPartes[0]) {
+                    aux1El.value = opt.value;
+                    break;
+                }
+            }
+        }
+        _sincronizarSelectAux2();
+        const aux2El = document.getElementById('auxiliar2');
+        if (aux2El && auxPartes[1]) {
+            for (const opt of aux2El.options) {
+                if (opt.value === auxPartes[1] || opt.text === auxPartes[1]) {
+                    aux2El.value = opt.value;
+                    break;
+                }
+            }
+        }
+        const noAuxEl = document.getElementById('no_auxiliares');
+        if (noAuxEl) noAuxEl.value = p.no_auxiliares || (auxPartes[1] ? '2' : '1');
+    }, 250);
+
+    const noPedEl = document.getElementById('no_pedidos');
+    if (noPedEl) { noPedEl.value = p.no_pedidos || 0; noPedEl.dataset.manual = 'true'; }
+
+    const rutaEl = document.getElementById('valor_ruta');
+    if (rutaEl) rutaEl.value = fmt(p.valor_ruta || 0);
+
+    const adicEl = document.getElementById('valor_adicional');
+    if (adicEl) adicEl.value = fmt(p.valor_adicional_negociacion || 0);
+
+    const razonEl = document.getElementById('razon_adicional');
+    if (razonEl) razonEl.value = p.razon_adicional_negociacion || '';
+
+    const noPlEl = document.getElementById('no_planilla');
+    if (noPlEl) noPlEl.value = p.no_planilla || '';
+
+    const factAdicEl = document.getElementById('facturas_adicionales');
+    if (factAdicEl) factAdicEl.value = p.facturas_seleccionadas || '';
+
+    const totalEl = document.getElementById('total_flete');
+    if (totalEl) totalEl.value = fmt(p.precio || 0);
+
+    // Indicador visual de modo edición
+    const banner = document.getElementById('form-edit-banner');
+    const title = document.getElementById('form-edit-title');
+    if (banner) banner.classList.add('visible');
+    if (title) title.textContent = `Editando ${p.placa || 'Ruta'} (Planilla: ${p.no_planilla || ''})`;
+
+    const btnGuardar = document.getElementById('btnGestionarFlete');
+    if (btnGuardar) {
+        btnGuardar.innerHTML = '<i class="ri-check-line"></i> Actualizar Programación';
+    }
+    const btnCancelar = document.getElementById('btnCancelarEdicion');
+    if (btnCancelar) btnCancelar.style.display = 'inline-flex';
+
+    cerrarModalEditar();
+
+    // Scroll suave hacia el formulario
+    document.getElementById('card-admin')?.scrollIntoView({ behavior: 'smooth' });
+}
+
+function cancelarEdicionFormulario() {
+    CURRENT_EDIT_PROG_ID = null;
+    const banner = document.getElementById('form-edit-banner');
+    if (banner) banner.classList.remove('visible');
+    const btnGuardar = document.getElementById('btnGestionarFlete');
+    if (btnGuardar) {
+        btnGuardar.innerHTML = '<i class="ri-send-plane-line"></i> Guardar Programación';
+    }
+    const btnCancelar = document.getElementById('btnCancelarEdicion');
+    if (btnCancelar) btnCancelar.style.display = 'none';
+    limpiarFormularioProg();
 }
 
 /* ─────────────────────────────────────────────────────────

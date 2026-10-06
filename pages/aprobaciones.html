@@ -368,9 +368,15 @@
                     </select>
                 </div>
                 <div class="input-group">
-                    <label>Auxiliar(es)</label>
-                    <select id="modal-auxiliares" onchange="handleAuxiliarExtraChange('modal-')">
+                    <label>Auxiliar 1</label>
+                    <select id="modal-auxiliares" onchange="handleAuxiliarExtraChange('modal-'); _sincronizarAux2Aprobaciones();">
                         <option value="" disabled selected>Seleccione...</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Auxiliar 2 <span style="font-size:0.75rem;color:var(--text-muted);font-weight:400;">(opcional)</span></label>
+                    <select id="modal-auxiliar2">
+                        <option value="">— Sin auxiliar 2 —</option>
                     </select>
                 </div>
                 <div id="modal-auxiliares_extra_container" class="input-group" style="display:none;">
@@ -614,12 +620,16 @@ function renderCards(data) {
                     <div class="val">${p.fecha || '—'} · ${p.dia || ''}</div>
                 </div>
                 <div class="prog-info-item">
+                    <div class="lbl">Zona</div>
+                    <div class="val">${p.zona || '—'}</div>
+                </div>
+                <div class="prog-info-item">
                     <div class="lbl">Población</div>
                     <div class="val">${p.poblacion || '—'}</div>
                 </div>
-                <div class="prog-info-item">
-                    <div class="lbl">Zona</div>
-                    <div class="val">${p.zona || '—'}</div>
+                <div class="prog-info-item" style="grid-column:1/-1;">
+                    <div class="lbl"><i class="ri-user-star-line" style="color:#a78bfa;font-size:0.75rem;"></i> Auxiliar(es)</div>
+                    <div class="val" style="color:#a78bfa;">${p.auxiliares || '—'}${p.no_auxiliares > 1 ? ` <span style="font-size:0.72rem;color:var(--text-muted);font-weight:400;">(×${p.no_auxiliares})</span>` : ''}</div>
                 </div>
                 <div class="prog-info-item">
                     <div class="lbl">Pedidos</div>
@@ -662,6 +672,24 @@ function renderCards(data) {
     }).join('');
 }
 
+/* ── Sincronizar opciones de auxiliar 1 → auxiliar 2 ────── */
+function _sincronizarAux2Aprobaciones() {
+    const src = document.getElementById('modal-auxiliares');
+    const dst = document.getElementById('modal-auxiliar2');
+    if (!src || !dst) return;
+    const valActual = dst.value;
+    dst.innerHTML = '<option value="">— Sin auxiliar 2 —</option>';
+    Array.from(src.options).forEach(opt => {
+        if (!opt.value || opt.disabled) return;
+        const o = document.createElement('option');
+        o.value = opt.value;
+        o.textContent = opt.textContent;
+        dst.appendChild(o);
+    });
+    // Intentar mantener el valor que tenía
+    if (valActual) dst.value = valActual;
+}
+
 /* ── Modal de edición ───────────────────────────────────── */
 function abrirModal(progId) {
     const p = APR_DATA.find(x => x.id === progId);
@@ -678,74 +706,112 @@ function abrirModal(progId) {
         <span><i class="ri-calendar-line"></i> ${p.created_at ? new Date(p.created_at).toLocaleString('es-CO') : '—'}</span>
         <span><i class="ri-store-2-line"></i> ${p.proveedor || '—'}</span>`;
 
-    // Llenar campos editables
-    document.getElementById('modal-placa').value             = p.placa       || '';
-    document.getElementById('modal-contratista').value       = p.contratista || '';
-    document.getElementById('modal-proveedor').value         = p.proveedor   || 'ALPINA';
-    document.getElementById('modal-fecha').value             = p.fecha       || '';
-    document.getElementById('modal-dia').value               = p.dia         || 'Lunes';
-    document.getElementById('modal-no_pedidos').value        = p.no_pedidos  || 0;
-    document.getElementById('modal-valor_ruta').value        = fmt(p.valor_ruta || 0);
+    // Campos simples — sin lógica reactiva
+    document.getElementById('modal-placa').value            = p.placa       || '';
+    document.getElementById('modal-contratista').value      = p.contratista || '';
+    document.getElementById('modal-fecha').value            = p.fecha       || '';
+    document.getElementById('modal-dia').value              = p.dia         || 'Lunes';
+    document.getElementById('modal-no_pedidos').value       = p.no_pedidos  || 0;
+    document.getElementById('modal-valor_ruta').value       = fmt(p.valor_ruta || 0);
     document.getElementById('modal-valor_adicional').value  = fmt(p.valor_adicional_negociacion || 0);
     document.getElementById('modal-razon_adicional').value  = p.razon_adicional_negociacion || '';
+    document.getElementById('modal-no_auxiliares').value    = p.no_auxiliares || 1;
 
-    // Actualizar zonas dinámicas según proveedor (app.js)
+    // ── Proveedor → zonas → población → auxiliar ──────────────────────────
+    // Seteamos el proveedor primero sin disparar eventos para evitar que la
+    // cadena reactiva de app.js sobreescriba los valores que vamos a restaurar.
+    const provEl = document.getElementById('modal-proveedor');
+    provEl.value = p.proveedor || 'ALPINA';
+
+    // actualizarZonasPorProveedor reconstruye el DOM de zonas y llama
+    // actualizarListaAuxiliares internamente. Después restauramos todo.
     if (typeof actualizarZonasPorProveedor === 'function') {
         actualizarZonasPorProveedor('modal-');
-        // Marcar las zonas que venían en la programación
-        setTimeout(() => {
-            const zonas = (p.zona || '').split(',').map(z => z.trim());
-            const container = document.getElementById('modal-zona-container');
-            if (container) {
-                container.querySelectorAll('input[type="checkbox"]').forEach(chk => {
-                    chk.checked = zonas.includes(chk.value);
-                });
-            }
-            // Actualizar poblaciones y precio
-            if (typeof actualizarPoblaciones === 'function') actualizarPoblaciones('modal-');
-            // Seleccionar población guardada
-            setTimeout(() => {
-                const pobEl = document.getElementById('modal-poblacion');
-                if (pobEl && p.poblacion) pobEl.value = p.poblacion;
-                if (typeof calcularTotal === 'function') calcularTotal('modal-');
-            }, 100);
-        }, 200);
     }
 
-    // Auxiliar — seleccionar el valor guardado
-    setTimeout(() => {
-        const auxEl = document.getElementById('modal-auxiliares');
-        if (auxEl && p.auxiliares) {
-            // Buscar si el auxiliar está en el select
-            for (const opt of auxEl.options) {
-                if (opt.value === p.auxiliares || p.auxiliares.startsWith(opt.value)) {
-                    auxEl.value = opt.value;
-                    break;
-                }
-            }
+    // ── 1. Restaurar zonas marcadas ────────────────────────────────────────
+    // Hacemos esto SINCRÓNICAMENTE justo después de que se reconstruyó el DOM.
+    const zonasGuardadas = (p.zona || '').split(',').map(z => z.trim()).filter(Boolean);
+    const zonaContainer = document.getElementById('modal-zona-container');
+    if (zonaContainer && zonasGuardadas.length) {
+        zonaContainer.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+            chk.checked = zonasGuardadas.includes(chk.value);
+        });
+        // Actualizar variable interna de app.js si existe
+        if (typeof ULTIMA_ZONA_SELECCIONADA !== 'undefined') {
+            ULTIMA_ZONA_SELECCIONADA['modal-'] = zonasGuardadas[0];
         }
-        if (document.getElementById('modal-no_auxiliares'))
-            document.getElementById('modal-no_auxiliares').value = p.no_auxiliares || 1;
-    }, 300);
+    }
 
-    // Planillas (solo lectura)
+    // ── 2. Actualizar poblaciones con las zonas ya marcadas y restaurar ────
+    if (typeof actualizarPoblaciones === 'function') {
+        actualizarPoblaciones('modal-');
+    }
+    // Restaurar población guardada (actualizarPoblaciones acaba de poblar el select)
+    const pobEl = document.getElementById('modal-poblacion');
+    if (pobEl && p.poblacion) {
+        pobEl.value = p.poblacion;
+    }
+
+    // ── 3. Recalcular total con zona + población ya correctas ──────────────
+    if (typeof calcularTotal === 'function') calcularTotal('modal-');
+
+    // ── 4. Restaurar auxiliares (aux1 y aux2) ─────────────────────────────
+    // El campo p.auxiliares puede ser "NOMBRE1" o "NOMBRE1, NOMBRE2"
+    const auxPartes = (p.auxiliares || '').split(',').map(s => s.trim()).filter(Boolean);
+    const aux1Guardado = auxPartes[0] || '';
+    const aux2Guardado = auxPartes[1] || '';
+
+    const auxEl = document.getElementById('modal-auxiliares');
+    if (auxEl && aux1Guardado) {
+        // Coincidencia exacta primero
+        const exacta = Array.from(auxEl.options).find(o => o.value === aux1Guardado);
+        if (exacta) {
+            auxEl.value = exacta.value;
+        } else {
+            // No está en la lista (nombre manual), agregar opción temporal
+            const opt = document.createElement('option');
+            opt.value = aux1Guardado;
+            opt.textContent = aux1Guardado;
+            auxEl.appendChild(opt);
+            auxEl.value = aux1Guardado;
+        }
+        if (typeof handleAuxiliarExtraChange === 'function') handleAuxiliarExtraChange('modal-');
+    }
+
+    // Poblar auxiliar 2 copiando las opciones del auxiliar 1 y restaurar valor
+    _sincronizarAux2Aprobaciones();
+    const aux2El = document.getElementById('modal-auxiliar2');
+    if (aux2El && aux2Guardado) {
+        const exacta2 = Array.from(aux2El.options).find(o => o.value === aux2Guardado);
+        if (exacta2) {
+            aux2El.value = exacta2.value;
+        } else {
+            const opt2 = document.createElement('option');
+            opt2.value = aux2Guardado;
+            opt2.textContent = aux2Guardado;
+            aux2El.appendChild(opt2);
+            aux2El.value = aux2Guardado;
+        }
+    }
+
+    // ── Planillas (solo lectura) ───────────────────────────────────────────
     const planillas = (p.no_planilla || '').split(',').map(s => s.trim()).filter(Boolean);
     const planEl = document.getElementById('modal-planillas-info');
     if (planEl) planEl.innerHTML = planillas.map(pl =>
         `<span style="background:rgba(59,130,246,0.1);color:var(--primary);border:1px solid rgba(59,130,246,0.25);padding:2px 9px;border-radius:5px;font-family:monospace;font-size:0.82rem;font-weight:700;margin-right:6px;">${pl}</span>`
     ).join('');
 
-    // Facturas (solo lectura)
+    // ── Facturas (solo lectura) ────────────────────────────────────────────
     const factEl = document.getElementById('modal-facturas-preview');
     if (factEl) factEl.textContent = p.facturas_seleccionadas || 'Sin facturas registradas';
 
-    // Ocultar botón aprobar si ya no está PENDIENTE
+    // ── Permisos de edición según estado ──────────────────────────────────
     const btnApr = document.querySelector('.btn-aprobar');
     const btnRec = document.querySelector('.btn-rechazar');
     if (p.estado !== 'PENDIENTE') {
         if (btnApr) btnApr.style.display = 'none';
         if (btnRec) btnRec.style.display = 'none';
-        // Campos de solo lectura
         document.querySelectorAll('#modal-editar input, #modal-editar select, #modal-editar textarea')
             .forEach(el => { el.readOnly = true; el.disabled = true; });
     } else {
@@ -753,7 +819,7 @@ function abrirModal(progId) {
         if (btnRec) btnRec.style.display = 'inline-flex';
         document.querySelectorAll('#modal-editar input, #modal-editar select, #modal-editar textarea')
             .forEach(el => { el.readOnly = false; el.disabled = false; });
-        // Estos siempre readonly
+        // Total siempre readonly
         document.getElementById('modal-total_flete').readOnly = true;
     }
 
@@ -788,7 +854,11 @@ async function aprobarDesdeModal() {
         fecha:                       document.getElementById('modal-fecha')?.value                 || '',
         dia:                         document.getElementById('modal-dia')?.value                   || '',
         poblacion:                   document.getElementById('modal-poblacion')?.value?.trim()     || '',
-        auxiliares:                  document.getElementById('modal-auxiliares')?.value?.trim()    || '',
+        auxiliares: (() => {
+            const a1 = document.getElementById('modal-auxiliares')?.value?.trim() || '';
+            const a2 = document.getElementById('modal-auxiliar2')?.value?.trim() || '';
+            return a2 ? `${a1}, ${a2}` : a1;
+        })(),
         no_auxiliares:               parseInt(document.getElementById('modal-no_auxiliares')?.value || '1'),
         no_pedidos:                  parseInt(document.getElementById('modal-no_pedidos')?.value   || '0'),
         valor_ruta:                  parseMon(document.getElementById('modal-valor_ruta')?.value),

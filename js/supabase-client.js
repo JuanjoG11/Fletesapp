@@ -1125,8 +1125,8 @@ async function aprobarProgramacion(programacionId) {
             .eq('id', programacionId);
         if (eUpd) throw eUpd;
 
-        // 4. Actualizar TODAS las planillas del flete a PROGRAMADA
-        // (el programador las programó — aún no han salido físicamente)
+        // 4. Actualizar TODAS las planillas del flete a DESPACHADA
+        // Al aprobar la programación el flete queda confirmado y listo para cuadre de caja.
         // Primero construir la lista de IDs: usar planillas_ids (CSV) si existe,
         // y caer de vuelta a planilla_id para compatibilidad con registros viejos.
         const planillasIdsRaw = prog.planillas_ids || (prog.planilla_id ? prog.planilla_id : null);
@@ -1138,7 +1138,7 @@ async function aprobarProgramacion(programacionId) {
             await _supabase
                 .from('planillas')
                 .update({
-                    estado:             'PROGRAMADA',
+                    estado:             'DESPACHADA',
                     placa:              prog.placa,
                     conductor:          prog.contratista,
                     fecha_programacion: prog.fecha,

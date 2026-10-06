@@ -89,15 +89,18 @@ async function cargarTablaCuadre() {
         + '<i class="ri-loader-4-line rotate" style="font-size:2.5rem;"></i>'
         + '<p style="margin-top:12px;">Cargando planillas del ' + CC.fecha + '…</p></div>';
 
-    // Traer DESPACHADAS y CUADRADAS del día
-    var [resDes, resCuad] = await Promise.all([
+    // Traer PROGRAMADAS, DESPACHADAS y CUADRADAS del día
+    // (PROGRAMADAS = aprobadas que aún no fueron marcadas como despachadas manualmente)
+    var [resProg, resDes, resCuad] = await Promise.all([
+        SupabaseClient.planillas.getAll({ estado: 'PROGRAMADA', fecha: CC.fecha }),
         SupabaseClient.planillas.getAll({ estado: 'DESPACHADA', fecha: CC.fecha }),
         SupabaseClient.planillas.getAll({ estado: 'CUADRADA',   fecha: CC.fecha }),
     ]);
 
+    var programadas = resProg.success ? (resProg.data || []) : [];
     var despachadas = resDes.success  ? (resDes.data  || []) : [];
     var cuadradas   = resCuad.success ? (resCuad.data || []) : [];
-    CC.data    = [...despachadas, ...cuadradas];
+    CC.data    = [...programadas, ...despachadas, ...cuadradas];
     CC.cambios = {};
 
     // Actualizar también el PL_CACHE de planillas.js

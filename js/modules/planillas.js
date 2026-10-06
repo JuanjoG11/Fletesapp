@@ -1,4 +1,4 @@
-﻿/* ==========================================================
+/* ==========================================================
    ?? M�DULO GESTI�N DE PLANILLAS
    FletesApp � js/modules/planillas.js
    ==========================================================
@@ -2096,17 +2096,21 @@ async function _cargarVistaCajera() {
 
     wrap.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-muted);"><i class="ri-loader-4-line rotate" style="font-size:2rem;"></i><p style="margin-top:10px;">Cargando...</p></div>';
 
-    const [resDes, resCuad] = await Promise.all([
+    const [resProg, resDes, resCuad] = await Promise.all([
+        SupabaseClient.planillas.getAll({ estado: 'PROGRAMADA', fecha }),
         SupabaseClient.planillas.getAll({ estado: 'DESPACHADA', fecha }),
         SupabaseClient.planillas.getAll({ estado: 'CUADRADA',   fecha }),
     ]);
 
-    if (!resDes.success && !resCuad.success) {
+    if (!resProg.success && !resDes.success && !resCuad.success) {
         wrap.innerHTML = '<div style="text-align:center;padding:32px;color:#ef4444;"><i class="ri-error-warning-line" style="font-size:2rem;"></i><p>Error al cargar las planillas.</p></div>';
         return;
     }
 
-    const porCuadrar  = resDes.success  ? (resDes.data  || []) : [];
+    // "Por cuadrar" incluye PROGRAMADAS (aprobadas) + DESPACHADAS
+    const programadas = resProg.success ? (resProg.data || []) : [];
+    const despachadas = resDes.success  ? (resDes.data  || []) : [];
+    const porCuadrar  = [...programadas, ...despachadas];
     const yaCuadradas = resCuad.success ? (resCuad.data || []) : [];
     PL_CACHE = [...porCuadrar, ...yaCuadradas];
 
@@ -2440,31 +2444,7 @@ async function cuadrarPlanillaCajera(planillaId) {
             + '<label style="display:block;margin-bottom:8px;font-size:0.75rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Valor recibido <span style="color:#ef4444;">*</span></label>'
             + '<input id="swal-cajera-valor" type="text" value="' + fmtExp + '" '
             + 'style="width:100%;padding:16px;background:#0a1628;border:2px solid rgba(16,185,129,0.5);color:#10b981;border-radius:10px;font-size:1.4rem;font-weight:900;font-family:monospace;outline:none;box-sizing:border-box;text-align:right;letter-spacing:1px;" '
-            + 'oninput="(function(el){'
-+ 'var raw=el.value.replace(/\\./g,\'\').replace(\',\',\'.\');'
-+ 'var vv=parseFloat(raw)||0;'
-            + 'var exp=' + valorEsperado + ';'
-            + 'var dif=vv-exp;'
-            + 'var di=document.getElementById(\'swal-cj-dif\');'
-            + 'if(di){'
-            + 'if(vv===0){di.style.display=\'none\';}else{'
-            + 'di.style.display=\'flex\';'
-            + 'if(Math.abs(dif)<1){'
-            + 'di.innerHTML=\'<i class="ri-checkbox-circle-fill"></i> Cuadra exacto \u2014 se guardar\u00e1 autom\u00e1ticamente\';'
-            + 'di.style.background=\'rgba(16,185,129,0.12)\';di.style.borderColor=\'rgba(16,185,129,0.35)\';di.style.color=\'#10b981\';'
-            + 'el.style.borderColor=\'rgba(16,185,129,0.7)\';'
-            + '}else if(dif>0){'
-            + 'di.innerHTML=\'<i class="ri-arrow-up-circle-fill"></i> Sobrante: +\'+(dif).toLocaleString(\'es-CO\',{minimumFractionDigits:2,maximumFractionDigits:2});'
-            + 'di.style.background=\'rgba(59,130,246,0.1)\';di.style.borderColor=\'rgba(59,130,246,0.3)\';di.style.color=\'#60a5fa\';'
-            + 'el.style.borderColor=\'rgba(59,130,246,0.5)\';'
-            + '}else{'
-            + 'di.innerHTML=\'<i class="ri-arrow-down-circle-fill"></i> Faltante: \'+(dif).toLocaleString(\'es-CO\',{minimumFractionDigits:2,maximumFractionDigits:2});'
-            + 'di.style.background=\'rgba(239,68,68,0.1)\';di.style.borderColor=\'rgba(239,68,68,0.3)\';di.style.color=\'#f87171\';'
-            + 'el.style.borderColor=\'rgba(239,68,68,0.5)\';'
-            + '}'
-            + '}'
-            + '}'
-            + '})(this)">'
+            + 'oninput="_ccInputDif(this,' + valorEsperado + ')">'
             + '<div id="swal-cj-dif" style="display:flex;align-items:center;gap:8px;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:0.88rem;font-weight:800;border:1px solid rgba(16,185,129,0.35);background:rgba(16,185,129,0.12);color:#10b981;">'
             + '<i class="ri-checkbox-circle-fill"></i> Cuadra exacto \u2014 se guardar\u00e1 autom\u00e1ticamente'
             + '</div>'
@@ -2690,6 +2670,30 @@ async function cuadrarPlanillaCajera(planillaId) {
         background: '#1e293b', color: '#fff'
     });
 }
+// Función global para el oninput del modal de cuadre cajera
+function _ccInputDif(el, valorEsperado) {
+    var raw = el.value.replace(/\./g, '').replace(',', '.');
+    var vv  = parseFloat(raw) || 0;
+    var dif = vv - valorEsperado;
+    var di  = document.getElementById('swal-cj-dif');
+    if (!di) return;
+    if (vv === 0) { di.style.display = 'none'; return; }
+    di.style.display = 'flex';
+    if (Math.abs(dif) < 1) {
+        di.innerHTML = '<i class="ri-checkbox-circle-fill"></i> Cuadra exacto — se guardará automáticamente';
+        di.style.background = 'rgba(16,185,129,0.12)'; di.style.borderColor = 'rgba(16,185,129,0.35)'; di.style.color = '#10b981';
+        el.style.borderColor = 'rgba(16,185,129,0.7)';
+    } else if (dif > 0) {
+        di.innerHTML = '<i class="ri-arrow-up-circle-fill"></i> Sobrante: +' + dif.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        di.style.background = 'rgba(59,130,246,0.1)'; di.style.borderColor = 'rgba(59,130,246,0.3)'; di.style.color = '#60a5fa';
+        el.style.borderColor = 'rgba(59,130,246,0.5)';
+    } else {
+        di.innerHTML = '<i class="ri-arrow-down-circle-fill"></i> Faltante: ' + dif.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        di.style.background = 'rgba(239,68,68,0.1)'; di.style.borderColor = 'rgba(239,68,68,0.3)'; di.style.color = '#f87171';
+        el.style.borderColor = 'rgba(239,68,68,0.5)';
+    }
+}
+window._ccInputDif = _ccInputDif;
 window.cuadrarPlanillaCajera = cuadrarPlanillaCajera;
 window._cargarVistaCajera    = _cargarVistaCajera;
 

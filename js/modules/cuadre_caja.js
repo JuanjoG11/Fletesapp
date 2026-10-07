@@ -117,10 +117,25 @@ async function cargarTablaCuadre() {
         return;
     }
 
+    // ── Render inicial mientras llegan los datos externos ────
     _renderTabla();
     _actualizarKpisCuadre();
     _iniciarAutoSave();
     _toggleBotonesExportCuadre(true);
+
+    // ── Enriquecer con ConsigControl y Devoluciones App ──────
+    if (window.ExternalAPIs && typeof window.ExternalAPIs.enriquecerConDatosExternos === 'function') {
+        _mostrarBadgeExternos('cargando');
+        try {
+            await window.ExternalAPIs.enriquecerConDatosExternos(CC.data, CC.fecha);
+            _renderTabla();          // re-render con datos externos ya disponibles
+            _actualizarKpisCuadre();
+            _mostrarBadgeExternos('ok');
+        } catch (e) {
+            console.warn('[CuadreCaja] Error cargando datos externos:', e);
+            _mostrarBadgeExternos('error');
+        }
+    }
 }
 window.cargarTablaCuadre = cargarTablaCuadre;
 
@@ -172,7 +187,7 @@ function _renderTabla() {
         var cuadre     = _n(p.valor_cuadrado);
         var dif        = cuadre - totalFila;
         var difColor   = Math.abs(dif) < 1 ? '#10b981' : dif > 0 ? '#3b82f6' : '#ef4444';
-        var auxNombre  = p.auxiliares ? p.auxiliares.split(',')[0].trim() : (p.conductor || '');
+        var auxNombre  = p._ext_auxiliar || (p.auxiliares ? p.auxiliares.split(',')[0].trim() : (p.conductor || ''));
 
         tbody += '<tr id="cc-row-' + p.id + '" data-id="' + p.id + '" style="' + rowBg + '">';
 
@@ -196,14 +211,50 @@ function _renderTabla() {
         // Columnas de desglose
         CC_COLS.forEach(function(col, ci) {
             var val = p[col.key];
+
+            // ── Valor automático desde APIs externas ─────────
+            // Si el campo está vacío Y hay dato externo, pre-llenar con él
+            var esAutoDevol   = col.key === 'cuadre_devolucion'      && p._ext_cargado && _n(val) === 0 && (p._ext_devol_valor   || 0) > 0;
+            var esAutoConsig  = col.key === 'cuadre_consignaciones'  && p._ext_cargado && _n(val) === 0 && (p._ext_consig_valor  || 0) > 0;
+            var esAutoNoConsig= col.key === 'cuadre_no_consignaciones'&& p._ext_cargado && !(val)       && (p._ext_consig_cantidad|| 0) > 0;
+
+            if (esAutoDevol)    val = p._ext_devol_valor;
+            if (esAutoConsig)   val = p._ext_consig_valor;
+            if (esAutoNoConsig) val = String(p._ext_consig_cantidad);
+
+            var esAuto = esAutoDevol || esAutoConsig || esAutoNoConsig;
+
+            // Si pre-llenamos con datos externos, registrar el cambio para que se guarde
+            if (esAuto && !CC.cambios[p.id]) CC.cambios[p.id] = {};
+            if (esAutoDevol)    { CC.cambios[p.id].cuadre_devolucion       = val; p.cuadre_devolucion       = val; }
+            if (esAutoConsig)   { CC.cambios[p.id].cuadre_consignaciones   = val; p.cuadre_consignaciones   = val; }
+            if (esAutoNoConsig) { CC.cambios[p.id].cuadre_no_consignaciones= val; p.cuadre_no_consignaciones= val; }
+
             var displayVal = col.tipo === 'num'
                 ? (_n(val) === 0 ? '' : _fmtCC2.format(_n(val)))
                 : (val || '');
-            tbody += '<td style="' + tdFixStyle + 'padding:0;" class="cc-cell">'
+
+            // Badge "AUTO" para indicar que el valor vino de API externa
+            var badgeAuto = esAuto
+                ? '<span style="position:absolute;top:1px;right:2px;font-size:0.5rem;font-weight:800;'
+                  + 'background:rgba(99,102,241,0.85);color:#fff;padding:1px 3px;border-radius:3px;'
+                  + 'letter-spacing:0.3px;pointer-events:none;line-height:1.3;">AUTO</span>'
+                : '';
+
+            // Badge de cantidad de consignaciones al lado del campo # CONSIG
+            var badgeConsigCant = (col.key === 'cuadre_no_consignaciones' && p._ext_cargado && (p._ext_consig_cantidad || 0) > 0 && !esAuto)
+                ? '<span title="Consignaciones en ConsigControl" style="position:absolute;top:1px;right:2px;font-size:0.5rem;font-weight:800;'
+                  + 'background:rgba(59,130,246,0.7);color:#fff;padding:1px 3px;border-radius:3px;pointer-events:none;line-height:1.3;">'
+                  + p._ext_consig_cantidad + '</span>'
+                : '';
+
+            var tdExtra = esAuto ? 'background:rgba(99,102,241,0.08);' : '';
+            tbody += '<td style="' + tdFixStyle + tdExtra + 'padding:0;position:relative;" class="cc-cell">'
                    + '<input type="text" class="cc-input" data-id="' + p.id + '" data-key="' + col.key + '" '
                    + 'data-tipo="' + col.tipo + '" data-idx="' + idx + '" data-col="' + (ci + 1) + '" '
                    + 'value="' + displayVal + '" placeholder="' + (col.tipo === 'num' ? '0' : '') + '" '
-                   + 'style="' + (col.tipo === 'num' ? inputStyle : inputTextStyle) + '">'
+                   + 'style="' + (col.tipo === 'num' ? inputStyle : inputTextStyle) + (esAuto ? 'color:#a5b4fc;' : '') + '">'
+                   + badgeAuto + badgeConsigCant
                    + '</td>';
         });
 
@@ -573,7 +624,7 @@ function exportarExcelCuadre() {
         var totalFila = _calcTotal(p);
         var dif = _n(p.valor_cuadrado) - totalFila;
         var obj = {
-            'AUXILIAR TAT': p.auxiliares ? p.auxiliares.split(',')[0].trim() : (p.conductor||''),
+            'AUXILIAR TAT': p._ext_auxiliar || (p.auxiliares ? p.auxiliares.split(',')[0].trim() : (p.conductor||'')),
             'RUTA':         p.zona || '',
             '# DE PLANILLA':p.no_planilla || '',
             [mes]:          '2',
@@ -604,3 +655,60 @@ function _toggleBotonesExportCuadre(visible) {
     if (btnPdf)   btnPdf.style.display   = d;
 }
 window._toggleBotonesExportCuadre = _toggleBotonesExportCuadre;
+
+// ── Badge de estado APIs externas ────────────────────────────
+/**
+ * Muestra un indicador pequeño junto al título del cuadre
+ * para que el usuario sepa si los datos externos se cargaron.
+ * estado: 'cargando' | 'ok' | 'error'
+ */
+function _mostrarBadgeExternos(estado) {
+    var BADGE_ID = 'cc-badge-externos';
+    var el = document.getElementById(BADGE_ID);
+
+    // Si no existe, crearlo dinámicamente junto al botón de actualizar
+    if (!el) {
+        var ref = document.getElementById('cc-btn-excel')
+               || document.getElementById('cc-btn-pdf')
+               || document.getElementById('cc-tabla-wrap');
+        if (!ref) return;
+        el = document.createElement('span');
+        el.id = BADGE_ID;
+        el.style.cssText = 'display:inline-flex;align-items:center;gap:5px;'
+            + 'padding:4px 10px;border-radius:20px;font-size:0.7rem;font-weight:700;'
+            + 'letter-spacing:0.3px;margin-left:10px;vertical-align:middle;transition:all 0.3s;';
+        ref.parentNode && ref.parentNode.insertBefore(el, ref);
+    }
+
+    var cfgs = {
+        cargando: {
+            bg: 'rgba(99,102,241,0.15)', border: 'rgba(99,102,241,0.4)', color: '#a5b4fc',
+            icon: '<i class="ri-loader-4-line rotate"></i>',
+            text: 'Cargando ConsigControl y Devoluciones…',
+        },
+        ok: {
+            bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.35)', color: '#34d399',
+            icon: '<i class="ri-checkbox-circle-fill"></i>',
+            text: 'Consig. y Devoluciones cargadas',
+        },
+        error: {
+            bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.3)', color: '#f87171',
+            icon: '<i class="ri-error-warning-line"></i>',
+            text: 'Error al cargar APIs externas',
+        },
+    };
+
+    var cfg = cfgs[estado] || cfgs.ok;
+    el.style.background   = cfg.bg;
+    el.style.border       = '1px solid ' + cfg.border;
+    el.style.color        = cfg.color;
+    el.innerHTML          = cfg.icon + ' ' + cfg.text;
+
+    // Ocultar el badge de "ok" después de 5 segundos
+    if (estado === 'ok') {
+        setTimeout(function() {
+            if (el) el.style.opacity = '0.4';
+        }, 5000);
+    }
+}
+window._mostrarBadgeExternos = _mostrarBadgeExternos;

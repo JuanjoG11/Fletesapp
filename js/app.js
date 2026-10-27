@@ -96,7 +96,7 @@ const MAPA_CONTRATISTAS = {
 
 // Configuración específica para TAT
 const CONFIG_TAT = {
-    proveedores: ['UNILEVER', 'FAMILIA', 'POLAR'],
+    proveedores: ['FAMILIA'],
     zonas: {
         'UNILEVER': [
             { value: 'MXEJ1301', text: 'MXEJ1301' },
@@ -259,13 +259,9 @@ const LISTA_AUXILIARES_ZENU = [
 ];
 
 const LISTA_AUXILIARES_TAT = [
-    "DANIELA CASTIBLANCO RAMIREZ", "MICHAEL CONTRERAS HURTADO", "LUIS ALFONSO RIOS GONZALEZ",
-    "JOHN ANDRES CASTILLO GIRALDO", "MANUEL ALEJANDRO RAMIREZ OVALLE", "JULIAN DAVID RODRIGUEZ MONTOYA",
-    "YERFREY FLORES ARROYAVE", "FIDEL HERNANDO GARCIA CORREA", "JOHN RAUL GRAJALES CANO",
-    "JUAN GUILLERMO FERNANDEZ GIRALDO", "JOSE ARLEY MARIN HERRERA", "SAMUEL ANDRES ARIAS ARCILA",
-    "VALENTINA GARCIA GOMEZ", "NATALY MOLINA BECERRA", "LINO LOPEZ SIMONS",
-    "LUZ MARINA GUZMAN TORO", "VALENTINA LONDOÑO MARIN", "BRANDON STIVEN ALZATE GONZALEZ",
-    "NELLY YURANNY SALDARRIAGA CAÑAS"
+    "NO APLICA",
+    "JULIAN DAVID RODRIGUEZ MONTOYA",
+    "YUDI BUITRAGO"
 ];
 
 
@@ -656,9 +652,7 @@ function actualizarProveedoresTAT() {
     if (provSelect) {
         provSelect.innerHTML = `
             <option value="" disabled selected>Seleccione...</option>
-            <option>UNILEVER</option>
             <option>FAMILIA</option>
-            <option>POLAR</option>
         `;
     }
 
@@ -667,9 +661,7 @@ function actualizarProveedoresTAT() {
     if (provSelectModal) {
         provSelectModal.innerHTML = `
             <option value="" disabled selected>Seleccione...</option>
-            <option>UNILEVER</option>
             <option>FAMILIA</option>
-            <option>POLAR</option>
         `;
     }
 }
@@ -1447,11 +1439,30 @@ const PRECIOS_TAT_UNILEVER = {
 };
 
 const PRECIOS_TAT_FAMILIA = {
-    ...PRECIOS_TAT_BASE,
-    'NEGOCIACIÓN MYMY 1-4 MILLONES': 80000,
-    'NEGOCIACIÓN MY4-8 MILLONES': 120000,
-    'NEGOCIACIÓN MY8-12 MILLONES': 160000,
-    'NEGOCIACIÓN MYMY +12 MILLONES': 200000
+    'DOSQUEBRADAS': 210000,
+    'DOSQUEBRADAS TODO': 290000,
+    'VITERBO': 280000,
+    'LA VIRGINIA': 235000,
+    'LA VIRGINIA-VITERBO': 350000,
+    'PEREIRA': 210000,
+    'SANTA ROSA': 215000,
+    'SANTA ROSA-CENTRO PEREIRA': 300000,
+    'MARSELLA-COMBIA': 250000,
+    'CENTRO-MARSELLA-COMBIA': 320000,
+    'CUBA': 210000,
+    'CUBA-CENTRO': 250000,
+    'PUEBLO RICO-SANTA CECILIA': 470000,
+    'QUINCHIA': 450000,
+    'GUATICA': 378000,
+    'QUINCHIA-GUATICA': 600000,
+    'APIA-SANTUARIO': 310000,
+    'LA CELIA-BALBOA': 290000,
+    'APIA SANTURIO-CELIA-BALBOA': 400000,
+    'MISTRATO': 350000,
+    'BELEN': 328000,
+    'BELEN-MISTRATO': 400000,
+    'SAN JOSE-BELALCAZAR': 325000,
+    'SAN JOSE-BELALCAZAR-PAQUE INDUSTRIAL': 360000,
 };
 
 // Mantenemos este para los reportes unificados
@@ -1903,8 +1914,6 @@ function actualizarPoblaciones(prefix = "") {
 
     const isAlpinaLike = (proveedor === 'ALPINA' || proveedor === 'FLEISCHMANN' || proveedor === 'ALPINA-FLEISCHMANN');
     const isZenu = (proveedor === 'ZENU');
-    const isPolar = (proveedor === 'POLAR');
-    const isUnilever = (proveedor === 'UNILEVER');
     const isFamilia = (proveedor === 'FAMILIA');
 
     // Determinar qué lista usar
@@ -1913,10 +1922,6 @@ function actualizarPoblaciones(prefix = "") {
         listaUsar = Object.keys(PRECIOS_ALPINA).sort();
     } else if (isZenu) {
         listaUsar = Object.keys(PRECIOS_ZENU).sort();
-    } else if (isPolar) {
-        listaUsar = Object.keys(PRECIOS_POLAR).sort();
-    } else if (proveedor === 'UNILEVER') {
-        listaUsar = Object.keys(PRECIOS_TAT_UNILEVER).sort();
     } else if (proveedor === 'FAMILIA') {
         listaUsar = Object.keys(PRECIOS_TAT_FAMILIA).sort();
     }
@@ -2073,7 +2078,7 @@ function actualizarListaAuxiliares(prefix = "") {
         lista = LISTA_AUXILIARES_ALPINA;
     } else if (proveedor === "ZENU") {
         lista = LISTA_AUXILIARES_ZENU;
-    } else if (["UNILEVER", "FAMILIA", "POLAR"].includes(proveedor)) {
+    } else if (["FAMILIA"].includes(proveedor)) {
         lista = LISTA_AUXILIARES_TAT;
     } else if (CURRENT_RAZON_SOCIAL === 'TAT' && !proveedor) {
         // Para TAT, todos los proveedores usan la misma lista, así que podemos mostrarla de entrada
@@ -2170,12 +2175,8 @@ function actualizarZonasPorProveedor(prefix = "") {
         filtered = master;
     }
     // ====== PROVEEDORES TAT ======
-    else if (proveedor === "UNILEVER") {
-        filtered = CONFIG_TAT.zonas['UNILEVER'] || [];
-    } else if (proveedor === "FAMILIA") {
+    else if (proveedor === "FAMILIA") {
         filtered = CONFIG_TAT.zonas['FAMILIA'] || [];
-    } else if (proveedor === "POLAR" && CONFIG_TAT.zonas['POLAR']) { // Nueva condición para POLAR en TAT
-        filtered = CONFIG_TAT.zonas['POLAR'];
     }
     // ====== PROVEEDORES TYM ======
     else if (proveedor === "ALPINA" || proveedor === "FLEISCHMANN" || proveedor === "ALPINA-FLEISCHMANN") {
@@ -2300,10 +2301,6 @@ function calcularTotal(prefix = "") {
         precioBase = PRECIOS_ALPINA[poblacion] || 0;
     } else if (proveedor === 'ZENU') {
         precioBase = PRECIOS_ZENU[poblacion] || 0;
-    } else if (proveedor === 'POLAR') {
-        precioBase = PRECIOS_POLAR[poblacion] || 0;
-    } else if (proveedor === 'UNILEVER') {
-        precioBase = PRECIOS_TAT_UNILEVER[poblacion] || 0;
     } else if (proveedor === 'FAMILIA') {
         precioBase = PRECIOS_TAT_FAMILIA[poblacion] || 0;
     } else {
@@ -3303,8 +3300,7 @@ async function exportarExcel() {
     // CAJA ve TODOS los proveedores
     if (role === 'caja') {
         opcionesProveedores = `
-            <option value="UNILEVER-FAMILIA">TAT: UNILEVER-FAMILIA</option>
-            <option value="POLAR">TAT: POLAR</option>
+            <option value="FAMILIA">TAT: FAMILIA</option>
             <option value="ALPINA">TYM: ALPINA</option>
             <option value="ZENU">TYM: ZENU</option>
             <option value="FLEISCHMANN">TYM: FLEISCHMANN</option>
@@ -3312,8 +3308,7 @@ async function exportarExcel() {
         `;
     } else if (esTAT) {
         opcionesProveedores = `
-            <option value="UNILEVER-FAMILIA">UNILEVER-FAMILIA</option>
-            <option value="POLAR">POLAR</option>
+            <option value="FAMILIA">FAMILIA</option>
         `;
     } else {
         opcionesProveedores = `
@@ -3414,9 +3409,7 @@ async function exportarExcel() {
     }
 
     if (proveedor) {
-        if (proveedor === 'UNILEVER-FAMILIA') {
-            query = query.in('proveedor', ['UNILEVER', 'FAMILIA', 'UNILEVER-FAMILIA']);
-        } else if (proveedor === 'ALPINA-FLEISCHMANN') {
+        if (proveedor === 'ALPINA-FLEISCHMANN') {
             query = query.in('proveedor', ['ALPINA', 'FLEISCHMANN', 'ALPINA-FLEISCHMANN']);
         } else {
             query = query.eq('proveedor', proveedor);
@@ -3424,7 +3417,7 @@ async function exportarExcel() {
     } else {
         // Filtro "Todos los Proveedores" respeta el contexto de la empresa
         if (esTAT) {
-            query = query.in('proveedor', ['UNILEVER', 'FAMILIA', 'POLAR', 'UNILEVER-FAMILIA']);
+            query = query.in('proveedor', ['FAMILIA']);
         } else if (role !== 'caja') {
             // Contexto TYM (excluyendo caja que ve todo)
             query = query.in('proveedor', ['ALPINA', 'FLEISCHMANN', 'ZENU', 'ALPINA-FLEISCHMANN']);
@@ -3447,7 +3440,7 @@ async function exportarExcel() {
             "ID": f.id,
             "FECHA": f.fecha,
             "DIA": f.dia,
-            "PROVEEDOR": (['UNILEVER', 'FAMILIA'].includes(f.proveedor)) ? 'UNILEVER-FAMILIA' : f.proveedor,
+            "PROVEEDOR": f.proveedor,
             "PLACA": placa,
             "NOMBRE CONTRATISTA": MAPA_CONTRATISTAS[placa] || 'N/A',
             "CONDUCTOR": conductor,
@@ -3492,15 +3485,13 @@ async function generarPDF() {
 
     if (role === 'caja') {
         opcionesProveedores = `
-            <option value="UNILEVER-FAMILIA">TAT: UNILEVER-FAMILIA</option>
-            <option value="POLAR">TAT: POLAR</option>
+            <option value="FAMILIA">TAT: FAMILIA</option>
             <option value="ZENU">TYM: ZENU</option>
             <option value="ALPINA-FLEISCHMANN">TYM: ALPINA-FLEISCHMANN</option>
         `;
     } else if (esTAT) {
         opcionesProveedores = `
-            <option value="UNILEVER-FAMILIA">UNILEVER-FAMILIA</option>
-            <option value="POLAR">POLAR</option>
+            <option value="FAMILIA">FAMILIA</option>
         `;
     } else {
         opcionesProveedores = `
@@ -3622,16 +3613,14 @@ async function generarPDF() {
     }
 
     if (proveedor) {
-        if (proveedor === 'UNILEVER-FAMILIA') {
-            query = query.in('proveedor', ['UNILEVER', 'FAMILIA', 'UNILEVER-FAMILIA']);
-        } else if (proveedor === 'ALPINA-FLEISCHMANN') {
+        if (proveedor === 'ALPINA-FLEISCHMANN') {
             query = query.in('proveedor', ['ALPINA', 'FLEISCHMANN', 'ALPINA-FLEISCHMANN']);
         } else {
             query = query.eq('proveedor', proveedor);
         }
     } else {
         if (esTAT) {
-            query = query.in('proveedor', ['UNILEVER', 'FAMILIA', 'POLAR', 'UNILEVER-FAMILIA']);
+            query = query.in('proveedor', ['FAMILIA']);
         } else if (role !== 'caja') {
             query = query.in('proveedor', ['ALPINA', 'FLEISCHMANN', 'ZENU', 'ALPINA-FLEISCHMANN']);
         }
@@ -3688,7 +3677,7 @@ async function generarPDF() {
     if (tipo === 'individual') {
         fletes.forEach((f, idx) => {
             const numFlete = String(f.id).padStart(6, '0');
-            const esTAT = ['UNILEVER', 'FAMILIA', 'POLAR'].includes(f.proveedor);
+            const esTAT = f.proveedor === 'FAMILIA';
             const logoData = esTAT ? logos.TAT : logos.TYM;
             const empresaNombre = esTAT ? "DISTRIBUCIONES DEL EJE CAFETERO SA" : "TIENDAS Y MARCAS EJE CAFETERO";
             const nitEmpresa = esTAT ? "NIT 901568117-1" : "NIT 900973929";
@@ -3820,8 +3809,8 @@ async function generarPDF() {
             contratista: f.vehiculo?.conductor || f.contratista || 'N/A'
         };
         const prov = flatFlete.proveedor || 'SIN PROVEEDOR';
-        if (['UNILEVER', 'FAMILIA', 'UNILEVER-FAMILIA'].includes(prov)) {
-            return { ...flatFlete, _provAgrupado: 'UNILEVER-FAMILIA' };
+        if (prov === 'FAMILIA') {
+            return { ...flatFlete, _provAgrupado: 'FAMILIA' };
         }
         if (['ALPINA', 'FLEISCHMANN', 'ALPINA-FLEISCHMANN'].includes(prov)) {
             return { ...flatFlete, _provAgrupado: 'ALPINA-FLEISCHMANN' };
@@ -3857,7 +3846,7 @@ async function generarPDF() {
 
         // Helper: dibujar encabezado para un proveedor en una fecha dada
         const dibujarHeaderDia = (docInstance, provActual) => {
-            const esProvTAT = provActual === 'UNILEVER-FAMILIA';
+            const esProvTAT = provActual === 'FAMILIA';
             const logoData = esProvTAT ? logos.TAT : logos.TYM;
             const logoFormat = esProvTAT ? 'JPEG' : 'PNG';
             const headerText = esProvTAT
@@ -4003,7 +3992,7 @@ async function generarPDF() {
                 body: bodyData,
                 theme: 'grid',
                 headStyles: {
-                    fillColor: provActual === 'UNILEVER-FAMILIA' ? [249, 115, 22] : [41, 128, 185],
+                    fillColor: provActual === 'FAMILIA' ? [249, 115, 22] : [41, 128, 185],
                     fontSize: 7,
                     halign: 'center'
                 },

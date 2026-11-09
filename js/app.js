@@ -647,22 +647,22 @@ function aplicarConfiguracionEmpresa(razonSocial) {
 }
 
 function actualizarProveedoresTAT() {
+    const opcionesTAT = `
+            <option value="" disabled selected>Seleccione...</option>
+            <option>FAMILIA</option>
+            <option>POSTOBON</option>
+    `;
+
     // Actualizar selector principal
     const provSelect = document.getElementById('proveedor');
     if (provSelect) {
-        provSelect.innerHTML = `
-            <option value="" disabled selected>Seleccione...</option>
-            <option>FAMILIA</option>
-        `;
+        provSelect.innerHTML = opcionesTAT;
     }
 
     // Actualizar selector del modal
     const provSelectModal = document.getElementById('modal-proveedor');
     if (provSelectModal) {
-        provSelectModal.innerHTML = `
-            <option value="" disabled selected>Seleccione...</option>
-            <option>FAMILIA</option>
-        `;
+        provSelectModal.innerHTML = opcionesTAT;
     }
 }
 
@@ -3312,6 +3312,7 @@ async function exportarExcel() {
     if (role === 'caja') {
         opcionesProveedores = `
             <option value="FAMILIA">TAT: FAMILIA</option>
+            <option value="POSTOBON">TAT: POSTOBON</option>
             <option value="ALPINA">TYM: ALPINA</option>
             <option value="ZENU">TYM: ZENU</option>
             <option value="FLEISCHMANN">TYM: FLEISCHMANN</option>
@@ -3320,6 +3321,7 @@ async function exportarExcel() {
     } else if (esTAT) {
         opcionesProveedores = `
             <option value="FAMILIA">FAMILIA</option>
+            <option value="POSTOBON">POSTOBON</option>
         `;
     } else {
         opcionesProveedores = `
@@ -3428,7 +3430,7 @@ async function exportarExcel() {
     } else {
         // Filtro "Todos los Proveedores" respeta el contexto de la empresa
         if (esTAT) {
-            query = query.in('proveedor', ['FAMILIA']);
+            query = query.in('proveedor', ['FAMILIA', 'POSTOBON']);
         } else if (role !== 'caja') {
             // Contexto TYM (excluyendo caja que ve todo)
             query = query.in('proveedor', ['ALPINA', 'FLEISCHMANN', 'ZENU', 'ALPINA-FLEISCHMANN']);
@@ -3497,12 +3499,14 @@ async function generarPDF() {
     if (role === 'caja') {
         opcionesProveedores = `
             <option value="FAMILIA">TAT: FAMILIA</option>
+            <option value="POSTOBON">TAT: POSTOBON</option>
             <option value="ZENU">TYM: ZENU</option>
             <option value="ALPINA-FLEISCHMANN">TYM: ALPINA-FLEISCHMANN</option>
         `;
     } else if (esTAT) {
         opcionesProveedores = `
             <option value="FAMILIA">FAMILIA</option>
+            <option value="POSTOBON">POSTOBON</option>
         `;
     } else {
         opcionesProveedores = `
@@ -3631,7 +3635,7 @@ async function generarPDF() {
         }
     } else {
         if (esTAT) {
-            query = query.in('proveedor', ['FAMILIA']);
+            query = query.in('proveedor', ['FAMILIA', 'POSTOBON']);
         } else if (role !== 'caja') {
             query = query.in('proveedor', ['ALPINA', 'FLEISCHMANN', 'ZENU', 'ALPINA-FLEISCHMANN']);
         }
@@ -3688,7 +3692,7 @@ async function generarPDF() {
     if (tipo === 'individual') {
         fletes.forEach((f, idx) => {
             const numFlete = String(f.id).padStart(6, '0');
-            const esTAT = f.proveedor === 'FAMILIA';
+            const esTAT = (f.proveedor === 'FAMILIA' || f.proveedor === 'POSTOBON');
             const logoData = esTAT ? logos.TAT : logos.TYM;
             const empresaNombre = esTAT ? "DISTRIBUCIONES DEL EJE CAFETERO SA" : "TIENDAS Y MARCAS EJE CAFETERO";
             const nitEmpresa = esTAT ? "NIT 901568117-1" : "NIT 900973929";

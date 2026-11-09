@@ -817,17 +817,28 @@ async function listarVehiculos() {
         FLOTA_VEHICULOS = res.success ? res.data : [];
     }
 
-    // Filtrar localmente según estado seleccionado (eliminados nunca aparecen)
+    // Filtrar localmente:
+    // - Sin búsqueda: aplica el filtro de estado (por defecto oculta inactivos y eliminados)
+    // - Con búsqueda escrita: ignora el filtro de estado y busca en TODOS,
+    //   para que se puedan encontrar inactivos y eliminados al buscar por placa.
+    const hayBusqueda = q.length > 0;
     const filtered = FLOTA_VEHICULOS.filter(v => {
         const estado = _resolverEstadoVehiculo(v);
-        if (estado === 'eliminado') return false;
-        if (filtroEstado === 'activos' && (estado === 'inactivo')) return false;
-        if (filtroEstado === 'inactivo' && estado !== 'inactivo') return false;
-        // filtroEstado === 'todos': pasa activos, inactivos y temporales
         const contratista = (v.contratista || '').toLowerCase();
         const conductor = (v.conductor || '').toLowerCase();
         const placa = (v.placa || '').toLowerCase();
-        return placa.includes(q) || conductor.includes(q) || contratista.includes(q);
+        const coincideTexto = placa.includes(q) || conductor.includes(q) || contratista.includes(q);
+
+        if (hayBusqueda) {
+            // Con búsqueda: mostrar cualquier estado que coincida con el texto
+            return coincideTexto;
+        }
+
+        // Sin búsqueda: filtrar por estado y no mostrar eliminados
+        if (estado === 'eliminado') return false;
+        if (filtroEstado === 'activos' && estado === 'inactivo') return false;
+        if (filtroEstado === 'inactivo' && estado !== 'inactivo') return false;
+        return true;
     });
 
     if (filtered.length === 0) {

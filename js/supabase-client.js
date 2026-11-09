@@ -199,7 +199,8 @@ async function buscarVehiculoPorPlaca(placa, razon_social = null) {
         let query = _supabase
             .from('vehiculos')
             .select('*')
-            .eq('placa', placa.toUpperCase().replace(/[\s-]/g, ''));
+            .eq('placa', placa.toUpperCase().replace(/[\s-]/g, ''))
+            .neq('estado_vehiculo', 'eliminado'); // No devolver vehículos eliminados
 
         // Aplicar filtro de empresa si se proporcionó o se obtuvo del usuario
         if (rs && rs !== 'GLOBAL') {
@@ -314,6 +315,36 @@ async function actualizarVehiculo(vehiculoId, vehiculoData) {
         return { success: true };
     } catch (error) {
         console.error('❌ Error al actualizar vehículo:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Eliminar vehículo (soft-delete: estado_vehiculo = 'eliminado')
+ * El vehículo queda en la base de datos para conservar integridad referencial
+ * con los fletes históricos, pero desaparece de todas las listas activas.
+ * @param {string} vehiculoId - ID del vehículo
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+async function eliminarVehiculo(vehiculoId) {
+    try {
+        if (!vehiculoId) throw new Error('ID de vehículo no proporcionado');
+
+        const { error } = await _supabase
+            .from('vehiculos')
+            .update({
+                estado_vehiculo: 'eliminado',
+                activo: false
+            })
+            .eq('id', vehiculoId);
+
+        if (error) {
+            console.error('❌ Error de Supabase al eliminar vehículo:', error);
+            return { success: false, error: error.message || 'Error desconocido en base de datos' };
+        }
+        return { success: true };
+    } catch (error) {
+        console.error('❌ Error al eliminar vehículo:', error);
         return { success: false, error: error.message };
     }
 }
@@ -694,7 +725,8 @@ const SupabaseClientAPI = {
         getByPlaca: buscarVehiculoPorPlaca,
         create: crearVehiculo,
         importar: importarVehiculos,
-        update: actualizarVehiculo
+        update: actualizarVehiculo,
+        delete: eliminarVehiculo
     },
     // Módulo de Fletes
     fletes: {

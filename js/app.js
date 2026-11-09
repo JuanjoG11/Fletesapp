@@ -789,6 +789,8 @@ function _badgeEstadoVehiculo(estado) {
             return '<span class="status-badge-active" style="background:rgba(16,185,129,0.1);color:#10b981;padding:2px 8px;border-radius:12px;font-size:0.75rem;"><i class="ri-checkbox-circle-line"></i> Activo</span>';
         case 'temporal':
             return '<span class="status-badge-temporal" style="background:rgba(249,115,22,0.12);color:#f97316;padding:2px 8px;border-radius:12px;font-size:0.75rem;"><i class="ri-time-line"></i> Temporal</span>';
+        case 'eliminado':
+            return '<span class="status-badge-deleted" style="background:rgba(100,116,139,0.15);color:#94a3b8;padding:2px 8px;border-radius:12px;font-size:0.75rem;"><i class="ri-delete-bin-line"></i> Eliminado</span>';
         default:
             return '<span class="status-badge-inactive" style="background:rgba(239,68,68,0.1);color:#ef4444;padding:2px 8px;border-radius:12px;font-size:0.75rem;"><i class="ri-error-warning-line"></i> Inactivo</span>';
     }
@@ -814,8 +816,9 @@ async function listarVehiculos() {
         FLOTA_VEHICULOS = res.success ? res.data : [];
     }
 
-    // Filtrar localmente
+    // Filtrar localmente (excluye eliminados de la tabla de gestión)
     const filtered = FLOTA_VEHICULOS.filter(v => {
+        if (_resolverEstadoVehiculo(v) === 'eliminado') return false;
         const contratista = (v.contratista || '').toLowerCase();
         const conductor = (v.conductor || '').toLowerCase();
         const placa = (v.placa || '').toLowerCase();
@@ -831,10 +834,11 @@ async function listarVehiculos() {
     let totalVencidosGral = 0;
     let htmlAlertas = '';
 
-    // Contadores para la tarjeta resumen (usando todos los vehículos, no solo el filtrado)
+    // Contadores para la tarjeta resumen (excluye los eliminados del total de flota)
     let cntActivos = 0, cntInactivos = 0, cntTemporales = 0;
     FLOTA_VEHICULOS.forEach(v => {
         const est = _resolverEstadoVehiculo(v);
+        if (est === 'eliminado') return; // No contar eliminados
         if (est === 'activo') cntActivos++;
         else if (est === 'inactivo') cntInactivos++;
         else if (est === 'temporal') cntTemporales++;
@@ -846,7 +850,8 @@ async function listarVehiculos() {
     if (elActivos)    elActivos.innerText    = cntActivos;
     if (elInactivos)  elInactivos.innerText  = cntInactivos;
     if (elTemporales) elTemporales.innerText = cntTemporales;
-    if (elTotal)      elTotal.innerText      = FLOTA_VEHICULOS.length;
+    // Total excluye eliminados
+    if (elTotal)      elTotal.innerText      = FLOTA_VEHICULOS.filter(v => _resolverEstadoVehiculo(v) !== 'eliminado').length;
 
     // OPTIMIZACIÓN: Usar DocumentFragment para minimizar reflujos del DOM
     const fragment = document.createDocumentFragment();
@@ -901,6 +906,9 @@ async function listarVehiculos() {
                 </button>
                 <button class="btn-icon ${estado === 'activo' ? 'delete' : 'edit'}" onclick="toggleEstadoVehiculo('${v.id}', '${estado}', '${v.placa}')" title="Cambiar Estado">
                     <i class="${estado === 'activo' ? 'ri-close-circle-line' : estado === 'temporal' ? 'ri-checkbox-circle-line' : 'ri-checkbox-circle-line'}"></i>
+                </button>
+                <button class="btn-icon delete" onclick="confirmarEliminarVehiculo('${v.id}', '${v.placa}')" title="Eliminar Vehículo" style="background:rgba(239,68,68,0.08); border-color:rgba(239,68,68,0.3); color:#ef4444; margin-left:2px;">
+                    <i class="ri-delete-bin-line"></i>
                 </button>
             </td>
         `;
@@ -1217,6 +1225,80 @@ async function toggleEstadoVehiculo(id, estadoActual, placa) {
         });
     } else {
         Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar el estado del vehículo.', background: '#1e293b', color: '#f8fafc' });
+    }
+}
+
+/**
+ * Confirmación y ejecución de eliminación de vehículo (soft-delete).
+ * El vehículo queda en la BD con estado 'eliminado' para preservar
+ * el historial de fletes, pero desaparece de todas las listas.
+ */
+async function confirmarEliminarVehiculo(id, placa) {
+    const { isConfirmed } = await Swal.fire({
+        title: `<span style="color:#ef4444;"><i class="ri-delete-bin-line"></i> Eliminar Vehículo</span>`,
+        html: `
+            <p style="color:#94a3b8; margin:0 0 12px;">
+                ¿Estás seguro de que deseas eliminar el vehículo<br>
+                <strong style="color:#f8fafc; font-size:1.1rem;">${placa}</strong>?
+            </p>
+            <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.3);
+                        border-radius:8px; padding:10px 14px; font-size:0.82rem; color:#fca5a5; text-align:left;">
+                <i class="ri-information-line"></i>
+                El vehículo <strong>no se borrará físicamente</strong> de la base de datos —
+                su historial de fletes se conserva — pero dejará de aparecer
+                en la lista de flota y en los registros de nuevos fletes.
+            </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '<i class="ri-delete-bin-line"></i> Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#475569',
+        background: '#1e293b',
+        color: '#f8fafc',
+        reverseButtons: true
+    });
+
+    if (!isConfirmed) return;
+
+    Swal.fire({ title: 'Eliminando...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
+
+    try {
+        const result = await SupabaseClient.vehiculos.delete(id);
+
+        if (result.success) {
+            // Actualizar cache local: marcar como eliminado (sin recargar todo)
+            const idx = FLOTA_VEHICULOS.findIndex(v => v.id === id);
+            if (idx !== -1) {
+                FLOTA_VEHICULOS[idx].estado_vehiculo = 'eliminado';
+                FLOTA_VEHICULOS[idx].activo = false;
+            }
+
+            await listarVehiculos();
+            await actualizarKPI();
+
+            Swal.fire({
+                title: 'Eliminado',
+                text: `El vehículo ${placa} fue eliminado de la flota.`,
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false,
+                background: '#1e293b',
+                color: '#f8fafc'
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudo eliminar el vehículo: ' + (result.error || 'Error desconocido'),
+                background: '#1e293b',
+                color: '#f8fafc'
+            });
+        }
+    } catch (e) {
+        console.error('❌ Error en confirmarEliminarVehiculo:', e);
+        Swal.fire({ icon: 'error', title: 'Error Crítico', text: 'Ocurrió un error inesperado.', background: '#1e293b', color: '#fff' });
     }
 }
 
@@ -3208,8 +3290,9 @@ async function mostrarListaFlota(filtro = 'todos') {
     };
     const cfg = CFG[filtro] || CFG.todos;
 
+    // Siempre excluir los eliminados del popup de flota
     const lista = filtro === 'todos'
-        ? FLOTA_VEHICULOS
+        ? FLOTA_VEHICULOS.filter(v => _resolverEstadoVehiculo(v) !== 'eliminado')
         : FLOTA_VEHICULOS.filter(v => _resolverEstadoVehiculo(v) === filtro);
 
     if (lista.length === 0) {

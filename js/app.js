@@ -806,8 +806,9 @@ async function listarVehiculos() {
     const panelAlertas = document.getElementById("panel-alertas");
     const listaAlertas = document.getElementById("lista-alertas");
 
-    // Filtro de búsqueda
+    // Filtro de búsqueda y estado
     const q = document.getElementById("buscarVehiculo")?.value.toLowerCase() || "";
+    const filtroEstado = document.getElementById("filtroEstadoVehiculo")?.value || "activos";
 
     // Si no hay cache, cargamos de Supabase
     if (FLOTA_VEHICULOS.length === 0) {
@@ -816,9 +817,13 @@ async function listarVehiculos() {
         FLOTA_VEHICULOS = res.success ? res.data : [];
     }
 
-    // Filtrar localmente (excluye eliminados de la tabla de gestión)
+    // Filtrar localmente según estado seleccionado (eliminados nunca aparecen)
     const filtered = FLOTA_VEHICULOS.filter(v => {
-        if (_resolverEstadoVehiculo(v) === 'eliminado') return false;
+        const estado = _resolverEstadoVehiculo(v);
+        if (estado === 'eliminado') return false;
+        if (filtroEstado === 'activos' && (estado === 'inactivo')) return false;
+        if (filtroEstado === 'inactivo' && estado !== 'inactivo') return false;
+        // filtroEstado === 'todos': pasa activos, inactivos y temporales
         const contratista = (v.contratista || '').toLowerCase();
         const conductor = (v.conductor || '').toLowerCase();
         const placa = (v.placa || '').toLowerCase();
@@ -835,10 +840,10 @@ async function listarVehiculos() {
     let htmlAlertas = '';
 
     // Contadores para la tarjeta resumen (excluye los eliminados del total de flota)
-    let cntActivos = 0, cntInactivos = 0, cntTemporales = 0;
+    let cntActivos = 0, cntInactivos = 0, cntTemporales = 0, cntEliminados = 0;
     FLOTA_VEHICULOS.forEach(v => {
         const est = _resolverEstadoVehiculo(v);
-        if (est === 'eliminado') return; // No contar eliminados
+        if (est === 'eliminado') { cntEliminados++; return; }
         if (est === 'activo') cntActivos++;
         else if (est === 'inactivo') cntInactivos++;
         else if (est === 'temporal') cntTemporales++;
@@ -847,9 +852,11 @@ async function listarVehiculos() {
     const elInactivos  = document.getElementById('flotaInactivos');
     const elTemporales = document.getElementById('flotaTemporales');
     const elTotal      = document.getElementById('flotaTotal');
+    const elEliminados = document.getElementById('flotaEliminados');
     if (elActivos)    elActivos.innerText    = cntActivos;
     if (elInactivos)  elInactivos.innerText  = cntInactivos;
     if (elTemporales) elTemporales.innerText = cntTemporales;
+    if (elEliminados) elEliminados.innerText = cntEliminados;
     // Total excluye eliminados
     if (elTotal)      elTotal.innerText      = FLOTA_VEHICULOS.filter(v => _resolverEstadoVehiculo(v) !== 'eliminado').length;
 
@@ -3283,17 +3290,20 @@ async function mostrarListaFlota(filtro = 'todos') {
     }
 
     const CFG = {
-        activo:   { label: 'Vehículos Activos',   color: '#10b981', icon: 'ri-checkbox-circle-line' },
-        inactivo: { label: 'Vehículos Inactivos',  color: '#ef4444', icon: 'ri-close-circle-line'    },
-        temporal: { label: 'Vehículos Temporales', color: '#f97316', icon: 'ri-time-line'             },
-        todos:    { label: 'Toda la Flota',         color: '#3b82f6', icon: 'ri-truck-line'            },
+        activo:    { label: 'Vehículos Activos',   color: '#10b981', icon: 'ri-checkbox-circle-line' },
+        inactivo:  { label: 'Vehículos Inactivos',  color: '#ef4444', icon: 'ri-close-circle-line'    },
+        temporal:  { label: 'Vehículos Temporales', color: '#f97316', icon: 'ri-time-line'             },
+        eliminado: { label: 'Vehículos Eliminados', color: '#94a3b8', icon: 'ri-delete-bin-line'       },
+        todos:     { label: 'Toda la Flota',         color: '#3b82f6', icon: 'ri-truck-line'            },
     };
     const cfg = CFG[filtro] || CFG.todos;
 
-    // Siempre excluir los eliminados del popup de flota
-    const lista = filtro === 'todos'
-        ? FLOTA_VEHICULOS.filter(v => _resolverEstadoVehiculo(v) !== 'eliminado')
-        : FLOTA_VEHICULOS.filter(v => _resolverEstadoVehiculo(v) === filtro);
+    // Siempre excluir los eliminados del popup de flota, excepto cuando se pide ver eliminados
+    const lista = filtro === 'eliminado'
+        ? FLOTA_VEHICULOS.filter(v => _resolverEstadoVehiculo(v) === 'eliminado')
+        : filtro === 'todos'
+            ? FLOTA_VEHICULOS.filter(v => _resolverEstadoVehiculo(v) !== 'eliminado')
+            : FLOTA_VEHICULOS.filter(v => _resolverEstadoVehiculo(v) === filtro);
 
     if (lista.length === 0) {
         return Swal.fire({

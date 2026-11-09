@@ -544,6 +544,13 @@
                         <p id="flotaTotal" class="kpi-value">0</p>
                     </div>
                 </div>
+                <div class="card glass-card kpi-card" onclick="mostrarListaFlota('eliminado')" style="cursor:pointer;" title="Ver eliminados">
+                    <div class="kpi-icon" style="background:rgba(100,116,139,0.15);"><i class="ri-delete-bin-line" style="color:#94a3b8;"></i></div>
+                    <div class="kpi-info">
+                        <h3>Eliminados</h3>
+                        <p id="flotaEliminados" class="kpi-value">0</p>
+                    </div>
+                </div>
             </div>
 
             <div id="card-operario" class="card glass-card">
@@ -682,9 +689,19 @@
                     style="margin-top:20px; border-top:1px solid var(--glass-border); padding-top:20px">
                     <div class="card-header flex-header">
                         <h2><i class="ri-list-check-2"></i> Flota Registrada</h2>
-                        <div class="filters" style="display: flex; gap: 10px; align-items: center;">
+                        <div class="filters" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                             <input id="buscarVehiculo" placeholder="Buscar placa, conductor o contratista..."
-                                onkeyup="buscarVehiculosDebounced()" style="flex: 1;">
+                                onkeyup="buscarVehiculosDebounced()" style="flex: 1; min-width: 200px;">
+                            <!-- Filtro de estado -->
+                            <div style="display:flex; align-items:center; gap:6px; background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:8px; padding:4px 10px; font-size:0.82rem; white-space:nowrap;">
+                                <label for="filtroEstadoVehiculo" style="color:var(--text-muted); margin:0;">Mostrar:</label>
+                                <select id="filtroEstadoVehiculo" onchange="buscarVehiculosDebounced()"
+                                    style="background:transparent; border:none; color:var(--text-primary); font-size:0.82rem; cursor:pointer; outline:none; padding:2px 4px;">
+                                    <option value="activos">Solo activos</option>
+                                    <option value="todos">Todos (inc. inactivos)</option>
+                                    <option value="inactivo">Solo inactivos</option>
+                                </select>
+                            </div>
                             <button id="btnExportarVehiculos" onclick="exportarVehiculosExcel()" class="action-btn"
                                 title="Exportar Vehículos a Excel" style="padding: 8px 12px; height: 42px;">
                                 <i class="ri-file-excel-2-line"></i>

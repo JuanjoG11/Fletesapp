@@ -96,7 +96,7 @@ const MAPA_CONTRATISTAS = {
 
 // Configuración específica para TAT
 const CONFIG_TAT = {
-    proveedores: ['FAMILIA'],
+    proveedores: ['FAMILIA', 'POSTOBON'],
     zonas: {
         'UNILEVER': [
             { value: 'MXEJ1301', text: 'MXEJ1301' },
@@ -1465,10 +1465,17 @@ const PRECIOS_TAT_FAMILIA = {
     'SAN JOSE-BELALCAZAR-PAQUE INDUSTRIAL': 360000,
 };
 
+// Precios ESPECIFICOS para TAT-POSTOBON
+const PRECIOS_TAT_POSTOBON = {
+    'PEREIRA': 250000,
+    'DOSQUEBRADAS': 240000
+};
+
 // Mantenemos este para los reportes unificados
 const PRECIOS_TAT_UNIFICADO = {
     ...PRECIOS_TAT_UNILEVER,
-    ...PRECIOS_TAT_FAMILIA
+    ...PRECIOS_TAT_FAMILIA,
+    ...PRECIOS_TAT_POSTOBON
 };
 
 // Precios ESPECIFICOS para ALPINA y FLEISCHMANN (Actualizado 2026)
@@ -1924,6 +1931,8 @@ function actualizarPoblaciones(prefix = "") {
         listaUsar = Object.keys(PRECIOS_ZENU).sort();
     } else if (proveedor === 'FAMILIA') {
         listaUsar = Object.keys(PRECIOS_TAT_FAMILIA).sort();
+    } else if (proveedor === 'POSTOBON') {
+        listaUsar = Object.keys(PRECIOS_TAT_POSTOBON).sort();
     }
 
     // --- LÓGICA DE FILTRADO POR DEPARTAMENTO DESHABILITADA (Solicitud del Usuario) ---
@@ -2303,6 +2312,8 @@ function calcularTotal(prefix = "") {
         precioBase = PRECIOS_ZENU[poblacion] || 0;
     } else if (proveedor === 'FAMILIA') {
         precioBase = PRECIOS_TAT_FAMILIA[poblacion] || 0;
+    } else if (proveedor === 'POSTOBON') {
+        precioBase = PRECIOS_TAT_POSTOBON[poblacion] || 0;
     } else {
         precioBase = PRECIOS_POBLACION[poblacion] || 0;
     }

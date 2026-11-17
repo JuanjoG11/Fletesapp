@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 
-    <!-- 📊 Librerías Externas (Deferred for Performance) -->
+    <!-- ?? Librerías Externas (Deferred for Performance) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
@@ -65,11 +65,14 @@
     <script src="../js/modules/planillas.js" defer></script>
     <script src="../js/modules/external-apis.js" defer></script>
     <script src="../js/modules/cuadre_caja.js" defer></script>
+
+    <!-- ?? Toque Navideño (nieve + saludo festivo) -->
+    <script src="../js/modules/christmas.js?v=9" defer></script>
 </head>
 
 <body>
 
-    <!-- 🟢 SIDEBAR (Navegación) -->
+    <!-- ?? SIDEBAR (Navegación) -->
     <aside class="sidebar glass-sidebar">
         <div class="logo-container">
             <img src="../assets/img/logo_tym.png" alt="Logo Empresa" class="logo-img">
@@ -101,16 +104,16 @@
                 <i class="ri-bar-chart-grouped-line"></i> Promedios Placa
             </a>
 
-            <!-- ── MÓDULO PLANILLAS ── -->
-            <!-- Carga de Planillas → página externa -->
+            <!-- -- MÓDULO PLANILLAS -- -->
+            <!-- Carga de Planillas ? página externa -->
             <a class="nav-item" href="carga-planillas.html" id="navCargaPlanillas" style="display:none;">
                 <i class="ri-upload-cloud-2-line"></i> Carga Planillas
             </a>
-            <!-- Programación → página externa -->
+            <!-- Programación ? página externa -->
             <a class="nav-item" href="programacion.html" id="navProgramacionPlanillas" style="display:none;">
                 <i class="ri-route-line"></i> Programación
             </a>
-            <!-- Estado / Kanban → tab interno del dashboard -->
+            <!-- Estado / Kanban ? tab interno del dashboard -->
             <a class="nav-item" data-tab="estado-planillas" id="navEstadoPlanillas" style="display:none; position:relative;">
                 <i class="ri-stack-line"></i> Estado Planillas
                 <span id="pl-badge-sueltas" style="display:none; position:absolute; top:6px; right:8px; background:#ef4444; color:#fff; border-radius:12px; font-size:0.7rem; font-weight:700; padding:1px 7px;"></span>
@@ -122,7 +125,7 @@
         <div class="sidebar-footer">
             <!-- Export buttons remain here -->
             <div class="actions" style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
-                <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0; text-align: center;">📥 Descargar
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0; text-align: center;">?? Descargar
                     Reportes</p>
                 <div style="display: flex; gap: 10px; justify-content: center; width: 100%;">
                     <button id="btnExportarExcel" onclick="exportarExcel()" class="action-btn" title="Exportar Excel">
@@ -158,7 +161,7 @@
         </div>
     </aside>
 
-    <!-- 🔵 MAIN CONTENT -->
+    <!-- ?? MAIN CONTENT -->
     <main class="main-content">
         <!-- TOPBAR -->
         <header class="topbar glass-header">
@@ -173,7 +176,7 @@
             </div>
         </header>
 
-        <!-- 🏠 SECCIÓN INICIO -->
+        <!-- ?? SECCIÓN INICIO -->
         <section id="inicio" class="tab-content fade-in">
 
 
@@ -201,7 +204,7 @@
                 </div>
             </div>
 
-            <!-- 📊 SECCIÓN ESTADÍSTICAS INTEGRADAS -->
+            <!-- ?? SECCIÓN ESTADÍSTICAS INTEGRADAS -->
             <div class="grid-2" style="margin-top: 20px;">
                 <div class="card glass-card chart-container">
                     <h3>Registros por Día</h3>
@@ -218,7 +221,7 @@
             </div>
         </section>
 
-        <!-- 📦 SECCIÓN EXCLUSIVA CAJA -->
+        <!-- ?? SECCIÓN EXCLUSIVA CAJA -->
         <section id="caja-view" class="tab-content fade-in"
             style="display: none; min-height: 100vh; background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1e293b 100%); position: relative; overflow: hidden;">
 
@@ -317,7 +320,7 @@
             </style>
         </section>
 
-        <!-- 📝 SECCIÓN CREAR FLETE (ADMIN) -->
+        <!-- ?? SECCIÓN CREAR FLETE (ADMIN) -->
         <section id="admin-crear" class="tab-content fade-in">
             <div id="card-admin" class="card glass-card">
                 <div class="card-header">
@@ -511,10 +514,10 @@
             </div>
         </section>
 
-        <!-- 👷 SECCIÓN OPERARIO: REGISTRAR VEHÍCULO -->
+        <!-- ?? SECCIÓN OPERARIO: REGISTRAR VEHÍCULO -->
         <section id="operario-vehiculos" class="tab-content fade-in">
 
-            <!-- 📊 TARJETA RESUMEN DE ESTADOS DE FLOTA -->
+            <!-- ?? TARJETA RESUMEN DE ESTADOS DE FLOTA -->
             <div class="kpi-grid" style="margin-bottom: 20px;" id="flota-resumen-grid">
                 <div class="card glass-card kpi-card" onclick="mostrarListaFlota('activo')" style="cursor:pointer;" title="Ver activos">
                     <div class="kpi-icon icon-green"><i class="ri-checkbox-circle-line"></i></div>
@@ -748,7 +751,7 @@
             </div>
         </section>
 
-        <!-- 📋 SECCIÓN LISTADO FLETES (TODOS) -->
+        <!-- ?? SECCIÓN LISTADO FLETES (TODOS) -->
         <section id="fletes" class="tab-content fade-in">
             <div class="card glass-card" id="card-listado-fletes">
                 <div class="card-header flex-header">
@@ -854,7 +857,7 @@
             </div>
         </section>
 
-        <!-- 💳 SECCIÓN PAGOS (admin + caja) -->
+        <!-- ?? SECCIÓN PAGOS (admin + caja) -->
         <section id="pagos" class="tab-content fade-in">
             <div class="card glass-card">
                 <div class="card-header flex-header">
@@ -949,7 +952,7 @@
             </div>
         </section>
 
-        <!-- 📊 SECCIÓN PROMEDIOS POR PLACA (solo admin) -->
+        <!-- ?? SECCIÓN PROMEDIOS POR PLACA (solo admin) -->
         <section id="promedios-placa" class="tab-content fade-in">
             <div class="card glass-card">
                 <div class="card-header flex-header">
@@ -1034,11 +1037,11 @@
 
         <!-- Secciones Carga Planillas y Programación movidas a páginas externas -->
         <!-- ================================================================
-             📊 SECCIÓN 3: ESTADO DE PLANILLAS / KANBAN (cajera_plan + admin)
+             ?? SECCIÓN 3: ESTADO DE PLANILLAS / KANBAN (cajera_plan + admin)
         ================================================================ -->
         <section id="estado-planillas" class="tab-content fade-in">
 
-            <!-- ── KPIs de planillas ── -->
+            <!-- -- KPIs de planillas -- -->
             <div class="kpi-grid" style="margin-bottom:20px;">
                 <div class="card glass-card kpi-card" style="border-left-color:#f59e0b;">
                     <div class="kpi-icon" style="color:#f59e0b;background:rgba(245,158,11,0.1);"><i class="ri-time-line"></i></div>
@@ -1070,10 +1073,10 @@
                 </div>
             </div>
 
-            <!-- ══════════════════════════════════════════════
+            <!-- ----------------------------------------------
                  VISTA SIMPLIFICADA CAJERA (solo cajera_plan)
                  Controlada por _aplicarVisibilidadRol()
-            ═══════════════════════════════════════════════ -->
+            ----------------------------------------------- -->
             <div id="pl-sec-cajera" style="display:none;">
 
                 <!-- HEADER CUADRE DE CAJA -->
@@ -1216,7 +1219,7 @@
 
             </div>
 
-            <!-- ── FILTROS (oculto para cajera) ── -->
+            <!-- -- FILTROS (oculto para cajera) -- -->
             <div id="pl-sec-filtros">
             <div class="card glass-card" style="margin-bottom:20px;">
                 <div class="flex-header">
@@ -1248,7 +1251,7 @@
             </div>
             </div><!-- /pl-sec-filtros -->
 
-            <!-- ── KANBAN DE ESTADOS (oculto para cajera) ── -->
+            <!-- -- KANBAN DE ESTADOS (oculto para cajera) -- -->
             <div id="pl-sec-kanban">
             <h3 style="margin-bottom:16px; color:var(--text-muted); font-size:0.85rem; text-transform:uppercase; letter-spacing:1px;">
                 <i class="ri-layout-column-line"></i> Tablero de Estado de Planillas
@@ -1302,7 +1305,7 @@
             </div>
             </div><!-- /pl-sec-kanban -->
 
-            <!-- ── TABLA RESUMEN (oculta para cajera) ── -->
+            <!-- -- TABLA RESUMEN (oculta para cajera) -- -->
             <div id="pl-sec-tabla-resumen">
             <div class="card glass-card" style="margin-top:24px;">
                 <div class="card-header flex-header">
@@ -1332,7 +1335,7 @@
             </div>
             </div><!-- /pl-sec-tabla-resumen -->
 
-            <!-- ── RESUMEN DIARIO DE CUADRE (cajera_plan + admin) ── -->
+            <!-- -- RESUMEN DIARIO DE CUADRE (cajera_plan + admin) -- -->
             <div class="card glass-card" style="margin-top:20px; border-left:4px solid #10b981;" id="pl-resumen-cuadre">
                 <div class="card-header flex-header" style="padding-bottom:14px; margin-bottom:14px;">
                     <h2 style="color:#10b981;">
@@ -1404,9 +1407,9 @@
         </section>
 
         <!-- ================================================================
-             ✅ SECCIÓN APROBACIONES (solo admin)
+             ? SECCIÓN APROBACIONES (solo admin)
              El admin revisa las programaciones PENDIENTES y las aprueba
-             o rechaza → al aprobar se crea el flete en la tabla fletes
+             o rechaza ? al aprobar se crea el flete en la tabla fletes
         ================================================================ -->
         <section id="aprobaciones" class="tab-content fade-in">
 
@@ -1597,7 +1600,7 @@
     <div id="modalEdicionFlete" class="modal-overlay">
         <div class="modal-glass">
             <div class="modal-header">
-                <h2>✏️ Editar Flete <span id="modal-title-info"
+                <h2>?? Editar Flete <span id="modal-title-info"
                         style="font-size: 0.9rem; margin-left:10px; opacity: 0.8;"></span></h2>
                 <button class="close-btn" onclick="ocultarModalEdicion()"><i class="ri-close-line"></i></button>
             </div>
@@ -1725,7 +1728,7 @@
     <div id="modalEdicionVehiculo" class="modal-overlay">
         <div class="modal-glass" style="max-width: 500px;">
             <div class="modal-header">
-                <h2>✏️ Editar Vehículo</h2>
+                <h2>?? Editar Vehículo</h2>
                 <button class="close-btn" onclick="ocultarModalVehiculo()"><i class="ri-close-line"></i></button>
             </div>
 
@@ -1853,7 +1856,7 @@
 
     <!-- APP SCRIPTS are loaded in HEAD -->
 
-    <!-- ── Scrollbar horizontal sticky al pie ── -->
+    <!-- -- Scrollbar horizontal sticky al pie -- -->
     <div id="sticky-hscroll-track"><div id="sticky-hscroll-inner"></div></div>
     <script>
     (function () {
@@ -1875,7 +1878,7 @@
             track.scrollLeft  = tc.scrollLeft;
         }
 
-        /* Sincroniza track → tabla */
+        /* Sincroniza track ? tabla */
         track.addEventListener('scroll', () => {
             if (syncing || !activeTable) return;
             syncing = true;
